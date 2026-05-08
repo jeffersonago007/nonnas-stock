@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: nonnas-stock-catalog
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO

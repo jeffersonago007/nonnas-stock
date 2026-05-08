@@ -5,7 +5,7 @@
 | T00    | concluída  | 2026-05-08 | `dbe2173` | Monorepo Maven multi-módulo com 12 módulos placeholder, Maven Wrapper 3.3.2 + Maven 3.9.9, docker-compose Postgres 16, Makefile/tasks.ps1, CI esqueleto. `./mvnw validate` e `./mvnw test` verdes. |
 | T01    | concluída  | 2026-05-08 | `42fc27c` | shared-kernel: Money, Quantity, EntityId, Result sealed (Success/Failure), DomainException sealed (Validation/BusinessRule/NotFound), ErrorCode. 68 testes, cobertura 99% linhas / 94% branches. ArchUnit local valida zero deps Spring/JPA/Lombok/Date legado. |
 | T02    | concluída  | 2026-05-08 | `6e50311` | identity (Empresa, Filial, Usuário, Auth JWT). Refresh rotation com replay detection (ADR 0003), brute force progressivo (3→15min, 5→1h, 10→travada) e PoliticaSenhaValidator antecipados de T16 (ADR 0006 D). AdminBootstrap idempotente substitui V002 seed. Embedded Postgres via Zonky (ADR 0007) — sem Docker. 12 testes integração + ~30 unit, cobertura 89% linhas / 76% branches. |
-| T03    | pendente   | —    | —      | — |
+| T03    | concluída  | 2026-05-08 | (este commit) | catalog (CategoriaInsumo, UnidadeMedida, ConversaoUnidade, Fornecedor, Insumo, InsumoFilial). `ConversorUnidadeService` domain-puro com cascata específica→global→inversa→erro (9 cenários cobertos no unit test). Seed V004 com unidades padrão e conversões globais KG→G, L→ML (inversa derivada automaticamente). `InsumoFilial.filial_id` sem FK física para identity.filiais (consolidação em T09). 5 IT + ~50 unit tests, cobertura 84% linhas / 80% branches. `docs/domain-model.md` criado. |
 | T04    | pendente   | —    | —      | — |
 | T05    | pendente   | —    | —      | — |
 | T06    | pendente   | —    | —      | — |

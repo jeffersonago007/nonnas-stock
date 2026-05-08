@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nonnas-stock-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nonnas_stock
+      POSTGRES_USER: nonnas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nonnas_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - nonnas_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nonnas -d nonnas_stock"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  nonnas_pg_data:
+    name: nonnas_pg_data

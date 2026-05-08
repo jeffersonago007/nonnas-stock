@@ -1,90 +1,131 @@
-# Nonnas Stock
+# 🍅 Nonnas Stock
 
-Sistema profissional de controle de estoque centralizado para a rede **Nonnas Paola** (churrascaria e pizzaria, multi-filial em São Paulo, multi-canal de venda).
+Sistema profissional de controle de estoque centralizado para a rede **Nonnas Paola** — churrascaria e pizzaria, multi-filial em São Paulo, multi-canal de venda (salão, iFood, Keeta, 99Food).
 
-> Documento mestre de desenvolvimento: [`PROMPT_CLAUDE_CODE.md`](PROMPT_CLAUDE_CODE.md)
-> Estado das tarefas: [`STATUS.md`](STATUS.md)
+![Java](https://img.shields.io/badge/Java-21_LTS-007396?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.5-6DB33F?logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-multi--módulo-C71A36?logo=apachemaven&logoColor=white)
+![Status](https://img.shields.io/badge/MVP_1.0-em_desenvolvimento-orange)
+![License](https://img.shields.io/badge/license-Privado-red)
 
----
+## Visão geral
+
+Sistema centralizado que cobre os gaps operacionais do controle de estoque tradicional em rede de restaurantes:
+
+- **Saldo separado por filial** (multi-tenant literal — cada loja vê seu estoque)
+- **Rastreabilidade fina por lote** com data de fabricação e validade
+- **FEFO automático** (First Expired, First Out) — sem perder mussarela na geladeira
+- **Ficha técnica versionada** — alterações de receita não reescrevem o histórico de vendas
+- **Alertas configuráveis** — estoque mínimo, vencimento próximo, ruptura
+- **Transferência orquestrada** entre filiais com workflow de estados
+- **API REST** documentada (OpenAPI/Swagger)
+- **Frontend web** com identidade visual da marca (a partir de T12)
 
 ## Stack
 
-- **Backend:** Java 21 · Spring Boot 3.3.5 · Maven multi-módulo · PostgreSQL 16 · Flyway · JPA/Hibernate 6 · JWT
-- **Testes:** JUnit 5 · Mockito · AssertJ · Testcontainers · ArchUnit · JaCoCo
-- **Frontend (T12+):** React 18 · Vite · TypeScript · Tailwind · shadcn/ui · TanStack Query
-- **Infra:** Docker · GitHub Actions
+| Camada | Tecnologia |
+|---|---|
+| Backend | Java 21 · Spring Boot 3.3.5 · Maven multi-módulo · PostgreSQL 16 · Flyway · JPA/Hibernate 6 · Spring Security · JWT (jjwt 0.12) |
+| Testes | JUnit 5 · Mockito · AssertJ · Embedded Postgres (Zonky) · ArchUnit · JaCoCo · MockMvc |
+| Frontend (T12+) | React 18 · Vite · TypeScript · Tailwind · shadcn/ui · TanStack Query |
+| Infra | Docker (opcional) · GitHub Actions · Maven Wrapper |
 
-## Estrutura
+## Arquitetura
+
+**Modular Monolith** com bounded contexts isolados — um deployable, contextos comunicam via contratos públicos ou eventos de aplicação. ArchUnit valida a fronteira em todo build.
 
 ```
 nonnas-stock/
-├── shared-kernel/           value objects, exceções base
-├── identity/                empresa, filial, usuário, JWT
-├── catalog/                 insumos, unidades, conversões
-├── inventory-core/          lote, saldo, movimentação, FEFO
-├── recipes/                 ficha técnica versionada
-├── operations/              transferência, ajuste, carga inicial
-├── alerts/                  alertas configuráveis
-├── reporting/               dashboards e relatórios
-├── sales-channels-api/      contratos para canais (MVP 1.2)
-├── nfe-importer/            importador de NF-e (MVP 1.1)
-├── quality-tests/           ArchUnit + JaCoCo agregado
-├── app/                     composição: main, configs, migrations
-└── frontend/                React + Vite (T12+)
+├── shared-kernel/        Money, Quantity, EntityId, exceções base, Result
+├── identity/             Empresa, Filial, Usuário, JWT com refresh rotation, brute force
+├── catalog/              Insumo, Categoria, UnidadeMedida, Conversão, Fornecedor
+├── inventory-core/       Lote, SaldoLote, Movimentação imutável, FEFO  ← núcleo
+├── recipes/              ProdutoVendavel, FichaTecnica versionada
+├── operations/           Transferência, Carga inicial, Ajuste
+├── alerts/               AlertaConfig, avaliação reativa
+├── reporting/            Dashboards e queries materializadas
+├── sales-channels-api/   Contratos para iFood/Keeta/99Food (MVP 1.2)
+├── nfe-importer/         Parser NF-e (MVP 1.1)
+├── quality-tests/        ArchUnit transversal + JaCoCo agregado
+├── app/                  Composição: main, configs, migrations Flyway unificadas
+├── docs/
+│   ├── adr/              Architecture Decision Records (0001+)
+│   └── domain-model.md   Modelo de domínio incremental
+└── frontend/             React + Vite (criado em T12)
 ```
 
-## Pré-requisitos
+Detalhes em [`docs/domain-model.md`](docs/domain-model.md) e [`docs/adr/`](docs/adr/).
 
-- **Java 21** (Temurin recomendado)
-- **Docker Desktop** (para Postgres local)
-- **Node.js 20+** (apenas a partir da T12)
+## Status
 
-> Maven não precisa estar instalado: o projeto usa o **Maven Wrapper** (`./mvnw` / `mvnw.cmd`) e baixa o Maven 3.9.9 sob demanda na primeira execução.
+| Tarefa | Módulo | Status |
+|---|---|---|
+| T00 | Fundação do repositório | ✅ |
+| T01 | shared-kernel | ✅ |
+| T02 | identity (Auth JWT, refresh rotation, brute force) | ✅ |
+| T03 | catalog (ConversorUnidadeService) | ✅ |
+| T04 | inventory-core (FEFO + saldo materializado) | ✅ |
+| T05–T15 | recipes, operations, alerts, reporting, app, CI/CD, frontend | 🔜 |
+| T16–T18 | hardening (LGPD, observability, DR) | 🔜 |
+
+Roadmap completo: [`STATUS.md`](STATUS.md). Detalhamento de cada tarefa: [`PROMPT_CLAUDE_CODE.md`](PROMPT_CLAUDE_CODE.md) seção 10.
 
 ## Setup local
 
-```bash
-# 1. Subir o Postgres
-make up                       # ou: .\tasks.ps1 up   (Windows)
+### Pré-requisitos
 
-# 2. Validar build (primeira execução baixa o Maven 3.9.9)
-make verify                   # ou: .\tasks.ps1 verify
-# Equivalente direto: ./mvnw verify  (Linux/Mac)  ou  .\mvnw.cmd verify  (Windows)
+- **Java 21** (Temurin recomendado, ou JBR do Android Studio)
+- **Docker Desktop** opcional — testes usam Postgres embedded (Zonky), produção usa Postgres standalone
 
-# 3. Rodar a aplicação (após T09)
-make run                      # ou: .\tasks.ps1 run
+> Maven não precisa estar instalado. O projeto usa **Maven Wrapper** (`./mvnw` / `mvnw.cmd`) que baixa Maven 3.9.9 sob demanda.
+
+### Comandos
+
+```powershell
+# Windows / PowerShell
+.\tasks.ps1 verify       # build + unit + integração + ArchUnit
+.\tasks.ps1 run          # sobe a aplicação (após T09)
+.\tasks.ps1 up           # Postgres via docker-compose (opcional)
 ```
 
-### Variáveis de ambiente
+```bash
+# Linux / macOS / Git Bash
+make verify
+make run
+make up
+```
 
-| Variável            | Default       | Uso                         |
-|---------------------|---------------|-----------------------------|
-| `POSTGRES_PASSWORD` | `nonnas_dev`  | Senha do Postgres (compose) |
+Equivalentes diretos: `./mvnw verify`, `./mvnw -pl app spring-boot:run`.
 
-## Comandos úteis
-
-| Make           | PowerShell                | Descrição                        |
-|----------------|---------------------------|----------------------------------|
-| `make up`      | `.\tasks.ps1 up`          | Sobe Postgres                    |
-| `make down`    | `.\tasks.ps1 down`        | Para Postgres                    |
-| `make logs`    | `.\tasks.ps1 logs`        | Tail de logs                     |
-| `make test`    | `.\tasks.ps1 test`        | Apenas testes unitários          |
-| `make verify`  | `.\tasks.ps1 verify`      | Build + integração + ArchUnit    |
-| `make run`     | `.\tasks.ps1 run`         | Sobe Spring Boot (módulo `app`)  |
-| `make clean`   | `.\tasks.ps1 clean`       | Limpa artefatos                  |
-| `make rebuild` | `.\tasks.ps1 rebuild`     | clean + verify                   |
+| Target | Make | PowerShell |
+|---|---|---|
+| Build + tests | `make verify` | `.\tasks.ps1 verify` |
+| Unit tests | `make test` | `.\tasks.ps1 test` |
+| Sobe Postgres | `make up` | `.\tasks.ps1 up` |
+| Roda app | `make run` | `.\tasks.ps1 run` |
+| Limpa | `make clean` | `.\tasks.ps1 clean` |
 
 ## Convenções
 
-- **Commits:** Conventional Commits, escopo = nome do módulo (`feat(catalog): adiciona entidade Insumo`).
-- **Branches:** `main` protegida; trabalho em `feat/T03-...`, `fix/T05-...`.
-- **Testes:** Postgres real via Testcontainers — **nunca H2**.
-- **Idioma:** logs e código em inglês; UI, validações e mensagens ao usuário em pt-BR.
+- **Commits**: Conventional Commits com escopo de módulo (`feat(catalog): ...`, `fix(inventory-core): ...`).
+- **Branches**: `main` é a linha estável; trabalho em `feat/T0X-...` e `fix/T0X-...`.
+- **Testes**: Postgres real via embedded-postgres (Zonky) — **nunca H2** (regra invariante).
+- **Idioma**: logs e identificadores técnicos em inglês; UI, validações e mensagens ao usuário em **pt-BR**.
+- **Arquitetura**: ports em `application.ports`, adapters em `infrastructure.persistence`, domain puro (sem Spring/JPA).
 
-## Tarefas e roadmap
+## Documentação
 
-Ver [`STATUS.md`](STATUS.md) para o estado atual e [`PROMPT_CLAUDE_CODE.md`](PROMPT_CLAUDE_CODE.md) seção 10 para o detalhamento de cada tarefa T00–T15.
+- 📄 [`PROMPT_CLAUDE_CODE.md`](PROMPT_CLAUDE_CODE.md) — documento mestre (escopo, regras, tarefas)
+- 📄 [`STATUS.md`](STATUS.md) — estado atual das tarefas com hashes de commit
+- 📄 [`docs/domain-model.md`](docs/domain-model.md) — modelo de domínio por bounded context
+- 📁 [`docs/adr/`](docs/adr/) — Architecture Decision Records
+
+## Equipe
+
+- **Jefferson Pacheco Agostinho** — BA/QA, condução do projeto
+- **Edwagney Luz** — desenvolvedor sênior Java
 
 ## Licença
 
-Privado — Nonnas Paola.
+🔒 **Privado** — código proprietário do projeto Nonnas Paola. Distribuição restrita aos colaboradores autorizados.

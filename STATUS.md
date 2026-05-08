@@ -3,7 +3,7 @@
 | Tarefa | Estado     | Data | Commit | Nota |
 |--------|------------|------|--------|------|
 | T00    | concluída  | 2026-05-08 | `dbe2173` | Monorepo Maven multi-módulo com 12 módulos placeholder, Maven Wrapper 3.3.2 + Maven 3.9.9, docker-compose Postgres 16, Makefile/tasks.ps1, CI esqueleto. `./mvnw validate` e `./mvnw test` verdes. |
-| T01    | concluída  | 2026-05-08 | (este commit) | shared-kernel: Money, Quantity, EntityId, Result sealed (Success/Failure), DomainException sealed (Validation/BusinessRule/NotFound), ErrorCode. 68 testes, cobertura 99% linhas / 94% branches. ArchUnit local valida zero deps Spring/JPA/Lombok/Date legado. |
+| T01    | concluída  | 2026-05-08 | `42fc27c` | shared-kernel: Money, Quantity, EntityId, Result sealed (Success/Failure), DomainException sealed (Validation/BusinessRule/NotFound), ErrorCode. 68 testes, cobertura 99% linhas / 94% branches. ArchUnit local valida zero deps Spring/JPA/Lombok/Date legado. |
 | T02    | pendente   | —    | —      | — |
 | T03    | pendente   | —    | —      | — |
 | T04    | pendente   | —    | —      | — |

@@ -18,3 +18,6 @@
 | T13    | pendente   | —    | —      | — |
 | T14    | pendente   | —    | —      | — |
 | T15    | pendente   | —    | —      | — |
+| T16    | pendente   | —    | —      | Hardening de segurança e LGPD: audit log, 2FA TOTP, criptografia de campos, brute force progressivo, headers, OWASP, endpoints LGPD. |
+| T17    | pendente   | —    | —      | Observabilidade e notificações internas: Sentry, Prometheus + Grafana, OpenTelemetry, logs estruturados em JSON, sistema de notificações in-app. |
+| T18    | pendente   | —    | —      | Backup, Disaster Recovery e Runbooks: pg_dump automatizado off-site, restore validado, ADRs 0001–0010, runbooks operacionais, simulação DR. |

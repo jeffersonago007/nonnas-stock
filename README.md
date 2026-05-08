@@ -124,7 +124,7 @@ Equivalentes diretos: `./mvnw verify`, `./mvnw -pl app spring-boot:run`.
 ## Equipe
 
 - **Jefferson Pacheco Agostinho** — BA/QA, condução do projeto
-- **Edwagney Luz** — desenvolvedor sênior Java
+- **Ewerton Carreira** — desenvolvedor sênior Java
 
 ## Licença
 

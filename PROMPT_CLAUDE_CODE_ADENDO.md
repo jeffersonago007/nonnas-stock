@@ -312,7 +312,7 @@ A interface `CanalNotificacao` na seção 15.4 garante que adicionar essas imple
 - ADMIN sem 2FA configurado não consegue acessar funcionalidades sensíveis.
 - CPF gravado no banco não é legível em consulta direta (criptografado).
 - OWASP Dependency Check verde no CI.
-- Documento LGPD revisado e assinado pelo responsável (Jeff ou Edwagney).
+- Documento LGPD revisado e assinado pelo responsável (Jeff ou Ewerton).
 
 ---
 
@@ -385,7 +385,7 @@ A interface `CanalNotificacao` na seção 15.4 garante que adicionar essas imple
 - ADRs 0001 a 0010 escritos e versionados.
 - Pelo menos 6 runbooks na pasta, todos com procedimento testado.
 - PR template atualizado com checklist completo.
-- Simulação de DR completa executada com Edwagney e Jeff em uma sessão de 2–3h, documento de post-mortem da simulação produzido.
+- Simulação de DR completa executada com Ewerton e Jeff em uma sessão de 2–3h, documento de post-mortem da simulação produzido.
 - Tag `v1.0.0` gerada após T18 verde, GitHub Release publicada com binário, source maps, CHANGELOG, e link para documentação.
 
 ---

@@ -6,7 +6,7 @@ Documento mestre de orientação para desenvolvimento assistido. Lido por inteir
 
 - **Repositório**: `C:\dev\nonnas-stock`
 - **Modelo comercial**: preço fechado por entregáveis, hora-base R$ 200/h
-- **Equipe**: Jefferson Pacheco Agostinho (BA/QA, condução do projeto) + Edwagney Luz (dev sênior Java)
+- **Equipe**: Jefferson Pacheco Agostinho (BA/QA, condução do projeto) + Ewerton Carreira (dev sênior Java)
 
 ---
 
@@ -968,7 +968,7 @@ Cada tarefa: objetivo, pré-requisitos, entregáveis, critérios de aceitação.
 - ADMIN sem 2FA configurado não consegue acessar funcionalidades sensíveis.
 - CPF gravado no banco não é legível em consulta direta (criptografado).
 - OWASP Dependency Check verde no CI.
-- Documento LGPD revisado e assinado pelo responsável (Jeff ou Edwagney).
+- Documento LGPD revisado e assinado pelo responsável (Jeff ou Ewerton).
 
 ---
 
@@ -1041,7 +1041,7 @@ Cada tarefa: objetivo, pré-requisitos, entregáveis, critérios de aceitação.
 - ADRs 0001 a 0010 escritos e versionados.
 - Pelo menos 6 runbooks na pasta, todos com procedimento testado.
 - PR template atualizado com checklist completo.
-- Simulação de DR completa executada com Edwagney e Jeff em uma sessão de 2–3h, documento de post-mortem da simulação produzido.
+- Simulação de DR completa executada com Ewerton e Jeff em uma sessão de 2–3h, documento de post-mortem da simulação produzido.
 - Tag `v1.0.0` gerada após T18 verde, GitHub Release publicada com binário, source maps, CHANGELOG, e link para documentação.
 
 ---

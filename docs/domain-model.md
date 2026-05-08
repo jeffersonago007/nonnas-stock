@@ -15,6 +15,7 @@ de domínio dos bounded contexts do sistema. Atualizado a cada nova tarefa.
 | shared-kernel | T01 | ✅ Concluído |
 | identity | T02 | ✅ Concluído |
 | catalog | T03 | ✅ Concluído |
+| inventory-core | T04 | ✅ Concluído |
 
 ---
 
@@ -163,9 +164,90 @@ para preservar isolamento entre bounded contexts.
 
 ---
 
+## inventory-core (T04)
+
+Núcleo do sistema. Lote, saldo materializado por (lote, filial), movimentação imutável com itens, FEFO.
+
+### Entidades
+
+```
+Lote (record imutável)
+  └─ id: LoteId
+     insumoId: UUID  (FK lógica catalog.insumos)
+     fornecedorId: Optional<UUID>
+     notaFiscalId: Optional<UUID>  (NF-e em onda 1.1)
+     numeroLote: String
+     dataFabricacao: Optional<LocalDate>
+     dataValidade: Optional<LocalDate>
+     valorUnitario: BigDecimal (≥ 0)
+
+SaldoLote (record imutável; chave composta lote_id + filial_id)
+  └─ loteId: LoteId
+     filialId: UUID
+     quantidadeBase: BigDecimal  (pode ser negativa — vide regra master doc 5.2)
+     atualizadoEm: Instant
+
+Movimentacao (record imutável — auditoria é trilha, nunca estado mutável)
+  └─ id: MovimentacaoId
+     filialId, usuarioId: UUID
+     tipo: TipoMovimentacao { ENTRADA_NF | ENTRADA_AJUSTE | ... | SAIDA_VENDA | ... | SAIDA_VENCIMENTO }
+     dataMovimentacao: Instant
+     documentoOrigemTipo/Id: Optional
+     observacao: Optional<String>
+     gerouNegativo: boolean  (true quando saída excedeu saldo disponível)
+     itens: List<ItemMovimentacao>  (defensive copy, unmodifiable)
+
+ItemMovimentacao (record)
+  └─ id: UUID
+     insumoId: UUID
+     loteId: LoteId
+     unidadeLancamentoId: UUID  (catalog.unidades_medida)
+     quantidadeLancada: BigDecimal  (na unidade que o operador escolheu)
+     quantidadeBase: BigDecimal  (após conversão pela ConversorUnidadeService)
+     valorUnitario: BigDecimal
+```
+
+### `SelecionarLotesPorFefoService` — algoritmo FEFO
+
+Domain service puro (sem Spring), recebe `SaldoLoteRepository` por construtor.
+
+1. Query lotes do insumo na filial com saldo > 0, ordenados por
+   `data_validade NULLS LAST, lote.id ASC`. Lock pessimista
+   (`PESSIMISTIC_WRITE`) serializa saídas concorrentes no mesmo lote.
+2. Itera consumindo até completar a quantidade. Pode produzir múltiplas
+   alocações (uma por lote consumido).
+3. Se a soma dos saldos não basta, o restante é alocado no último lote —
+   saldo desse lote ficará negativo. Flag `gerouNegativo = true` é
+   anexada à movimentação. Restaurante prefere registrar a venda mesmo
+   sem estoque a bloquear o pedido (regra invariante master doc 5.2).
+4. Sem lote algum disponível: `Resultado.semLotes() == true`. Use case
+   lança 422 — não há nem onde registrar a saída.
+
+### Saldo materializado via `@EventListener`
+
+`SaldoLoteListener` escuta `MovimentacaoCriadaEvent` (publicado pelo use
+case na mesma transação) e atualiza `saldos_lotes` somando ou subtraindo
+quantidade base por item. `Propagation.MANDATORY` garante que se a
+transação da movimentação aborta, o saldo também aborta.
+
+Saldo é **projeção**, não fonte da verdade — a verdade é a soma das
+movimentações. Job de conciliação (T08+) compara projeção com soma e
+alerta divergências.
+
+### Cross-module references
+
+- `lote.insumo_id` → catalog.insumos
+- `lote.fornecedor_id` → catalog.fornecedores
+- `movimentacao.filial_id` → identity.filiais
+- `movimentacao.usuario_id` → identity.usuarios
+- `item_movimentacao.unidade_lancamento_id` → catalog.unidades_medida
+
+Todos UUIDs sem FK física — consolidação em T09.
+
+---
+
 ## Próximos contextos (não entregues ainda)
 
-- **inventory-core (T04):** Lote, SaldoLote, Movimentação, ItemMovimentacao, FEFO. ⚠ NÚCLEO do sistema.
 - **recipes (T05):** ProdutoVendavel, FichaTecnica versionada, ItemFichaTecnica.
 - **operations (T06):** Transferência (state machine), Carga inicial, Ajuste.
 - **alerts (T07):** AlertaConfig, AlertaDisparado, AvaliadorAlertasService.

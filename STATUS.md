@@ -4,7 +4,7 @@
 |--------|------------|------|--------|------|
 | T00    | concluída  | 2026-05-08 | `dbe2173` | Monorepo Maven multi-módulo com 12 módulos placeholder, Maven Wrapper 3.3.2 + Maven 3.9.9, docker-compose Postgres 16, Makefile/tasks.ps1, CI esqueleto. `./mvnw validate` e `./mvnw test` verdes. |
 | T01    | concluída  | 2026-05-08 | `42fc27c` | shared-kernel: Money, Quantity, EntityId, Result sealed (Success/Failure), DomainException sealed (Validation/BusinessRule/NotFound), ErrorCode. 68 testes, cobertura 99% linhas / 94% branches. ArchUnit local valida zero deps Spring/JPA/Lombok/Date legado. |
-| T02    | concluída  | 2026-05-08 | (este commit) | identity (Empresa, Filial, Usuário, Auth JWT). Refresh rotation com replay detection (ADR 0003), brute force progressivo (3→15min, 5→1h, 10→travada) e PoliticaSenhaValidator antecipados de T16 (ADR 0006 D). AdminBootstrap idempotente substitui V002 seed. Embedded Postgres via Zonky (ADR 0007) — sem Docker. 12 testes integração + ~30 unit, cobertura 89% linhas / 76% branches. |
+| T02    | concluída  | 2026-05-08 | `6e50311` | identity (Empresa, Filial, Usuário, Auth JWT). Refresh rotation com replay detection (ADR 0003), brute force progressivo (3→15min, 5→1h, 10→travada) e PoliticaSenhaValidator antecipados de T16 (ADR 0006 D). AdminBootstrap idempotente substitui V002 seed. Embedded Postgres via Zonky (ADR 0007) — sem Docker. 12 testes integração + ~30 unit, cobertura 89% linhas / 76% branches. |
 | T03    | pendente   | —    | —      | — |
 | T04    | pendente   | —    | —      | — |
 | T05    | pendente   | —    | —      | — |

@@ -1,0 +1,28 @@
+spring:
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        temp:
+          use_jdbc_metadata_defaults: false
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+nonnas:
+  operations:
+    ajuste:
+      threshold-aprovacao: 50
+
+logging:
+  level:
+    com.nonnas: INFO
+    org.hibernate.SQL: WARN
+    org.springframework: WARN
+    io.zonky: INFO

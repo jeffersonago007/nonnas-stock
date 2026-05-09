@@ -17,6 +17,7 @@ de domínio dos bounded contexts do sistema. Atualizado a cada nova tarefa.
 | catalog | T03 | ✅ Concluído |
 | inventory-core | T04 | ✅ Concluído |
 | recipes | T05 | ✅ Concluído |
+| operations | T06 | ✅ Concluído |
 
 ---
 
@@ -305,9 +306,96 @@ ADR 0008 estabelece o precedente: dependência Maven `recipes → inventory-core
 
 ---
 
+## operations (T06)
+
+Workflows com estados: transferência entre filiais, ajuste manual de inventário e carga inicial idempotente.
+
+### Entidades
+
+```
+Transferencia  (mutável, state machine)
+  └─ id: TransferenciaId
+     filialOrigemId, filialDestinoId: UUID  (devem ser distintas)
+     status: StatusTransferencia { SOLICITADA → APROVADA → EM_TRANSITO → RECEBIDA / CANCELADA }
+     solicitadoPor / aprovadoPor / enviadoPor / recebidoPor: UUID
+     dataSolicitacao / dataAprovacao / dataEnvio / dataRecebimento: Instant
+     movSaidaId, movEntradaId: Optional<UUID>  (rastros das movimentações)
+     itens: List<ItemTransferencia>
+
+ItemTransferencia  (mutável apenas no recebimento)
+  └─ id: UUID
+     insumoId, unidadeId: UUID
+     quantidadeSolicitada: BigDecimal
+     quantidadeRecebida: Optional<BigDecimal>  (fixa-se uma vez via registrarRecebimento)
+
+AjusteEstoque  (mutável)
+  └─ id: AjusteEstoqueId
+     filialId, insumoId, unidadeId: UUID
+     quantidadeDiff: BigDecimal  (positivo=entrada, negativo=saída)
+     motivo: String
+     status: StatusAjuste { PENDENTE_APROVACAO → APROVADO / REJEITADO }
+     requerAprovacao: boolean  (true se |diff| > threshold)
+     movId: Optional<UUID>
+     origemTransferenciaId: Optional<UUID>
+
+CargaInicial  (record imutável)
+  └─ id: CargaInicialId
+     filialId: UUID
+     hashPlanilha: String (64 chars SHA-256 hex, único)
+     nomeArquivo, registrosProcessados, registrosFalhos
+     solicitadoPor: UUID
+     createdAt: Instant
+```
+
+### State machine de Transferencia
+
+Cada transição é um método de domínio que valida o estado corrente:
+
+| Operação | De → Para | Efeito |
+|---|---|---|
+| `solicitar` | (novo) → SOLICITADA | Cria transferência |
+| `aprovar` | SOLICITADA → APROVADA | Anota gerente que aprovou |
+| `registrarEnvio` | APROVADA → EM_TRANSITO | Use case dispara `RegistrarSaidaMultiItemUseCase` (FEFO multi-insumo) e anexa `movSaidaId` |
+| `registrarRecebimento` | EM_TRANSITO → RECEBIDA | Use case dispara `RegistrarEntradaMultiItemUseCase` (lotes novos no destino) e anexa `movEntradaId`. Para itens com `qtd_recebida ≠ qtd_solicitada`, cria `AjusteEstoque` no destino só para auditoria (sem movimentação adicional — perda implícita já reside na diferença saída/entrada) |
+| `cancelar` | SOLICITADA ou APROVADA → CANCELADA | Bloqueado após `EM_TRANSITO` (já há saída no estoque) |
+
+### Threshold de aprovação para AjusteEstoque
+
+Configurável via `nonnas.operations.ajuste.threshold-aprovacao` (default `50`, na unidade base). Lógica em `AjusteEstoque.novo(...)`:
+- `|diff| ≤ threshold` → status APROVADO direto, use case dispara movimentação imediatamente.
+- `|diff| > threshold` → status PENDENTE_APROVACAO, sem movimentação. `AprovarAjusteEstoqueUseCase` realiza a transição completa.
+
+Movimentação correspondente:
+- **diff positivo** (`ENTRADA_AJUSTE`): cria lote sintético `AJUSTE-<ajuste_id>` com `valor_unitario=0`, sem fornecedor/NF.
+- **diff negativo** (`SAIDA_AJUSTE`): baixa via FEFO (single-item, pois é 1 insumo).
+
+### Carga inicial idempotente
+
+`ProcessarCargaInicialUseCase` recebe `hash_planilha` (SHA-256). Antes de processar, consulta `cargas_iniciais` por hash:
+- **Hash existe** → retorna registro anterior (no-op). Re-upload da mesma planilha não duplica estoque.
+- **Hash novo** → dispara `RegistrarEntradaMultiItemUseCase` com tipo `ENTRADA_CARGA_INICIAL`, persiste registro `CargaInicial`.
+
+Importer pipeline:
+1. `PlanilhaImporterService` roteia por extensão: `.xlsx` → `XlsxParser` (Apache POI), `.csv` → `CsvParser` (OpenCSV, detecta separador `,`/`;` automaticamente).
+2. Schema fixo: `insumo_id, unidade_id, numero_lote, quantidade, valor_unitario, data_fabricacao?, data_validade?` (linha 1 = cabeçalho).
+3. Validação por linha em pt-BR; primeiro erro lança `ValidationException` com número da linha.
+4. Hash SHA-256 do conteúdo do arquivo.
+
+### Cross-module references
+
+- `transferencias.filial_origem_id / filial_destino_id` → identity.filiais (UUID puro)
+- `transferencias.solicitado_por / aprovado_por / enviado_por / recebido_por` → identity.usuarios
+- `transferencias.mov_saida_id / mov_entrada_id` → inventory-core.movimentacoes
+- `itens_transferencia.insumo_id / unidade_id` → catalog.insumos / catalog.unidades_medida
+- `ajustes_estoque.mov_id` → inventory-core.movimentacoes (Optional)
+- `ajustes_estoque.origem_transferencia_id` → operations.transferencias (mesma tabela, FK lógica)
+
+Maven dep `operations → inventory-core` (compile, ADR 0008). Use cases multi-item em inventory-core (ADR 0009).
+
+---
+
 ## Próximos contextos (não entregues ainda)
 
-- **operations (T06):** Transferência (state machine), Carga inicial, Ajuste.
 - **alerts (T07):** AlertaConfig, AlertaDisparado, AvaliadorAlertasService.
 - **reporting (T08):** views materializadas, queries de dashboards.
 

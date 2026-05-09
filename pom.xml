@@ -27,6 +27,7 @@
     <module>nfe-importer</module>
     <module>quality-tests</module>
     <module>app</module>
+    <module>e2e</module>
   </modules>
 
   <properties>

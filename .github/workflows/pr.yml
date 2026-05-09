@@ -69,3 +69,41 @@ jobs:
           path: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
           reporter: java-junit
           fail-on-error: false
+
+  security-scan:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy dependency scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          ignore-unfixed: true
+          format: table
+          # Falha o build em CRITICAL/HIGH com fix disponível.
+          # Master doc T15: "Trivy scan sem CVEs críticas ou altas".
+
+      - name: Trivy SBOM (artifact)
+        if: always()
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: cyclonedx
+          output: trivy-sbom.json
+
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sbom
+          path: trivy-sbom.json
+          retention-days: 30
+          if-no-files-found: ignore

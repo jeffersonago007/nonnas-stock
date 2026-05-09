@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.nonnas</groupId>
+    <artifactId>nonnas-stock-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>e2e</artifactId>
+  <name>Nonnas Stock — E2E (Playwright)</name>
+  <description>
+    Smoke tests Playwright Java contra backend (localhost:8080) + frontend
+    (localhost:5173). Não executa no `mvn verify` padrão; requer profile
+    `e2e` ou execução direta com `mvn -pl e2e test -Pe2e`.
+  </description>
+
+  <properties>
+    <playwright.version>1.49.0</playwright.version>
+    <e2e.base.url>http://localhost:5173</e2e.base.url>
+    <e2e.api.url>http://localhost:8080</e2e.api.url>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.microsoft.playwright</groupId>
+      <artifactId>playwright</artifactId>
+      <version>${playwright.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!--
+        E2E não roda no `mvn verify` padrão pra preservar o tempo alvo de 5min.
+        Surefire só dispara quando o profile `e2e` é ativado.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skipTests>true</skipTests>
+        </configuration>
+      </plugin>
+      <!-- JaCoCo no e2e não faz sentido — desabilitado pra evitar ruído. -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>e2e</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skipTests>false</skipTests>
+              <systemPropertyVariables>
+                <e2e.base.url>${e2e.base.url}</e2e.base.url>
+                <e2e.api.url>${e2e.api.url}</e2e.api.url>
+                <e2e.headless>true</e2e.headless>
+              </systemPropertyVariables>
+              <includes>
+                <include>**/*Test.java</include>
+              </includes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

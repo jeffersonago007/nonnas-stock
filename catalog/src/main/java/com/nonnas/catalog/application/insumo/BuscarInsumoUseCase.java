@@ -2,23 +2,25 @@ package com.nonnas.catalog.application.insumo;
 
 import com.nonnas.catalog.application.ports.InsumoRepository;
 import com.nonnas.catalog.domain.Insumo;
+import com.nonnas.catalog.domain.InsumoId;
+import com.nonnas.sharedkernel.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
-public class ListarInsumosUseCase {
+public class BuscarInsumoUseCase {
 
     private final InsumoRepository repository;
 
-    public ListarInsumosUseCase(InsumoRepository repository) {
+    public BuscarInsumoUseCase(InsumoRepository repository) {
         this.repository = repository;
     }
 
     @Transactional(readOnly = true)
-    public List<Insumo> execute(UUID categoriaId, Boolean ativo, String q, int page, int size) {
-        return repository.findFiltered(categoriaId, ativo, q, page, size);
+    public Insumo execute(UUID id) {
+        return repository.findById(InsumoId.of(id))
+                .orElseThrow(() -> new NotFoundException("Insumo", id));
     }
 }

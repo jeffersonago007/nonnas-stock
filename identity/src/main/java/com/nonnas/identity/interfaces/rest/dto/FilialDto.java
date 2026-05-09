@@ -17,6 +17,11 @@ public final class FilialDto {
             String endereco
     ) {}
 
+    public record UpdateRequest(
+            @NotBlank @Size(max = 255) String nome,
+            String endereco
+    ) {}
+
     public record Response(
             UUID id,
             UUID empresaId,

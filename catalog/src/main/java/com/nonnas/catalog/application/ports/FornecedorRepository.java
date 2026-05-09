@@ -13,4 +13,10 @@ public interface FornecedorRepository {
     Optional<Fornecedor> findByCnpj(Cnpj cnpj);
     boolean existsByCnpj(Cnpj cnpj);
     List<Fornecedor> findAll(int page, int size);
+
+    /**
+     * @param ativo quando não-nulo filtra pelo status ativo/inativo.
+     * @param q     quando não-nulo/não-vazio aplica busca case-insensitive em razão social ou CNPJ.
+     */
+    List<Fornecedor> findFiltered(Boolean ativo, String q, int page, int size);
 }

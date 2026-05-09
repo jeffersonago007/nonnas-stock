@@ -43,4 +43,14 @@ class FornecedorRepositoryImpl implements FornecedorRepository {
     public List<Fornecedor> findAll(int page, int size) {
         return jpa.findAll(PageRequest.of(page, size)).map(CatalogMappers::toDomain).getContent();
     }
+
+    @Override
+    public List<Fornecedor> findFiltered(Boolean ativo, String q, int page, int size) {
+        // Pattern montado em Java — Postgres infere bytea pra :q dentro de
+        // CONCAT/LOWER, então melhor mandar o LIKE pronto.
+        String pattern = (q == null || q.isBlank()) ? null : "%" + q.trim().toLowerCase() + "%";
+        return jpa.findFiltered(ativo, pattern, PageRequest.of(page, size))
+                .map(CatalogMappers::toDomain)
+                .getContent();
+    }
 }

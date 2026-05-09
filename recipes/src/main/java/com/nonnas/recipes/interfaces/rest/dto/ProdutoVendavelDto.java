@@ -14,6 +14,11 @@ public final class ProdutoVendavelDto {
             @NotBlank String categoria
     ) {}
 
+    public record UpdateRequest(
+            @NotBlank String nome,
+            @NotBlank String categoria
+    ) {}
+
     public record Response(
             UUID id,
             String codigo,

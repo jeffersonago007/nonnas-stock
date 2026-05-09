@@ -31,16 +31,7 @@ public class CargaInicialController {
             @RequestParam("filialId") UUID filialId,
             @RequestParam("solicitadoPor") UUID solicitadoPor,
             @RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new ValidationException("Arquivo da planilha é obrigatório");
-        }
-
-        PlanilhaCargaInicial plan;
-        try {
-            plan = importer.parse(file.getInputStream(), file.getOriginalFilename());
-        } catch (IOException e) {
-            throw new ValidationException("Falha ao ler arquivo: " + e.getMessage());
-        }
+        PlanilhaCargaInicial plan = parseOrThrow(file);
 
         var itens = plan.linhas().stream()
                 .map(l -> new ProcessarCargaInicialUseCase.ItemEntrada(
@@ -51,5 +42,26 @@ public class CargaInicialController {
         var cmd = new ProcessarCargaInicialUseCase.Comando(
                 filialId, plan.hashSha256(), plan.nomeArquivo(), solicitadoPor, itens);
         return CargaInicialDto.Response.from(processar.execute(cmd));
+    }
+
+    /**
+     * Faz parse + validação da planilha sem persistir. Frontend usa o
+     * resultado para mostrar preview ao usuário antes da confirmação
+     * (master doc T13 — "preview antes de confirmar").
+     */
+    @PostMapping("/preview")
+    public CargaInicialDto.PreviewResponse preview(@RequestParam("file") MultipartFile file) {
+        return CargaInicialDto.PreviewResponse.from(parseOrThrow(file));
+    }
+
+    private PlanilhaCargaInicial parseOrThrow(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ValidationException("Arquivo da planilha é obrigatório");
+        }
+        try {
+            return importer.parse(file.getInputStream(), file.getOriginalFilename());
+        } catch (IOException e) {
+            throw new ValidationException("Falha ao ler arquivo: " + e.getMessage());
+        }
     }
 }

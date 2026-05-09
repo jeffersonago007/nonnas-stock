@@ -2,22 +2,25 @@ package com.nonnas.catalog.application.fornecedor;
 
 import com.nonnas.catalog.application.ports.FornecedorRepository;
 import com.nonnas.catalog.domain.Fornecedor;
+import com.nonnas.catalog.domain.FornecedorId;
+import com.nonnas.sharedkernel.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.UUID;
 
 @Service
-public class ListarFornecedoresUseCase {
+public class BuscarFornecedorUseCase {
 
     private final FornecedorRepository repository;
 
-    public ListarFornecedoresUseCase(FornecedorRepository repository) {
+    public BuscarFornecedorUseCase(FornecedorRepository repository) {
         this.repository = repository;
     }
 
     @Transactional(readOnly = true)
-    public List<Fornecedor> execute(Boolean ativo, String q, int page, int size) {
-        return repository.findFiltered(ativo, q, page, size);
+    public Fornecedor execute(UUID id) {
+        return repository.findById(FornecedorId.of(id))
+                .orElseThrow(() -> new NotFoundException("Fornecedor", id));
     }
 }

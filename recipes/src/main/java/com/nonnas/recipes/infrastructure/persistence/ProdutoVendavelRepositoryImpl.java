@@ -42,4 +42,14 @@ class ProdutoVendavelRepositoryImpl implements ProdutoVendavelRepository {
     public List<ProdutoVendavel> findAll(int page, int size) {
         return jpa.findAll(PageRequest.of(page, size)).map(RecipesMappers::toDomain).getContent();
     }
+
+    @Override
+    public List<ProdutoVendavel> findFiltered(String categoria, Boolean ativo, String q, int page, int size) {
+        String normalizedCat = (categoria == null || categoria.isBlank()) ? null : categoria.trim();
+        // Pattern em Java — Postgres infere bytea pra :q dentro de funções/CONCAT.
+        String pattern = (q == null || q.isBlank()) ? null : "%" + q.trim().toLowerCase() + "%";
+        return jpa.findFiltered(normalizedCat, ativo, pattern, PageRequest.of(page, size))
+                .map(RecipesMappers::toDomain)
+                .getContent();
+    }
 }

@@ -19,6 +19,10 @@ public final class InsumoDto {
             Boolean controlaValidade
     ) {}
 
+    public record UpdateRequest(
+            @NotBlank @Size(max = 255) String nome
+    ) {}
+
     public record Response(
             UUID id,
             String codigo,

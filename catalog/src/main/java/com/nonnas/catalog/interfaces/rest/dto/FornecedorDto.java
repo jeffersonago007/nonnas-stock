@@ -13,6 +13,10 @@ public final class FornecedorDto {
             @NotBlank String cnpj
     ) {}
 
+    public record UpdateRequest(
+            @NotBlank String razaoSocial
+    ) {}
+
     public record Response(
             UUID id,
             String razaoSocial,

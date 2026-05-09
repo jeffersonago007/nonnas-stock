@@ -12,4 +12,11 @@ public interface ProdutoVendavelRepository {
     Optional<ProdutoVendavel> findByCodigo(String codigo);
     boolean existsByCodigo(String codigo);
     List<ProdutoVendavel> findAll(int page, int size);
+
+    /**
+     * @param categoria quando não-nula/não-vazia restringe à categoria informada (match exato).
+     * @param ativo     quando não-nulo filtra pelo status ativo/inativo.
+     * @param q         quando não-nulo/não-vazio aplica busca case-insensitive em nome ou código.
+     */
+    List<ProdutoVendavel> findFiltered(String categoria, Boolean ativo, String q, int page, int size);
 }

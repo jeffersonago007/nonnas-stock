@@ -21,10 +21,56 @@
       <artifactId>archunit-junit5</artifactId>
       <scope>test</scope>
     </dependency>
+    <!--
+      Test-jar dependencies: AbstractIntegrationTest e fixtures comuns (em
+      src/test/java/.../testsupport) precisam de Spring Boot test + Zonky.
+      Esses jars são puxados em test scope quando outros módulos declaram
+      <type>test-jar</type> deste artefato — não vazam para o classpath
+      compile do shared-kernel ("zero deps Spring no main" preservado).
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.zonky.test</groupId>
+      <artifactId>embedded-database-spring-test</artifactId>
+      <version>2.5.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.zonky.test</groupId>
+      <artifactId>embedded-postgres</artifactId>
+      <version>2.0.7</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
+      <!--
+        Publica src/test/classes como shared-kernel-{version}-tests.jar para
+        que outros módulos consumam fixtures comuns via:
+            <dependency>
+              <groupId>com.nonnas</groupId>
+              <artifactId>shared-kernel</artifactId>
+              <type>test-jar</type>
+              <scope>test</scope>
+            </dependency>
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>test-jar</id>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>

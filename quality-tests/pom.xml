@@ -13,5 +13,98 @@
 
   <artifactId>quality-tests</artifactId>
   <name>Nonnas Stock — Quality Tests</name>
-  <description>Regras ArchUnit transversais e relatório JaCoCo agregado. Populado em T10.</description>
+  <description>Regras ArchUnit transversais (seção 7.4) e relatório JaCoCo agregado.</description>
+
+  <dependencies>
+    <!--
+      Compile deps em todos os módulos para que ArchUnit veja todas as
+      classes durante a análise. Scope test reduz risco de "vazamento" pra
+      qualquer outro consumidor (este módulo não é publicado).
+    -->
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>shared-kernel</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>web-commons</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>identity</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>catalog</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>inventory-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>recipes</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>operations</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>alerts</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>reporting</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!--
+        Relatório JaCoCo agregado: consolida coverage de todos os módulos
+        que rodaram em quality-tests/test classpath. Gera HTML em
+        target/site/jacoco-aggregate/ — critério de aceitação T10.
+      -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jacoco-aggregate</id>
+            <phase>verify</phase>
+            <goals><goal>report-aggregate</goal></goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

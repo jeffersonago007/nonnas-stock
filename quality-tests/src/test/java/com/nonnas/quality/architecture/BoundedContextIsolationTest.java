@@ -1,5 +1,6 @@
-package com.nonnas.app.architecture;
+package com.nonnas.quality.architecture;
 
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -7,21 +8,38 @@ import com.tngtech.archunit.lang.ArchRule;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
- * Garantias arquiteturais mínimas do T09:
+ * Regras de isolamento entre bounded contexts. Cada módulo só pode
+ * depender daqueles que declarou em Maven.
+ *
+ * <p>Mapa de dependências (refs ADRs 0008, 0009, 0010):
  * <ul>
- *   <li>Bounded contexts não atravessam fronteiras exceto pelas dependências
- *       declaradas em Maven (recipes/operations/alerts → inventory-core,
- *       alerts → catalog).</li>
- *   <li>{@code com.nonnas.app} é o único pacote autorizado a juntar todos
- *       os módulos — verificado pelo fato de que cada módulo individual
- *       não importa de outros módulos não-declarados.</li>
+ *   <li>identity → shared-kernel, web-commons</li>
+ *   <li>catalog → shared-kernel, web-commons</li>
+ *   <li>inventory-core → shared-kernel, web-commons</li>
+ *   <li>recipes → shared-kernel, web-commons, inventory-core (ADR 0008)</li>
+ *   <li>operations → shared-kernel, web-commons, inventory-core (ADR 0009)</li>
+ *   <li>alerts → shared-kernel, web-commons, inventory-core, catalog</li>
+ *   <li>reporting → shared-kernel, web-commons (ADR 0010 — outras
+ *       dependências Maven existem só para encadear migrations Flyway, mas
+ *       o código Java não importa)</li>
+ *   <li>app → todos (único agregador autorizado)</li>
  * </ul>
  *
- * <p>T10 expande isto em {@code quality-tests/} com camadas (domain → app →
- * infra), proibições de Lombok no shared-kernel etc.
+ * <p>Mantém também a regra "shared-kernel main é zero-deps de Spring/JPA/Lombok".
  */
-@AnalyzeClasses(packages = "com.nonnas")
-class ArchitectureSmokeTest {
+@AnalyzeClasses(
+        packages = "com.nonnas",
+        importOptions = ImportOption.DoNotIncludeTests.class)
+class BoundedContextIsolationTest {
+
+    @ArchTest
+    static final ArchRule sharedKernel_eZeroDepsDeFrameworks = noClasses()
+            .that().resideInAPackage("com.nonnas.sharedkernel..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "org.springframework..",
+                    "jakarta.persistence..",
+                    "lombok..",
+                    "org.hibernate..");
 
     @ArchTest
     static final ArchRule identity_naoCruzaFronteiraNenhuma = noClasses()
@@ -86,9 +104,8 @@ class ArchitectureSmokeTest {
                     "com.nonnas.reporting..");
 
     /**
-     * Reporting usa SQL nativo cross-schema (ADR 0010). Em Java, ele NÃO
-     * importa classes dos outros bounded contexts — só shared-kernel e
-     * web-commons.
+     * Reporting usa SQL nativo cross-schema (ADR 0010); em Java, NÃO importa
+     * classes dos outros bounded contexts — só shared-kernel e web-commons.
      */
     @ArchTest
     static final ArchRule reporting_naoImportaJavaDeOutrosModulos = noClasses()

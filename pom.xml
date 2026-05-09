@@ -39,6 +39,8 @@
     <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
     <maven-failsafe-plugin.version>3.5.2</maven-failsafe-plugin.version>
     <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+    <pitest-maven.version>1.17.4</pitest-maven.version>
+    <pitest-junit5-plugin.version>1.2.1</pitest-junit5-plugin.version>
 
     <!-- Library versions -->
     <spring-boot.version>3.3.5</spring-boot.version>
@@ -71,6 +73,13 @@
         <groupId>com.nonnas</groupId>
         <artifactId>shared-kernel</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.nonnas</groupId>
+        <artifactId>shared-kernel</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>com.nonnas</groupId>
@@ -221,6 +230,36 @@
             </execution>
           </executions>
         </plugin>
+        <!--
+          PIT mutation testing (master doc 7.5). Configurado mas só executa no
+          profile `nightly` — reuse via parent pluginManagement.
+        -->
+        <plugin>
+          <groupId>org.pitest</groupId>
+          <artifactId>pitest-maven</artifactId>
+          <version>${pitest-maven.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.pitest</groupId>
+              <artifactId>pitest-junit5-plugin</artifactId>
+              <version>${pitest-junit5-plugin.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <targetClasses>
+              <param>com.nonnas.*.domain.*</param>
+              <param>com.nonnas.*.application.*</param>
+            </targetClasses>
+            <targetTests>
+              <param>com.nonnas.*</param>
+            </targetTests>
+            <mutationThreshold>70</mutationThreshold>
+            <outputFormats>
+              <format>HTML</format>
+              <format>XML</format>
+            </outputFormats>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -243,4 +282,29 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!--
+      `mvn -P nightly verify` executa mutation testing pelo PIT. Não roda no
+      build padrão para preservar o tempo alvo de < 5 min.
+    -->
+    <profile>
+      <id>nightly</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <executions>
+              <execution>
+                <id>pit-mutation-coverage</id>
+                <phase>verify</phase>
+                <goals><goal>mutationCoverage</goal></goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

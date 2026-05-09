@@ -4,32 +4,23 @@ import com.nonnas.identity.IdentityTestApplication;
 import com.nonnas.identity.application.ports.UsuarioRepository;
 import com.nonnas.identity.domain.Email;
 import com.nonnas.identity.domain.Usuario;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import com.nonnas.sharedkernel.testsupport.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Clock;
 
 /**
- * Base for identity integration tests. Starts the full Spring Boot context
- * with embedded Postgres provided by Zonky (no Docker — see ADR 0007), and
- * uses MockMvc instead of a real HTTP transport. MockMvc exercises the
- * full Spring MVC + Security + use-case + JPA stack without going through
- * the JDK's HttpURLConnection, which proved fragile when handling 401 on
- * streaming POST bodies.
- *
- * <p>Boot time ~3–5s once Postgres binary is cached in {@code ~/.embedpostgresql/}.
+ * Base for identity integration tests. Herda de
+ * {@link AbstractIntegrationTest} (shared-kernel) o setup comum de Zonky +
+ * profile {@code test} + MockMvc, e adiciona o {@code @SpringBootTest} com
+ * {@link IdentityTestApplication} específico do módulo.
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         classes = IdentityTestApplication.class)
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
-public abstract class AbstractIdentityIntegrationTest {
+public abstract class AbstractIdentityIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private UsuarioRepository adminResetRepo;

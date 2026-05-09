@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Tokens shadcn/ui mapeados à paleta Nonnas (master doc 9.1).
+ * primary = brand.red (#D62828) → HSL(0, 70%, 50%)
+ * destructive = semantic.danger (#DC2626) → HSL(0, 73%, 51%)
+ * Demais tokens herdam neutros suaves para densidade alta de UI.
+ */
+@layer base {
+  :root {
+    --background: 60 14% 98%;            /* #FAFAF7 neutral.bg */
+    --foreground: 220 14% 17%;           /* #1F2937 neutral.text */
+    --card: 0 0% 100%;
+    --card-foreground: 220 14% 17%;
+    --primary: 0 70% 50%;                /* #D62828 brand.red */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 132 58% 39%;            /* #2A9D3F brand.green */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 13% 91%;
+    --muted-foreground: 220 9% 46%;      /* #6B7280 neutral.text-muted */
+    --destructive: 0 73% 51%;            /* #DC2626 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;               /* #E5E7EB */
+    --input: 220 13% 91%;
+    --ring: 0 70% 50%;
+    --radius: 0.5rem;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+}

@@ -17,5 +17,6 @@ Repositório de decisões arquiteturais do Nonnas Stock. Toda decisão relevante
 | [0005](0005-versionamento-de-receita-via-snapshot.md) | Versionamento de ficha técnica via snapshot na venda | Aceita | 2026-05-08 |
 | [0006](0006-sequenciamento-pos-adendo.md) | Sequenciamento de execução pós-adendo (T16–T18) | Aceita | 2026-05-08 |
 | [0007](0007-embedded-postgres-em-vez-de-testcontainers.md) | Embedded Postgres (Zonky) em vez de Testcontainers no MVP 1.0 | Aceita | 2026-05-08 |
+| [0008](0008-recipes-depende-de-inventory-core-via-maven.md) | `recipes` depende de `inventory-core` em escopo `compile` | Aceita | 2026-05-08 |
 
-ADRs 0008–0010 serão criadas em T18 (observability stack, deployment platform, secrets management) conforme necessidade. T10 reavalia se voltamos para Testcontainers.
+ADRs 0009–0010 serão criadas em T18 (observability stack, deployment platform, secrets management) conforme necessidade. T10 reavalia se voltamos para Testcontainers.

@@ -16,6 +16,7 @@ de domínio dos bounded contexts do sistema. Atualizado a cada nova tarefa.
 | identity | T02 | ✅ Concluído |
 | catalog | T03 | ✅ Concluído |
 | inventory-core | T04 | ✅ Concluído |
+| recipes | T05 | ✅ Concluído |
 
 ---
 
@@ -246,9 +247,66 @@ Todos UUIDs sem FK física — consolidação em T09.
 
 ---
 
+## recipes (T05)
+
+Produto vendável e ficha técnica versionada. Snapshot por referência: a venda registra o `id` da versão vigente da ficha; edições posteriores criam nova versão e não alteram histórico.
+
+### Entidades
+
+```
+ProdutoVendavel  (mutável)
+  └─ id: ProdutoVendavelId
+     codigo: String (1-50, único)
+     nome: String (1-150)
+     categoria: String (1-50)  ← rótulo livre (Pizza, Churrasco, Bebida...)
+     ativo: boolean
+     createdAt/updatedAt: Instant
+
+FichaTecnica  (mutável; mas edição = nova versão, nunca muta receita)
+  └─ id: FichaTecnicaId
+     produtoVendavelId: ProdutoVendavelId
+     versao: int (≥ 1, único por produto)
+     vigenteDesde: Instant
+     vigenteAte: Optional<Instant>
+     ativa: boolean
+     itens: List<ItemFichaTecnica>  (defensive copy, unmodifiable)
+
+ItemFichaTecnica  (record imutável)
+  └─ id: UUID
+     insumoId: UUID  (catalog.insumos)
+     unidadeId: UUID  (catalog.unidades_medida)
+     quantidade: BigDecimal (> 0)
+```
+
+### Versionamento via `FichaTecnica.editar(...)`
+
+Operação de domínio: muta a ficha vigente para `ativa=false, vigente_ate=agora` e devolve uma **nova** `FichaTecnica` com `versao+1`. Persistência atômica é responsabilidade do `AtualizarFichaTecnicaUseCase` que salva ambas na mesma transação.
+
+**Garantia de invariante "no máximo uma ficha ativa por produto":** índice único parcial `uq_fichas_ativa_por_produto ON fichas_tecnicas(produto_vendavel_id) WHERE ativa = TRUE`. Para evitar violação no fluxo de edição (UPDATE da antiga + INSERT da nova), o adapter `FichaTecnicaRepositoryImpl.save()` usa `saveAndFlush()` deliberadamente — sem isso o Hibernate poderia processar o INSERT antes do UPDATE no flush final.
+
+### `RegistrarVendaSimuladaUseCase` — venda end-to-end no MVP sem canais reais
+
+Recebe `produtoVendavelId + quantidadeVendida + filial + usuario`. Algoritmo:
+1. Busca `findVigentePorProduto(produtoId)` ou `404`.
+2. Mapeia cada `ItemFichaTecnica` para `ItemSaida(insumoId, unidadeId, quantidade × quantidadeVendida)`.
+3. Delega para `RegistrarSaidaMultiItemUseCase` (em inventory-core, ADR 0008) que aplica FEFO insumo por insumo e produz **uma única** `Movimentacao SAIDA_VENDA` consolidada.
+4. `documentoOrigemTipo='FICHA_TECNICA'`, `documentoOrigemId=fichaVigente.id` — snapshot por referência.
+
+Tudo na mesma transação: se qualquer insumo não tiver lote disponível, a venda inteira rola back.
+
+### Cross-module references
+
+- `ficha_tecnica.produto_vendavel_id` → `produtos_vendaveis.id` (FK física, mesmo módulo)
+- `items_ficha_tecnica.ficha_tecnica_id` → `fichas_tecnicas.id` (FK física, mesmo módulo, ON DELETE CASCADE)
+- `items_ficha_tecnica.insumo_id` → catalog.insumos (UUID puro, T09 unifica)
+- `items_ficha_tecnica.unidade_id` → catalog.unidades_medida (UUID puro)
+
+ADR 0008 estabelece o precedente: dependência Maven `recipes → inventory-core` em escopo `compile`. Direção unidirecional, jamais reversa.
+
+---
+
 ## Próximos contextos (não entregues ainda)
 
-- **recipes (T05):** ProdutoVendavel, FichaTecnica versionada, ItemFichaTecnica.
 - **operations (T06):** Transferência (state machine), Carga inicial, Ajuste.
 - **alerts (T07):** AlertaConfig, AlertaDisparado, AvaliadorAlertasService.
 - **reporting (T08):** views materializadas, queries de dashboards.

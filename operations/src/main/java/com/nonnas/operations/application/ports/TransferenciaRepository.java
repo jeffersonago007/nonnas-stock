@@ -16,6 +16,15 @@ public interface TransferenciaRepository {
     List<Transferencia> findByStatus(StatusTransferencia status, int page, int size);
 
     /**
+     * Lista transferências com filtros opcionais.
+     *
+     * @param filialId  quando não-nulo, filtra por filial origem OU destino
+     *                  (UI mostra "minhas transferências" pra filial logada).
+     * @param status    quando não-nulo, restringe ao status informado.
+     */
+    List<Transferencia> findFiltered(UUID filialId, StatusTransferencia status, int page, int size);
+
+    /**
      * Soma a quantidade solicitada de itens de transferências em trânsito,
      * agregado por insumo. Filtro opcional por filial destino.
      */

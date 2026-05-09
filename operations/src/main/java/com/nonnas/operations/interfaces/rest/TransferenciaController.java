@@ -3,9 +3,11 @@ package com.nonnas.operations.interfaces.rest;
 import com.nonnas.operations.application.ports.TransferenciaRepository;
 import com.nonnas.operations.application.transferencia.AprovarTransferenciaUseCase;
 import com.nonnas.operations.application.transferencia.CancelarTransferenciaUseCase;
+import com.nonnas.operations.application.transferencia.ListarTransferenciasUseCase;
 import com.nonnas.operations.application.transferencia.RegistrarEnvioTransferenciaUseCase;
 import com.nonnas.operations.application.transferencia.RegistrarRecebimentoTransferenciaUseCase;
 import com.nonnas.operations.application.transferencia.SolicitarTransferenciaUseCase;
+import com.nonnas.operations.domain.StatusTransferencia;
 import com.nonnas.operations.domain.TransferenciaId;
 import com.nonnas.operations.interfaces.rest.dto.TransferenciaDto;
 import com.nonnas.sharedkernel.NotFoundException;
@@ -28,6 +30,7 @@ public class TransferenciaController {
     private final RegistrarEnvioTransferenciaUseCase enviar;
     private final RegistrarRecebimentoTransferenciaUseCase receber;
     private final CancelarTransferenciaUseCase cancelar;
+    private final ListarTransferenciasUseCase listar;
     private final TransferenciaRepository repo;
 
     public TransferenciaController(SolicitarTransferenciaUseCase solicitar,
@@ -35,12 +38,14 @@ public class TransferenciaController {
                                    RegistrarEnvioTransferenciaUseCase enviar,
                                    RegistrarRecebimentoTransferenciaUseCase receber,
                                    CancelarTransferenciaUseCase cancelar,
+                                   ListarTransferenciasUseCase listar,
                                    TransferenciaRepository repo) {
         this.solicitar = solicitar;
         this.aprovar = aprovar;
         this.enviar = enviar;
         this.receber = receber;
         this.cancelar = cancelar;
+        this.listar = listar;
         this.repo = repo;
     }
 
@@ -90,6 +95,15 @@ public class TransferenciaController {
     public TransferenciaDto.Response cancelar(@PathVariable UUID id,
                                               @Valid @RequestBody TransferenciaDto.CancelarRequest req) {
         return TransferenciaDto.Response.from(cancelar.execute(id, req.motivo()));
+    }
+
+    @GetMapping
+    public List<TransferenciaDto.Response> list(@RequestParam(required = false) UUID filialId,
+                                                @RequestParam(required = false) StatusTransferencia status,
+                                                @RequestParam(defaultValue = "0") int page,
+                                                @RequestParam(defaultValue = "50") int size) {
+        return listar.execute(filialId, status, page, size).stream()
+                .map(TransferenciaDto.Response::from).toList();
     }
 
     @GetMapping("/em-transito")

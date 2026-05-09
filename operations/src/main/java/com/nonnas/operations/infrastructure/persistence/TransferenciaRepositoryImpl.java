@@ -43,6 +43,12 @@ class TransferenciaRepositoryImpl implements TransferenciaRepository {
     }
 
     @Override
+    public List<Transferencia> findFiltered(UUID filialId, StatusTransferencia status, int page, int size) {
+        return jpa.findFiltered(filialId, status, PageRequest.of(page, size))
+                .stream().map(OperationsMappers::toDomain).toList();
+    }
+
+    @Override
     public List<EmTransitoPorInsumo> agregadoEmTransito(UUID filialDestinoIdOpt) {
         return jpa.agregadoEmTransito(filialDestinoIdOpt).stream()
                 .map(r -> new EmTransitoPorInsumo(r.insumoId(), r.quantidadeEmTransito()))

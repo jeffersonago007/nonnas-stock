@@ -17,6 +17,16 @@ interface SpringDataTransferenciaRepository extends JpaRepository<TransferenciaE
     List<TransferenciaEntity> findByStatusOrderByDataSolicitacaoDesc(StatusTransferencia status, Pageable pageable);
 
     @Query("""
+            SELECT t FROM TransferenciaEntity t
+            WHERE (:filialId IS NULL OR t.filialOrigemId = :filialId OR t.filialDestinoId = :filialId)
+              AND (:status IS NULL OR t.status = :status)
+            ORDER BY t.dataSolicitacao DESC
+            """)
+    List<TransferenciaEntity> findFiltered(@Param("filialId") UUID filialId,
+                                           @Param("status") StatusTransferencia status,
+                                           Pageable pageable);
+
+    @Query("""
             SELECT new com.nonnas.operations.infrastructure.persistence.SpringDataTransferenciaRepository$EmTransitoRow(
                 i.insumoId, SUM(i.quantidadeSolicitada))
             FROM TransferenciaEntity t JOIN t.itens i

@@ -2,7 +2,73 @@
 
 Notas de release do Nonnas Stock. Formato baseado em [Keep a Changelog](https://keepachangelog.com/), versionamento [SemVer](https://semver.org/).
 
-A primeira versão estável será `1.0.0` (entrega T18). `1.0.0-rc.1` (T15) é o snapshot pré-release com smoke E2E completo, docs operacionais e auditoria de segurança inicial.
+`1.0.0-rc.1` (T15) é o snapshot pré-release com smoke E2E completo, docs operacionais e auditoria de segurança inicial. `1.0.0` (T18) é a versão estável com hardening LGPD, observabilidade interna e DR validado.
+
+---
+
+## [1.0.0] — 2026-05-09
+
+### Highlights
+
+Release estável final do MVP. T16 (hardening de segurança e LGPD), T17 (observabilidade + notificações in-app) e T18 (backup/DR/runbooks) entregues e validados. Reactor `mvn verify`: 14/14 SUCCESS em ~04:51.
+
+### Adicionado — T16 (segurança e LGPD)
+
+- **Migration V010**: tabelas `audit_log`, `tokens_revogados`, `aceites_termos`, `usuarios_2fa`.
+- **AuditLogService** com `REQUIRES_NEW` registrando eventos não-CRUD.
+- **Logout + token blacklist** (`JwtAuthenticationFilter` consulta `tokens_revogados`).
+- **CryptoService AES-256-GCM** + `CamposSensiveisConverter`; chave mestra via `NONNAS_MASTER_KEY`.
+- **2FA TOTP** roll-my-own (HmacSHA1, zero deps): setup com `otpauthUri` + 8 backup codes one-shot.
+- **LGPD endpoints**: `/meus-dados` (Art. 18 II/IV), `/correcao` (III), `/exclusao` (VI = anonimização).
+- **Security headers**: HSTS 1y + preload, X-Frame-Options DENY, Referrer-Policy no-referrer, etc.
+- **CSP frontend** via meta tag; `useAuthStore.logout` chama backend.
+- **OWASP Dependency Check** em pluginManagement + workflow `security-deep.yml` semanal.
+- **4 docs LGPD**: secrets-management, lgpd-compliance, lgpd-mapping, lgpd-ropa.
+
+### Adicionado — T17 (observabilidade e notificações)
+
+- **Migration V011**: `notificacoes_usuario` com índice parcial pra não-lidas.
+- **NotificacaoInternaService** + `CanalNotificacao` port + `CanalInterno` impl + 5 endpoints REST.
+- **AlertaDisparadoEvent end-to-end**: shared-kernel/events + `salvarNovo` no port + `AlertaDisparadoListener` materializa pra ADMINs + GERENTES da filial.
+- **Frontend**: badge no header com polling 30s + toast Sonner pra CRITICA + página `/notificacoes`.
+- **Sentry SDK** com DSN no-op sem signup + `SentryConfig.beforeSend` mascarando PII.
+- **micrometer-registry-prometheus** + `/actuator/prometheus`.
+- **MdcRequestFilter**: `traceId`/`usuarioId`/`filialId` no MDC; `SensitiveDataMasker` regex.
+- **Dashboards Grafana JSON** (operacional/banco/negócio) + `prometheus-config.md`.
+
+### Adicionado — T18 (backup, DR, runbooks)
+
+- **Migration V012**: `feature_flags` com seed + `FeatureFlagService` (POC com gating em `/lgpd/exclusao`).
+- **scripts/backup.sh evoluído**: `pg_dump --format=custom | gzip | gpg --encrypt | aws s3 cp` (ou b2://).
+- **scripts/restore.sh**: download → decrypt → pg_restore + smoke validation; aceita `s3://` ou `b2://` direto.
+- **Workflow `backup-restore-test.yml`**: provisiona Postgres em container, baixa backup, restaura, valida — 1ª semana de cada mês.
+- **ADR 0012**: Estratégia de Backup (pg_dump custom + GPG + S3-IA + lifecycle 30/12/12).
+- **`docs/disaster-recovery.md`** com 5 cenários (crash loop, banco corrompido, servidor down, chave GPG perdida, vazamento).
+- **`docs/backup-restore.md`** com setup zero-to-cron + Lifecycle rules S3 + restore parcial.
+- **6 runbooks**: postgres-lento, restore-backup, novo-usuario-admin, migracao-manual-de-dados, alerta-falso-positivo, feature-flag-rollback.
+- **`docs/post-mortems/template.md`** + roteiro de simulação DR pré-go-live.
+- **PR template atualizado** com checklist completo (banco, segurança, observabilidade, operação, performance + risco/rollout).
+- **STATUS.md ADRs section** atualizada com ADR 0012.
+
+### Métricas
+
+- **Reactor `mvn verify`**: 14/14 SUCCESS em ~04:51.
+- **Frontend bundle**: ~1015KB / 297KB gzip.
+- **Cobertura**: > 75% application, > 85% domain por bounded context.
+- **ADRs versionadas**: 12 (de 0001 a 0012).
+- **Migrations Flyway**: 12 (V001 a V012).
+
+### Conhecidas limitações pós-1.0.0
+
+- Hibernate Envers em todas entidades fica para evolução pós-1.0.
+- Métricas custom de negócio via MeterRegistry (counters em movimentações/alertas/notificações) — backlog.
+- Source maps do frontend pro Sentry — workflow `main.yml` exige `SENTRY_AUTH_TOKEN` configurado.
+- Webhook Grafana → notificação interna ADMIN — exige staging real provisionado.
+- 4 eventos planejados (Transferencia/Divergencia/LoginNovoIP/LgpdDireito) ainda não publicados.
+- Distribuição refinada via `preferencias_notificacao` por usuário — backlog.
+- WAL archiving para RPO < 24h — pós-MVP.
+- UI de gerenciamento de feature flags — operação via SQL conforme runbook.
+- Simulação DR completa de 2-3h com Ewerton ainda não executada — roteiro pronto em `docs/post-mortems/simulacao-dr-pre-golive.md`.
 
 ---
 

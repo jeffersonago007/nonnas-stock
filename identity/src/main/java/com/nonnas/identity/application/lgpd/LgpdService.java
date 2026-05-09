@@ -2,10 +2,14 @@ package com.nonnas.identity.application.lgpd;
 
 import com.nonnas.identity.application.audit.AuditEvent;
 import com.nonnas.identity.application.audit.AuditLogService;
+import com.nonnas.identity.application.featureflags.FeatureFlag;
+import com.nonnas.identity.application.featureflags.FeatureFlagService;
 import com.nonnas.identity.application.ports.UsuarioRepository;
 import com.nonnas.identity.domain.Email;
 import com.nonnas.identity.domain.Usuario;
 import com.nonnas.identity.domain.UsuarioId;
+import com.nonnas.sharedkernel.BusinessRuleException;
+import com.nonnas.sharedkernel.ErrorCode;
 import com.nonnas.sharedkernel.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,11 +38,14 @@ public class LgpdService {
 
     private final UsuarioRepository usuarios;
     private final AuditLogService auditLog;
+    private final FeatureFlagService featureFlags;
     private final Clock clock;
 
-    public LgpdService(UsuarioRepository usuarios, AuditLogService auditLog, Clock clock) {
+    public LgpdService(UsuarioRepository usuarios, AuditLogService auditLog,
+                       FeatureFlagService featureFlags, Clock clock) {
         this.usuarios = usuarios;
         this.auditLog = auditLog;
+        this.featureFlags = featureFlags;
         this.clock = clock;
     }
 
@@ -79,6 +86,13 @@ public class LgpdService {
      */
     @Transactional
     public void excluir(UUID usuarioId) {
+        // T18 — POC de feature flag. Quando off, a anonimização é bloqueada
+        // (kill-switch operacional pra emergências). Padrão: TRUE em prod.
+        if (!featureFlags.isAtiva(FeatureFlag.Chaves.LGPD_EXCLUSAO_ATIVADA)) {
+            throw new BusinessRuleException(
+                    ErrorCode.CONFLICT,
+                    "Exclusão LGPD temporariamente indisponível. Tente novamente em algumas horas ou contate o DPO.");
+        }
         Usuario u = buscar(usuarioId);
         Instant agora = clock.instant();
         String idCurto = usuarioId.toString().substring(0, 8);

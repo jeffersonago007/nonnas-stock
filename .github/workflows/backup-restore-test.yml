@@ -1,0 +1,122 @@
+name: Backup Restore Test (mensal)
+
+on:
+  schedule:
+    # Primeiro domingo de cada mês às 04:00 UTC.
+    # GitHub Actions cron não suporta "primeiro domingo" diretamente — rodamos
+    # todo domingo e o job interno aborta se o dia não estiver entre 1-7.
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      backup_url:
+        description: 'URL do backup (s3:// ou b2://). Vazio = pula download.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  restore-validation:
+    name: Provisiona ambiente, restaura último backup, smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nonnas_app
+          POSTGRES_PASSWORD: nonnas_local
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nonnas_app"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Aborta se cron e dia > 7 (queremos só 1ª semana)
+        if: github.event_name == 'schedule'
+        run: |
+          DAY_OF_MONTH=$(date +%-d)
+          if [ "$DAY_OF_MONTH" -gt 7 ]; then
+            echo "Dia $DAY_OF_MONTH > 7 — pulando (rodamos só na 1ª semana)."
+            exit 78  # neutral
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Importa chave GPG privada
+        run: |
+          # Secret GPG_PRIVATE_KEY contém a chave privada armored. Sem ela
+          # não dá pra descriptografar o backup.
+          if [ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            echo "GPG_PRIVATE_KEY ausente — workflow não consegue restaurar."
+            exit 1
+          fi
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Configurar AWS CLI
+        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws --version
+          aws s3 ls "${{ secrets.BACKUP_BUCKET }}" | head -5 || true
+
+      - name: Descobrir backup mais recente
+        id: latest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          INPUT_URL="${{ github.event.inputs.backup_url }}"
+          if [ -n "$INPUT_URL" ]; then
+            echo "url=$INPUT_URL" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "${{ secrets.BACKUP_BUCKET }}" ]; then
+            echo "BACKUP_BUCKET secret ausente — pulando."
+            exit 78
+          fi
+          LATEST=$(aws s3 ls "${{ secrets.BACKUP_BUCKET }}/" \
+            | grep 'nonnas-' | sort | tail -1 | awk '{print $4}')
+          if [ -z "$LATEST" ]; then
+            echo "Nenhum backup encontrado em ${{ secrets.BACKUP_BUCKET }}"
+            exit 1
+          fi
+          echo "url=${{ secrets.BACKUP_BUCKET }}/$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Restaurar
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          PG_HOST: localhost
+          PG_PORT: 5432
+          PG_USER: nonnas_app
+          PG_PASSWORD: nonnas_local
+        run: |
+          chmod +x scripts/restore.sh
+          START=$(date +%s)
+          scripts/restore.sh "${{ steps.latest.outputs.url }}" nonnas_restore_test
+          END=$(date +%s)
+          DURATION=$((END - START))
+          echo "Restore total: ${DURATION}s (RTO alvo: 14400s = 4h)"
+          if [ "$DURATION" -gt 14400 ]; then
+            echo "::warning::Restore acima do RTO alvo de 4h — investigar."
+          fi
+
+      - name: Reportar status (slack/notificacao interna — TODO)
+        if: always()
+        run: |
+          echo "Restore mensal: ${{ job.status }}"
+          # TODO: integrar com Grafana webhook → notificação interna
+          # quando endpoint de webhook existir (T18+).

@@ -1,6 +1,7 @@
 package com.nonnas.identity.application.lgpd;
 
 import com.nonnas.identity.application.audit.AuditLogService;
+import com.nonnas.identity.application.featureflags.FeatureFlagService;
 import com.nonnas.identity.application.ports.UsuarioRepository;
 import com.nonnas.identity.domain.Email;
 import com.nonnas.identity.domain.Perfil;
@@ -32,6 +33,7 @@ class LgpdServiceTest {
 
     @Mock UsuarioRepository usuarios;
     @Mock AuditLogService auditLog;
+    @Mock FeatureFlagService featureFlags;
 
     private final Clock clock = Clock.fixed(Instant.parse("2026-05-09T12:00:00Z"), ZoneOffset.UTC);
 
@@ -43,7 +45,9 @@ class LgpdServiceTest {
     @BeforeEach
     void setup() {
         // Substitui o relógio do @InjectMocks (que é mockado por default).
-        service = new LgpdService(usuarios, auditLog, clock);
+        // FeatureFlag default ativa — tests explícitos sobrescrevem quando precisam.
+        org.mockito.Mockito.lenient().when(featureFlags.isAtiva(any())).thenReturn(true);
+        service = new LgpdService(usuarios, auditLog, featureFlags, clock);
         id = UUID.randomUUID();
         usuario = new Usuario(
                 UsuarioId.of(id),

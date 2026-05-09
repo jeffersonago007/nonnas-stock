@@ -14,7 +14,7 @@
 <!-- Que testes cobrem essa mudança? Unitários, integração, E2E? -->
 
 - [ ] Unitários
-- [ ] Integração (Testcontainers)
+- [ ] Integração (Postgres embarcado via Zonky — ADR 0007)
 - [ ] ArchUnit (se aplicável)
 - [ ] E2E (se aplicável)
 

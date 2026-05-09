@@ -1,0 +1,54 @@
+# Referência de deploy em produção. Não use em dev — `docker-compose.yml`
+# (Postgres só) é o ambiente local. Aqui o app roda atrás de um Postgres
+# também containerizado, lendo segredos via `.env.prod` (NÃO commitado).
+#
+# Deploy real do MVP é manual (master doc T11): copiar este arquivo +
+# .env.prod pro servidor, ajustar SPRING_PROFILES_ACTIVE=prod, e rodar
+# `docker compose -f docker-compose.prod.yml up -d`.
+
+services:
+  app:
+    image: ghcr.io/jeffersonago007/nonnas-stock:latest
+    container_name: nonnas-stock-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/nonnas_stock
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      NONNAS_JWT_SECRET: ${NONNAS_JWT_SECRET}
+      NONNAS_INITIAL_ADMIN_PASSWORD: ${NONNAS_INITIAL_ADMIN_PASSWORD}
+      NONNAS_CORS_ORIGINS: ${NONNAS_CORS_ORIGINS}
+      JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/actuator/health/liveness"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nonnas-stock-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nonnas_stock
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - nonnas_pg_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  nonnas_pg_data_prod:
+    name: nonnas_pg_data_prod

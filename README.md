@@ -2,6 +2,9 @@
 
 Sistema profissional de controle de estoque centralizado para a rede **Nonnas Paola** — churrascaria e pizzaria, multi-filial em São Paulo, multi-canal de venda (salão, iFood, Keeta, 99Food).
 
+[![PR Build](https://github.com/jeffersonago007/nonnas-stock/actions/workflows/pr.yml/badge.svg?branch=main)](https://github.com/jeffersonago007/nonnas-stock/actions/workflows/pr.yml)
+[![Main Build](https://github.com/jeffersonago007/nonnas-stock/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/jeffersonago007/nonnas-stock/actions/workflows/main.yml)
+[![Release](https://img.shields.io/github/v/release/jeffersonago007/nonnas-stock?include_prereleases&sort=semver)](https://github.com/jeffersonago007/nonnas-stock/releases)
 ![Java](https://img.shields.io/badge/Java-21_LTS-007396?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.5-6DB33F?logo=springboot&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)

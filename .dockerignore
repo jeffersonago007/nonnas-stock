@@ -1,0 +1,23 @@
+# Build artifacts (gerados dentro do builder)
+**/target/
+**/*.iml
+**/.idea/
+**/.vscode/
+**/.classpath
+**/.project
+**/.settings/
+
+# Dev
+docker-compose.yml
+docker-compose.prod.yml
+**/node_modules/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docs (não vão pra image)
+docs/
+*.md
+!README.md

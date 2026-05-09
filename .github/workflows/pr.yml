@@ -10,6 +10,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
 jobs:
   build:
     name: Build & Verify
@@ -34,4 +39,33 @@ jobs:
         run: ./mvnw -B -ntp validate
 
       - name: Build & verify
-        run: ./mvnw -B -ntp verify
+        run: ./mvnw -B -ntp -T 1C verify
+
+      - name: Upload JaCoCo aggregate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-aggregate
+          path: quality-tests/target/site/jacoco-aggregate/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.7.1
+        with:
+          paths: quality-tests/target/site/jacoco-aggregate/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 75
+          min-coverage-changed-files: 80
+          title: Cobertura agregada
+          update-comment: true
+
+      - name: Surefire & Failsafe summary
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: JUnit
+          path: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+          reporter: java-junit
+          fail-on-error: false

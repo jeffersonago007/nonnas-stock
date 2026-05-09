@@ -1,5 +1,6 @@
 package com.nonnas.identity.infrastructure.security;
 
+import com.nonnas.identity.application.ports.TokensRevogadosPort;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,9 +25,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider tokenProvider;
+    private final TokensRevogadosPort blacklist;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, TokensRevogadosPort blacklist) {
         this.tokenProvider = tokenProvider;
+        this.blacklist = blacklist;
     }
 
     @Override
@@ -38,15 +41,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = header.substring(BEARER_PREFIX.length());
             try {
                 JwtTokenProvider.ParsedAccess parsed = tokenProvider.parseAccess(token);
-                AuthenticatedPrincipal principal = new AuthenticatedPrincipal(
-                        parsed.usuarioId(), parsed.email(), parsed.perfil(), parsed.filialId());
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        List.of(new SimpleGrantedAuthority(parsed.perfil().authority()))
-                );
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                if (blacklist.estaRevogado(parsed.jti().toString())) {
+                    // Token foi revogado em logout/troca-de-senha — não autenticamos.
+                    log.debug("JWT revogado (jti={}) — request rejeitada", parsed.jti());
+                    SecurityContextHolder.clearContext();
+                } else {
+                    AuthenticatedPrincipal principal = new AuthenticatedPrincipal(
+                            parsed.usuarioId(), parsed.email(), parsed.perfil(), parsed.filialId());
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                            principal,
+                            null,
+                            List.of(new SimpleGrantedAuthority(parsed.perfil().authority()))
+                    );
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             } catch (JwtException ex) {
                 log.debug("JWT inválido: {}", ex.getMessage());
                 SecurityContextHolder.clearContext();

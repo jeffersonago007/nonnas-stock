@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { tokenStorage } from '@/lib/tokenStorage';
+import { logoutBackend } from './api';
 
 export interface AuthUser {
   id: string;
@@ -14,7 +15,7 @@ interface AuthState {
   token: string | null;
   user: AuthUser | null;
   setSession: (token: string, user: AuthUser) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -24,7 +25,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     tokenStorage.set(token);
     set({ token, user });
   },
-  logout: () => {
+  logout: async () => {
+    // Revoga no backend antes de limpar local — o token precisa estar válido
+    // nesse momento. Falhas no backend são silenciosas (ver logoutBackend).
+    await logoutBackend();
     tokenStorage.clear();
     set({ token: null, user: null });
   },

@@ -16,6 +16,10 @@ public final class AuthDto {
             @NotBlank String refreshToken
     ) {}
 
+    public record LogoutRequest(
+            String refreshToken    // opcional — ausente revoga apenas o access token
+    ) {}
+
     public record TokenResponse(
             String accessToken,
             Instant accessExpiresAt,

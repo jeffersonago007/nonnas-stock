@@ -42,6 +42,7 @@
     <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     <pitest-maven.version>1.17.4</pitest-maven.version>
     <pitest-junit5-plugin.version>1.2.1</pitest-junit5-plugin.version>
+    <dependency-check-maven.version>11.1.1</dependency-check-maven.version>
 
     <!-- Library versions -->
     <spring-boot.version>3.3.5</spring-boot.version>
@@ -259,6 +260,36 @@
               <format>HTML</format>
               <format>XML</format>
             </outputFormats>
+          </configuration>
+        </plugin>
+        <!--
+          OWASP Dependency Check (master doc 13.4 / T16). Roda no workflow
+          `security-deep.yml` em CI semanal — não no PR padrão pra preservar
+          o tempo de feedback (NVD download + análise levam 5-15 min).
+          Devs podem rodar local: `./mvnw -P security-scan org.owasp:dependency-check-maven:aggregate`.
+        -->
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>${dependency-check-maven.version}</version>
+          <configuration>
+            <failBuildOnCVSS>7</failBuildOnCVSS>
+            <suppressionFiles>
+              <suppressionFile>${maven.multiModuleProjectDirectory}/dependency-check-suppressions.xml</suppressionFile>
+            </suppressionFiles>
+            <formats>
+              <format>HTML</format>
+              <format>JSON</format>
+            </formats>
+            <skipTestScope>false</skipTestScope>
+            <skipProvidedScope>false</skipProvidedScope>
+            <skipSystemScope>true</skipSystemScope>
+            <prettyPrint>true</prettyPrint>
+            <!--
+              NVD API key vem da variável de ambiente NVD_API_KEY. Sem ela
+              o plugin ainda funciona mas a sincronização inicial é mais lenta.
+            -->
+            <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
           </configuration>
         </plugin>
       </plugins>

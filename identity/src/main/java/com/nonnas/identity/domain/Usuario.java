@@ -29,7 +29,7 @@ public final class Usuario {
     private final UsuarioId id;
     private FilialId filialId;
     private String nome;
-    private final Email email;
+    private Email email;
     private SenhaHash senhaHash;
     private Perfil perfil;
     private boolean ativo;
@@ -119,6 +119,16 @@ public final class Usuario {
 
     public void renomear(String novoNome, Instant agora) {
         this.nome = validarNome(novoNome);
+        this.updatedAt = agora;
+    }
+
+    /**
+     * Troca de e-mail — usado em fluxos LGPD (correção do Art. 18 III e
+     * anonimização do Art. 18 VI). Mantém o id, então integridade referencial
+     * (movimentações, transferências, audit log) permanece.
+     */
+    public void alterarEmail(Email novoEmail, Instant agora) {
+        this.email = Objects.requireNonNull(novoEmail, "email");
         this.updatedAt = agora;
     }
 

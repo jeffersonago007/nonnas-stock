@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Suppressions para o OWASP Dependency Check.
+
+  Edite com cuidado — cada supressão precisa de justificativa explícita
+  com data e responsável. Usar `notes` campo para isso.
+
+  Documentação: https://jeremylong.github.io/DependencyCheck/general/suppression.html
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!-- Exemplo (comentado):
+    <suppress>
+        <notes><![CDATA[
+        2026-XX-XX Jefferson: CVE-XXXX-YYYY não se aplica porque o módulo
+        afetado não é exposto à internet pública (uso só em testes).
+        Reavaliação em 2026-MM-DD.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/exemplo/lib@.*$</packageUrl>
+        <cve>CVE-XXXX-YYYY</cve>
+    </suppress>
+    -->
+</suppressions>

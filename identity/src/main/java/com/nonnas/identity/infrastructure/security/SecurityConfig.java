@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 
 import java.time.Clock;
 
@@ -49,6 +51,20 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(c -> {})
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Master doc 13: headers de segurança completos.
+                // CSP é setado pelo frontend (Nginx + meta tag) — backend serve só JSON.
+                .headers(h -> h
+                        .contentTypeOptions(c -> {})                                 // X-Content-Type-Options: nosniff
+                        .frameOptions(f -> f.deny())                                 // X-Frame-Options: DENY
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .preload(true)
+                                .maxAgeInSeconds(31_536_000))                        // 1 ano
+                        .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                        .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy",
+                                "geolocation=(), microphone=(), camera=(), payment=()"))
+                        .addHeaderWriter(new StaticHeadersWriter("X-Permitted-Cross-Domain-Policies", "none"))
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
                         .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()

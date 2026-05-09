@@ -1,5 +1,7 @@
 package com.nonnas.identity.application.auth;
 
+import com.nonnas.identity.application.audit.AuditEvent;
+import com.nonnas.identity.application.audit.AuditLogService;
 import com.nonnas.identity.application.ports.UsuarioRepository;
 import com.nonnas.identity.domain.Email;
 import com.nonnas.identity.domain.Usuario;
@@ -32,17 +34,20 @@ public class AutenticarUseCase {
     private final PasswordEncoder encoder;
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenService refreshTokens;
+    private final AuditLogService auditLog;
     private final Clock clock;
 
     public AutenticarUseCase(UsuarioRepository usuarioRepo,
                              PasswordEncoder encoder,
                              JwtTokenProvider tokenProvider,
                              RefreshTokenService refreshTokens,
+                             AuditLogService auditLog,
                              Clock clock) {
         this.usuarioRepo = usuarioRepo;
         this.encoder = encoder;
         this.tokenProvider = tokenProvider;
         this.refreshTokens = refreshTokens;
+        this.auditLog = auditLog;
         this.clock = clock;
     }
 
@@ -63,20 +68,29 @@ public class AutenticarUseCase {
         }
 
         Usuario usuario = usuarioRepo.findByEmail(email)
-                .orElseThrow(() -> new BusinessRuleException(
-                        ErrorCode.UNAUTHORIZED, "Credenciais inválidas"));
+                .orElseThrow(() -> {
+                    auditLog.registrarTentativaLogin(AuditEvent.Types.LOGIN_FAILED, null, null, null,
+                            "{\"motivo\":\"email_inexistente\",\"emailTentado\":\"" + emailRaw + "\"}");
+                    return new BusinessRuleException(ErrorCode.UNAUTHORIZED, "Credenciais inválidas");
+                });
 
         if (!usuario.ativo()) {
+            auditLog.registrarTentativaLogin(AuditEvent.Types.LOGIN_BLOQUEADO, usuario, null, null,
+                    "{\"motivo\":\"usuario_desativado\"}");
             throw new BusinessRuleException(ErrorCode.FORBIDDEN, "Usuário desativado");
         }
 
         if (usuario.travada()) {
+            auditLog.registrarTentativaLogin(AuditEvent.Types.LOGIN_BLOQUEADO, usuario, null, null,
+                    "{\"motivo\":\"conta_travada\"}");
             throw new BusinessRuleException(
                     ErrorCode.FORBIDDEN,
                     "Conta travada por excesso de tentativas. Contate um administrador.");
         }
 
         if (usuario.estaBloqueado(clock.instant())) {
+            auditLog.registrarTentativaLogin(AuditEvent.Types.LOGIN_BLOQUEADO, usuario, null, null,
+                    "{\"motivo\":\"bloqueado_temporariamente\"}");
             throw new BusinessRuleException(
                     ErrorCode.FORBIDDEN,
                     "Conta temporariamente bloqueada. Tente novamente mais tarde.");
@@ -86,11 +100,14 @@ public class AutenticarUseCase {
         if (!ok) {
             usuario.registrarLoginFalho(clock.instant());
             usuarioRepo.save(usuario);
+            auditLog.registrarTentativaLogin(AuditEvent.Types.LOGIN_FAILED, usuario, null, null,
+                    "{\"motivo\":\"senha_invalida\"}");
             throw new BusinessRuleException(ErrorCode.UNAUTHORIZED, "Credenciais inválidas");
         }
 
         usuario.registrarLoginSucesso(clock.instant());
         usuarioRepo.save(usuario);
+        auditLog.registrarTentativaLogin(AuditEvent.Types.LOGIN_SUCCESS, usuario, null, null, null);
 
         JwtTokenProvider.IssuedToken access = tokenProvider.issueAccess(usuario);
         JwtTokenProvider.IssuedToken refresh = refreshTokens.issueNewFamily(usuario);

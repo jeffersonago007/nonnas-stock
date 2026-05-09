@@ -88,6 +88,17 @@ public class RefreshTokenService {
         // Placeholder for password-change-driven revocation (T16).
     }
 
+    /**
+     * Revoga todos os tokens de uma família (logout, troca de senha, ou
+     * habilitação de 2FA). Idempotente — chamadas repetidas não recriam
+     * efeito, apenas marcam novamente {@code revoked_at} (no-op no SQL
+     * porque a query já filtra {@code revoked_at IS NULL}).
+     */
+    @Transactional
+    public void revogarFamilia(UUID familyId, Instant agora) {
+        repository.revokeFamily(familyId, agora);
+    }
+
     private JwtTokenProvider.IssuedToken persistAndReturn(Usuario usuario, UUID familyId, UUID parentJti) {
         JwtTokenProvider.IssuedToken issued = tokenProvider.issueRefresh(usuario, familyId, parentJti);
 

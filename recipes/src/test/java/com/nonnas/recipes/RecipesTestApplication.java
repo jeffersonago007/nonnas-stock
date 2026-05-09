@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * recipes depende em compile e o use case de venda chama
  * {@code RegistrarSaidaMultiItemUseCase} cross-module.
  */
-@SpringBootApplication(scanBasePackages = {"com.nonnas.recipes", "com.nonnas.inventory"})
+@SpringBootApplication(scanBasePackages = {"com.nonnas.recipes", "com.nonnas.inventory", "com.nonnas.web"})
 @EntityScan(basePackages = {"com.nonnas.recipes", "com.nonnas.inventory"})
 @EnableJpaRepositories(basePackages = {"com.nonnas.recipes", "com.nonnas.inventory"})
 @ConfigurationPropertiesScan(basePackages = {"com.nonnas.recipes", "com.nonnas.inventory"})

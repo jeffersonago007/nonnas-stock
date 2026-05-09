@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
  * the package so {@code @SpringBootTest} auto-discovers it from any
  * sub-package.
  */
-@SpringBootApplication(scanBasePackages = "com.nonnas.identity")
+@SpringBootApplication(scanBasePackages = {"com.nonnas.identity", "com.nonnas.web"})
 @ConfigurationPropertiesScan(basePackages = "com.nonnas.identity")
 public class IdentityTestApplication {
 }

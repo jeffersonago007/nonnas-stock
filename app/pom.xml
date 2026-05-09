@@ -14,4 +14,121 @@
   <artifactId>app</artifactId>
   <name>Nonnas Stock — Application</name>
   <description>Composição: main class, configuração Spring, perfis e migrations Flyway centralizadas.</description>
+
+  <properties>
+    <springdoc.version>2.6.0</springdoc.version>
+    <bucket4j.version>8.10.1</bucket4j.version>
+    <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+    <zonky.embedded-postgres.version>2.0.7</zonky.embedded-postgres.version>
+    <zonky.embedded-postgres-spring.version>2.5.1</zonky.embedded-postgres-spring.version>
+  </properties>
+
+  <dependencies>
+    <!-- Internal modules -->
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>shared-kernel</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>web-commons</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>identity</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>catalog</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>inventory-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>recipes</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>operations</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>alerts</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>reporting</artifactId>
+    </dependency>
+
+    <!-- Spring Boot starters extras -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- OpenAPI / Swagger UI -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
+
+    <!-- Rate limiting -->
+    <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j-core</artifactId>
+      <version>${bucket4j.version}</version>
+    </dependency>
+
+    <!-- JSON structured logging in production -->
+    <dependency>
+      <groupId>net.logstash.logback</groupId>
+      <artifactId>logstash-logback-encoder</artifactId>
+      <version>${logstash-logback-encoder.version}</version>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.zonky.test</groupId>
+      <artifactId>embedded-database-spring-test</artifactId>
+      <version>${zonky.embedded-postgres-spring.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.zonky.test</groupId>
+      <artifactId>embedded-postgres</artifactId>
+      <version>${zonky.embedded-postgres.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <configuration>
+          <mainClass>com.nonnas.app.NonnasStockApplication</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

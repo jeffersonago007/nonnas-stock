@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <springProperty name="appName" source="spring.application.name" defaultValue="nonnas-stock"/>
+
+  <!-- Dev: padrão colorido (igual ao Spring Boot default) -->
+  <springProfile name="dev">
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
+  <!-- Test: silencioso, padrão simples -->
+  <springProfile name="test">
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <root level="WARN">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
+  <!-- Prod: stdout em JSON (uma linha por evento, parseável por agregador) -->
+  <springProfile name="prod">
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <customFields>{"app":"${appName}"}</customFields>
+        <includeMdcKeyName>traceId</includeMdcKeyName>
+        <includeMdcKeyName>usuarioId</includeMdcKeyName>
+        <includeMdcKeyName>filialId</includeMdcKeyName>
+        <fieldNames>
+          <timestamp>timestamp</timestamp>
+          <message>message</message>
+          <thread>thread</thread>
+          <logger>logger</logger>
+          <level>level</level>
+          <stackTrace>stack_trace</stackTrace>
+        </fieldNames>
+      </encoder>
+    </appender>
+    <root level="INFO">
+      <appender-ref ref="JSON"/>
+    </root>
+  </springProfile>
+
+</configuration>

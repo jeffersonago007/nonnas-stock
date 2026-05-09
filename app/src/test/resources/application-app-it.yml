@@ -1,0 +1,12 @@
+# Override pro perfil de teste do app: liga springdoc para validar
+# que o OpenAPI bean popula tags/endpoints. Outros módulos não precisam.
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+nonnas:
+  rate-limit:
+    enabled: false

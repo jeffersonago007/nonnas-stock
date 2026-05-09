@@ -1,0 +1,80 @@
+# Defaults compartilhados pelos perfis dev/test/prod.
+# Profile ativo escolhido via SPRING_PROFILES_ACTIVE — em dev usamos `dev`.
+
+spring:
+  application:
+    name: nonnas-stock
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+server:
+  shutdown: graceful
+  error:
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+
+nonnas:
+  security:
+    jwt:
+      secret: ${NONNAS_JWT_SECRET:change-me-in-prod-must-be-32-or-more-bytes-long-please}
+      access-ttl: PT15M
+      refresh-ttl: P7D
+      issuer: nonnas-stock
+    initial-admin-password: ${NONNAS_INITIAL_ADMIN_PASSWORD:AdminNonnas2026!}
+  operations:
+    ajuste:
+      threshold-aprovacao: 50
+  cors:
+    allowed-origins: ${NONNAS_CORS_ORIGINS:}
+  rate-limit:
+    enabled: true
+    requests-per-minute: 100
+  health:
+    db-latency:
+      threshold-ms: 200
+
+logging:
+  level:
+    com.nonnas: INFO
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO

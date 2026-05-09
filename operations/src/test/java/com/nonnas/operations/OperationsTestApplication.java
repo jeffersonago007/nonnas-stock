@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication(scanBasePackages = {"com.nonnas.operations", "com.nonnas.inventory"})
+@SpringBootApplication(scanBasePackages = {"com.nonnas.operations", "com.nonnas.inventory", "com.nonnas.web"})
 @EntityScan(basePackages = {"com.nonnas.operations", "com.nonnas.inventory"})
 @EnableJpaRepositories(basePackages = {"com.nonnas.operations", "com.nonnas.inventory"})
 @ConfigurationPropertiesScan(basePackages = {"com.nonnas.operations", "com.nonnas.inventory"})

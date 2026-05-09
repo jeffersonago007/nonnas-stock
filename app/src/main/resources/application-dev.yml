@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nonnas_stock
+    username: postgres
+    password: postgres
+
+nonnas:
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000
+
+logging:
+  level:
+    com.nonnas: DEBUG
+    org.hibernate.SQL: INFO

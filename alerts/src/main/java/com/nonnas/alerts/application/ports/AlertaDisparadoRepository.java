@@ -13,6 +13,16 @@ import java.util.UUID;
 
 public interface AlertaDisparadoRepository {
     AlertaDisparado save(AlertaDisparado a);
+
+    /**
+     * Como {@link #save(AlertaDisparado)}, mas para um disparo novo.
+     * Implementação publica {@code AlertaDisparadoEvent} (master doc T17 /
+     * 15.4) — listeners materializam notificações internas e podem
+     * incrementar métricas. Use apenas no caminho de criação; updates
+     * (ex.: auto-resolução) seguem usando {@code save}.
+     */
+    AlertaDisparado salvarNovo(AlertaDisparado a);
+
     Optional<AlertaDisparado> findById(AlertaDisparadoId id);
 
     /** Idempotência para alertas sem lote (estoque). */

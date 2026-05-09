@@ -1,0 +1,69 @@
+{
+  "title": "Nonnas Stock — Negócio",
+  "description": "Master doc 15.2 (negócio): movimentações por dia, distribuição por tipo, alertas disparados por categoria. Painéis vazios até T18 expor as métricas custom via MeterRegistry.",
+  "tags": ["nonnas", "negocio"],
+  "timezone": "America/Sao_Paulo",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Movimentações criadas por minuto (custom — TODO T18)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (tipo) (rate(nonnas_movimentacoes_total[5m]))",
+          "legendFormat": "{{tipo}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "stat",
+      "title": "Alertas disparados (último 24h)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(nonnas_alertas_disparados_total[24h])"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 }
+    },
+    {
+      "type": "piechart",
+      "title": "Alertas por tipo (24h)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (tipo) (increase(nonnas_alertas_disparados_total[24h]))",
+          "legendFormat": "{{tipo}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Transferências em trânsito (snapshot)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "nonnas_transferencias_em_transito",
+          "legendFormat": "em trânsito"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "type": "stat",
+      "title": "Notificações novas (último 1h)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(nonnas_notificacoes_criadas_total[1h])"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 8 }
+    }
+  ]
+}

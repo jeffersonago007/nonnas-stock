@@ -129,7 +129,7 @@ public final class AvaliadorAlertasService {
                     escolhida.id(), TipoAlerta.VENCIMENTO_PROXIMO_DIAS,
                     candidato.insumoId(), candidato.filialId(), candidato.loteId().value(),
                     candidato.saldoBase(), detalhe, clock.instant());
-            disparadoRepo.save(disparado);
+            disparadoRepo.salvarNovo(disparado);
             disparados++;
         }
         return disparados;
@@ -150,7 +150,7 @@ public final class AvaliadorAlertasService {
             var d = AlertaDisparado.disparar(
                     escolhida.id(), tipo, insumoId, filialId, null,
                     saldoAtual, detalhe, clock.instant());
-            disparadoRepo.save(d);
+            disparadoRepo.salvarNovo(d);
         } else if (!cruzouThreshold && jaAtivo.isPresent()) {
             // Auto-resolução
             var ativo = jaAtivo.get();

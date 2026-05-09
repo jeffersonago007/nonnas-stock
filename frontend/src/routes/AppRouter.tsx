@@ -15,6 +15,7 @@ import { MovimentacoesPage } from '@/features/operacoes/MovimentacoesPage';
 import { TransferenciasPage } from '@/features/operacoes/TransferenciasPage';
 import { AlertasPage } from '@/features/alertas/AlertasPage';
 import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
+import { NotificacoesPage } from '@/features/notificacoes/NotificacoesPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       { path: 'transferencias', element: <TransferenciasPage /> },
       { path: 'alertas', element: <AlertasPage /> },
       { path: 'relatorios', element: <RelatoriosPage /> },
+      { path: 'notificacoes', element: <NotificacoesPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/dashboard" replace /> },

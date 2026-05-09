@@ -77,7 +77,8 @@ class AvaliadorAlertasServiceTest {
 
         avaliador.avaliarEstoque(insumo, filial);
 
-        verify(disparadoRepo).save(any(AlertaDisparado.class));
+        // T17: novo dispatch usa salvarNovo (publica AlertaDisparadoEvent).
+        verify(disparadoRepo).salvarNovo(any(AlertaDisparado.class));
     }
 
     @Test
@@ -95,6 +96,7 @@ class AvaliadorAlertasServiceTest {
         avaliador.avaliarEstoque(insumo, filial);
 
         verify(disparadoRepo, never()).save(any());
+        verify(disparadoRepo, never()).salvarNovo(any());
     }
 
     @Test
@@ -129,5 +131,6 @@ class AvaliadorAlertasServiceTest {
         avaliador.avaliarEstoque(insumo, filial);
 
         verify(disparadoRepo, never()).save(any());
+        verify(disparadoRepo, never()).salvarNovo(any());
     }
 }

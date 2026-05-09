@@ -3,6 +3,7 @@ import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/store';
 import { FilialFiltro } from './FilialFiltro';
+import { NotificacoesBadge } from './NotificacoesBadge';
 
 export function Header() {
   const user = useAuthStore((s) => s.user);
@@ -12,6 +13,7 @@ export function Header() {
     <header className="flex h-16 items-center justify-between gap-4 border-b border-border bg-neutral-surface px-6">
       <FilialFiltro />
       <div className="flex items-center gap-3">
+        <NotificacoesBadge />
         <span className="text-sm text-muted-foreground">
           {user ? `Olá, ${user.nome}` : 'Sessão ativa'}
         </span>

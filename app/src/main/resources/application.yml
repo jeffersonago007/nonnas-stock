@@ -39,11 +39,36 @@ management:
       show-details: when_authorized
       probes:
         enabled: true
+    prometheus:
+      access: read_only
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
   health:
     livenessstate:
       enabled: true
     readinessstate:
       enabled: true
+
+# Sentry (master doc 15.1 / T17). Sem DSN configurado, SDK opera em modo
+# no-op — não falha o boot. Configure NONNAS_SENTRY_DSN em prod.
+sentry:
+  dsn: ${NONNAS_SENTRY_DSN:}
+  environment: ${SPRING_PROFILES_ACTIVE:dev}
+  release: ${NONNAS_RELEASE:dev}
+  send-default-pii: false
+  traces-sample-rate: 0.1
+  enable-tracing: true
+  in-app-includes: com.nonnas
+  # Logback integration sobe via sentry-logback no classpath. Eventos
+  # >= ERROR viram issues; INFO+ sobe como breadcrumb.
+  logging:
+    minimum-event-level: error
+    minimum-breadcrumb-level: info
 
 springdoc:
   api-docs:

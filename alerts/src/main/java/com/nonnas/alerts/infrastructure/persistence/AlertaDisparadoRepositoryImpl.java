@@ -6,12 +6,14 @@ import com.nonnas.alerts.domain.AlertaDisparado;
 import com.nonnas.alerts.domain.AlertaDisparadoId;
 import com.nonnas.alerts.domain.StatusAlerta;
 import com.nonnas.alerts.domain.TipoAlerta;
+import com.nonnas.sharedkernel.events.AlertaDisparadoEvent;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -23,17 +25,38 @@ import java.util.UUID;
 class AlertaDisparadoRepositoryImpl implements AlertaDisparadoRepository {
 
     private final SpringDataAlertaDisparadoRepository jpa;
+    private final ApplicationEventPublisher events;
 
     @PersistenceContext
     private EntityManager em;
 
-    AlertaDisparadoRepositoryImpl(SpringDataAlertaDisparadoRepository jpa) {
+    AlertaDisparadoRepositoryImpl(SpringDataAlertaDisparadoRepository jpa,
+                                  ApplicationEventPublisher events) {
         this.jpa = jpa;
+        this.events = events;
     }
 
     @Override
     public AlertaDisparado save(AlertaDisparado a) {
         return AlertsMappers.toDomain(jpa.save(AlertsMappers.toEntity(a)));
+    }
+
+    @Override
+    public AlertaDisparado salvarNovo(AlertaDisparado a) {
+        AlertaDisparado salvo = save(a);
+        events.publishEvent(new AlertaDisparadoEvent(
+                salvo.id().value(),
+                salvo.configId().value(),
+                salvo.tipo().name(),
+                salvo.insumoId(),
+                salvo.filialId(),
+                salvo.loteIdOpt().orElse(null),
+                salvo.saldoNoDisparoOpt().orElse(null),
+                // Prioridade não está em AlertaDisparado — pegamos da config
+                // depois (T17.1). Por enquanto deixamos no metadata do listener.
+                "AVISO",
+                salvo.dataDisparo()));
+        return salvo;
     }
 
     @Override

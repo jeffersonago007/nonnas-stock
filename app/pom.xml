@@ -21,6 +21,7 @@
     <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     <zonky.embedded-postgres.version>2.0.7</zonky.embedded-postgres.version>
     <zonky.embedded-postgres-spring.version>2.5.1</zonky.embedded-postgres-spring.version>
+    <sentry.version>7.18.0</sentry.version>
   </properties>
 
   <dependencies>
@@ -66,6 +67,25 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- Métricas Prometheus (master doc 15.2 / T17) — expõe /actuator/prometheus -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Sentry (master doc 15.1 / T17) — DSN vem da env NONNAS_SENTRY_DSN. Sem DSN, SDK fica no-op. -->
+    <dependency>
+      <groupId>io.sentry</groupId>
+      <artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+      <version>${sentry.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.sentry</groupId>
+      <artifactId>sentry-logback</artifactId>
+      <version>${sentry.version}</version>
     </dependency>
 
     <!-- OpenAPI / Swagger UI -->

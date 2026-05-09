@@ -1,0 +1,74 @@
+{
+  "title": "Nonnas Stock — Banco",
+  "description": "Master doc 15.2 (banco): queries lentas, locks ativos, cache hit ratio. Algumas métricas exigem postgres_exporter no pipeline — sem ele, painéis ficam vazios.",
+  "tags": ["nonnas", "banco", "postgres"],
+  "timezone": "America/Sao_Paulo",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Tempo de query JDBC p95 (Hibernate)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(hibernate_query_executions_seconds_bucket[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Conexões ativas no pool",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "ativas"
+        },
+        {
+          "expr": "hikaricp_connections_max",
+          "legendFormat": "max"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "type": "stat",
+      "title": "Pool acquire timeout (último 1h)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(hikaricp_connections_timeout_total[1h])"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Postgres locks ativos (postgres_exporter)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "pg_locks_count",
+          "legendFormat": "{{mode}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Cache hit ratio (postgres_exporter)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "pg_stat_database_blks_hit / (pg_stat_database_blks_hit + pg_stat_database_blks_read)",
+          "legendFormat": "hit ratio"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 18, "x": 0, "y": 16 }
+    }
+  ]
+}

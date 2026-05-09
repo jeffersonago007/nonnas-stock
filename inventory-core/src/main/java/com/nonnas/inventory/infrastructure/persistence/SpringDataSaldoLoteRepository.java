@@ -41,5 +41,18 @@ interface SpringDataSaldoLoteRepository extends JpaRepository<SaldoLoteEntity, S
 
     Optional<SaldoLoteEntity> findByLoteIdAndFilialId(UUID loteId, UUID filialId);
 
+    @Query("""
+        SELECT new com.nonnas.inventory.infrastructure.persistence.SpringDataSaldoLoteRepository$LoteVencendoRow(
+            s.loteId, l.insumoId, s.filialId, s.quantidadeBase, l.dataValidade)
+        FROM SaldoLoteEntity s
+        JOIN LoteEntity l ON l.id = s.loteId
+        WHERE l.dataValidade IS NOT NULL
+          AND l.dataValidade <= :ate
+          AND s.quantidadeBase > 0
+        """)
+    List<LoteVencendoRow> findLotesVencendoComSaldoAte(@Param("ate") LocalDate ate);
+
     record LoteFefoRow(UUID loteId, BigDecimal saldoBase, LocalDate dataValidade) {}
+
+    record LoteVencendoRow(UUID loteId, UUID insumoId, UUID filialId, BigDecimal saldoBase, LocalDate dataValidade) {}
 }

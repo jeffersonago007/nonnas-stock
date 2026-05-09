@@ -18,6 +18,7 @@ de domínio dos bounded contexts do sistema. Atualizado a cada nova tarefa.
 | inventory-core | T04 | ✅ Concluído |
 | recipes | T05 | ✅ Concluído |
 | operations | T06 | ✅ Concluído |
+| alerts | T07 | ✅ Concluído |
 
 ---
 
@@ -394,9 +395,85 @@ Maven dep `operations → inventory-core` (compile, ADR 0008). Use cases multi-i
 
 ---
 
+## alerts (T07)
+
+Sistema de alertas com escopo flexível. Quatro tipos cobrindo os principais riscos sanitário/operacionais de uma rede de restaurantes.
+
+### Entidades
+
+```
+AlertaConfig  (mutável: ativar/desativar, atualizar threshold)
+  └─ id: AlertaConfigId
+     tipo: TipoAlerta { ESTOQUE_MINIMO_PERCENTUAL | ESTOQUE_MINIMO_ABSOLUTO | VENCIMENTO_PROXIMO_DIAS | RUPTURA }
+     insumoId: Optional<UUID>     ← null = todos os insumos
+     filialId: Optional<UUID>     ← null = todas as filiais
+     threshold: Optional<BigDecimal>  ← null SOMENTE para RUPTURA
+     ativo: boolean
+     prioridade: int              ← desempate em match de escopo
+
+AlertaDisparado  (mutável: status, visualizadoEm)
+  └─ id: AlertaDisparadoId
+     configId: AlertaConfigId
+     tipo: TipoAlerta            ← cópia do tipo da config no disparo
+     insumoId, filialId: UUID    ← denormalizado para indexação
+     loteId: Optional<UUID>      ← apenas para VENCIMENTO_PROXIMO_DIAS
+     status: StatusAlerta { ATIVO | RESOLVIDO_AUTO | RESOLVIDO_MANUAL }
+     saldoNoDisparo, detalhe
+     dataDisparo
+     dataResolucao, resolvidoPor: Optional
+     visualizadoEm, visualizadoPor: Optional   ← ortogonal ao status
+```
+
+### Threshold polimórfico (uma única coluna)
+
+`threshold NUMERIC(20,4)` cobre os 3 tipos paramétricos:
+- `ESTOQUE_MINIMO_PERCENTUAL` — 0–100, % do `InsumoFilial.estoqueMaximo` (catalog)
+- `ESTOQUE_MINIMO_ABSOLUTO` — quantidade na unidade base
+- `VENCIMENTO_PROXIMO_DIAS` — dias inteiros
+
+`RUPTURA` não usa threshold (sempre `saldo ≤ 0`); coluna fica `NULL`. CHECK constraint do schema garante a invariante. Validação por tipo mora em `AlertaConfig.novo()` — schema é minimalista, regras vivem no domínio.
+
+### `AvaliadorAlertasService` — algoritmo
+
+Domain service puro (sem Spring), recebe portas via construtor.
+
+**Match de escopo:** dado `(insumoId, filialId)` vindo de uma movimentação ou candidato a vencimento, encontra a config aplicável mais específica:
+- `especificidade = (insumoId != null ? 2 : 0) + (filialId != null ? 1 : 0)`
+- Empate: maior `prioridade` vence.
+
+**Avaliação reativa (movimentações):** após cada `MovimentacaoCriadaEvent`, para cada par `(insumo, filial)` afetado:
+1. Soma saldo via `SaldoLoteRepository.somarPorInsumoEFilial`
+2. Para cada tipo de estoque (RUPTURA, ABSOLUTO, PERCENTUAL): se cruzou threshold E não há ativo, dispara; se NÃO cruzou E há ativo, **auto-resolve**.
+
+Para cada `loteId` afetado: se saldo do lote agora é zero, auto-resolve qualquer `VENCIMENTO` ativo daquele lote.
+
+**Avaliação @Scheduled (vencimentos):** cron diário `0 0 6 * * *` em `America/Sao_Paulo`. Job:
+1. Pega `dias máximo` de todas as configs ativas de tipo VENCIMENTO
+2. Query `findLotesVencendoComSaldoAte(hoje + dias_máximo)` em inventory-core
+3. Para cada candidato, pega config aplicável (match), checa se `dias_restantes ≤ config.threshold`, dispara
+4. Idempotente via partial unique index `uq_alertas_disparados_ativo_lote ON (config_id, lote_id) WHERE status='ATIVO' AND lote_id IS NOT NULL`.
+
+### Listener com `@TransactionalEventListener`
+
+`MovimentacaoAlertaListener` usa `phase=AFTER_COMMIT` + `@Transactional(REQUIRES_NEW)`:
+- Saldo já materializado quando começamos.
+- Falha aqui não rola back a movimentação. Alertas são observabilidade, não invariante de negócio.
+- Try/catch interno + log.warn — listener jamais propaga exceção.
+
+### Cross-module references e Maven deps
+
+- `alertas_disparados.insumo_id, filial_id, lote_id` → catalog/identity/inventory (UUID puro, T09)
+- `alertas_config.insumo_id, filial_id` → catalog/identity (UUID puro, nullable)
+- `alerts/pom.xml`: depende de `inventory-core` (eventos + saldos + lotes vencendo) e `catalog` (`InsumoFilial.estoqueMaximo` para alertas percentuais). ADR 0008 cobre o padrão.
+
+### Conflito de Clock beans
+
+Alerts é o primeiro módulo a depender de **dois** bounded contexts ao mesmo tempo (inventory-core + catalog), e cada um expõe seu próprio bean de `Clock` (`inventoryClock`, `catalogClock`). `AlertsConfig` declara `alertsClock @Primary` para resolver a ambiguidade na injeção dos use cases.
+
+---
+
 ## Próximos contextos (não entregues ainda)
 
-- **alerts (T07):** AlertaConfig, AlertaDisparado, AvaliadorAlertasService.
 - **reporting (T08):** views materializadas, queries de dashboards.
 
 Cada nova tarefa estende este documento com sua seção própria.

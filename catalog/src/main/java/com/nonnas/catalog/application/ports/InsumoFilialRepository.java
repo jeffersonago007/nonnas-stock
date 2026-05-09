@@ -11,6 +11,7 @@ import java.util.UUID;
 public interface InsumoFilialRepository {
     InsumoFilial save(InsumoFilial i);
     Optional<InsumoFilial> findById(InsumoFilialId id);
+    Optional<InsumoFilial> findByInsumoEFilial(InsumoId insumoId, UUID filialId);
     boolean existsByInsumoEFilial(InsumoId insumoId, UUID filialId);
     List<InsumoFilial> findAll(int page, int size);
 }

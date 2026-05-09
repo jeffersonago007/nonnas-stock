@@ -30,4 +30,15 @@ public interface SaldoLoteRepository {
 
     /** Projeção usada exclusivamente pelo FEFO para evitar trazer agregados pesados. */
     record LoteSaldoFefo(LoteId loteId, java.math.BigDecimal saldoBase, java.time.LocalDate dataValidade) {}
+
+    /**
+     * Lotes com saldo positivo e {@code data_validade <= ate}. Usado pelo
+     * job de alertas {@code VENCIMENTO_PROXIMO_DIAS} (T07) para varredura
+     * diária. Consumidores filtram por config em memória.
+     */
+    java.util.List<LoteVencendoComSaldo> findLotesVencendoComSaldoAte(java.time.LocalDate ate);
+
+    record LoteVencendoComSaldo(
+            LoteId loteId, java.util.UUID insumoId, java.util.UUID filialId,
+            java.math.BigDecimal saldoBase, java.time.LocalDate dataValidade) {}
 }

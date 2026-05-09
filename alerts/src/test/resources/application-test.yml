@@ -1,0 +1,22 @@
+spring:
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        temp:
+          use_jdbc_metadata_defaults: false
+  flyway:
+    enabled: true
+  task:
+    scheduling:
+      enabled: false  # cron jobs ficam desabilitados nos testes — invocamos manualmente
+
+logging:
+  level:
+    com.nonnas: INFO
+    org.hibernate.SQL: WARN
+    org.springframework: WARN
+    io.zonky: INFO

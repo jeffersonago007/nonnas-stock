@@ -35,4 +35,12 @@ class SaldoLoteRepositoryImpl implements SaldoLoteRepository {
                 .map(r -> new LoteSaldoFefo(LoteId.of(r.loteId()), r.saldoBase(), r.dataValidade()))
                 .toList();
     }
+
+    @Override public List<LoteVencendoComSaldo> findLotesVencendoComSaldoAte(java.time.LocalDate ate) {
+        return jpa.findLotesVencendoComSaldoAte(ate).stream()
+                .map(r -> new LoteVencendoComSaldo(
+                        LoteId.of(r.loteId()), r.insumoId(), r.filialId(),
+                        r.saldoBase(), r.dataValidade()))
+                .toList();
+    }
 }

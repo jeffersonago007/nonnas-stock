@@ -31,6 +31,11 @@ class InsumoFilialRepositoryImpl implements InsumoFilialRepository {
     }
 
     @Override
+    public Optional<InsumoFilial> findByInsumoEFilial(InsumoId insumoId, UUID filialId) {
+        return jpa.findByInsumoIdAndFilialId(insumoId.value(), filialId).map(CatalogMappers::toDomain);
+    }
+
+    @Override
     public boolean existsByInsumoEFilial(InsumoId insumoId, UUID filialId) {
         return jpa.existsByInsumoIdAndFilialId(insumoId.value(), filialId);
     }

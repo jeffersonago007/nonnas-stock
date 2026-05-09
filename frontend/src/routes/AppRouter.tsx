@@ -4,10 +4,11 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
-import { FiliaisPage } from '@/features/cadastros/FiliaisPage';
-import { InsumosPage } from '@/features/cadastros/InsumosPage';
-import { FornecedoresPage } from '@/features/cadastros/FornecedoresPage';
-import { ProdutosPage } from '@/features/cadastros/ProdutosPage';
+import { FiliaisPage } from '@/features/cadastros/filiais/FiliaisPage';
+import { CargaInicialPage } from '@/features/cadastros/filiais/CargaInicialPage';
+import { InsumosPage } from '@/features/cadastros/insumos/InsumosPage';
+import { FornecedoresPage } from '@/features/cadastros/fornecedores/FornecedoresPage';
+import { ProdutosPage } from '@/features/cadastros/produtos/ProdutosPage';
 import { FichasTecnicasPage } from '@/features/receitas/FichasTecnicasPage';
 import { EstoquePage } from '@/features/operacoes/EstoquePage';
 import { MovimentacoesPage } from '@/features/operacoes/MovimentacoesPage';
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'filiais', element: <FiliaisPage /> },
+      { path: 'filiais/:id/carga-inicial', element: <CargaInicialPage /> },
       { path: 'insumos', element: <InsumosPage /> },
       { path: 'fornecedores', element: <FornecedoresPage /> },
       { path: 'produtos', element: <ProdutosPage /> },

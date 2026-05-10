@@ -37,11 +37,9 @@ class SmokeE2ETest extends AbstractE2ETest {
 
     private static String adminToken;
     private static String empresaId;
-    private static String filialPrincipalId;
     private static String filialPrincipalNome;
     private static String filialSecundariaId;
     private static String filialSecundariaNome;
-    private static String categoriaId;
     private static String categoriaNome;
     private static String unidadeKgId;
     private static String unidadeKgCodigo;
@@ -68,7 +66,7 @@ class SmokeE2ETest extends AbstractE2ETest {
         unidadeKgId = api.idUnidadePorCodigo(adminToken, "KG");
         unidadeKgCodigo = "KG";
         categoriaNome = unique("Categoria E2E");
-        categoriaId = api.criarCategoria(adminToken, categoriaNome);
+        api.criarCategoria(adminToken, categoriaNome);
 
         // T19 — admin section disponível e tela de categorias lista o que a API
         // criou. Validação sem PageObject novo, foca em sidebar + render.
@@ -88,7 +86,6 @@ class SmokeE2ETest extends AbstractE2ETest {
                 Cnpjs.FILIAL_E2E_PRINCIPAL, "Av. Nonnas, 100");
         filiais.confirmarCriacao();
         assertThat(filiais.linhaComNomeExiste(filialPrincipalNome)).isTrue();
-        filialPrincipalId = api.idFilialPorCnpj(adminToken, Cnpjs.FILIAL_E2E_PRINCIPAL);
     }
 
     @Test

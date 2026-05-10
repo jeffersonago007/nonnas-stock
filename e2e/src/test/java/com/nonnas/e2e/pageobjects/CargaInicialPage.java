@@ -11,11 +11,9 @@ import java.nio.file.Path;
 public class CargaInicialPage {
 
     private final Page page;
-    private final String baseUrl;
 
-    public CargaInicialPage(Page page, String baseUrl) {
+    public CargaInicialPage(Page page) {
         this.page = page;
-        this.baseUrl = baseUrl;
     }
 
     /**

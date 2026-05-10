@@ -32,7 +32,6 @@ class SelecionarLotesPorFefoServiceTest {
     private final UUID FILIAL = UUID.randomUUID();
     private final LoteId L1 = LoteId.generate();
     private final LoteId L2 = LoteId.generate();
-    private final LoteId L3 = LoteId.generate();
 
     @Test
     void cenario1_umLoteQuantidadeExata() {

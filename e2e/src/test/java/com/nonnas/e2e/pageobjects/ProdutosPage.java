@@ -33,6 +33,6 @@ public class ProdutosPage {
     public FichaTecnicaPage abrirFichaDe(String nomeProduto) {
         page.locator("tr:has-text('" + nomeProduto + "') >> a:has-text('Ficha técnica')").click();
         page.waitForURL("**/fichas-tecnicas**");
-        return new FichaTecnicaPage(page, baseUrl);
+        return new FichaTecnicaPage(page);
     }
 }

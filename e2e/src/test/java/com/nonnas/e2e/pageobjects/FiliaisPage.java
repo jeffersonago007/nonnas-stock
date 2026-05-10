@@ -46,6 +46,6 @@ public class FiliaisPage {
     public CargaInicialPage abrirCargaInicialDe(String nomeFilial) {
         page.locator("tr:has-text('" + nomeFilial + "') >> a:has-text('Carga inicial')").click();
         page.waitForURL("**/carga-inicial");
-        return new CargaInicialPage(page, baseUrl);
+        return new CargaInicialPage(page);
     }
 }

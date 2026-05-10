@@ -6,11 +6,9 @@ import com.microsoft.playwright.options.AriaRole;
 public class FichaTecnicaPage {
 
     private final Page page;
-    private final String baseUrl;
 
-    public FichaTecnicaPage(Page page, String baseUrl) {
+    public FichaTecnicaPage(Page page) {
         this.page = page;
-        this.baseUrl = baseUrl;
     }
 
     public FichaTecnicaPage adicionarPrimeiroItem(String insumoNome, String unidade, String quantidade) {

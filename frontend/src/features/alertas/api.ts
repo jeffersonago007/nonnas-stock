@@ -10,6 +10,25 @@ export type StatusAlerta = 'ATIVO' | 'RESOLVIDO_AUTO' | 'RESOLVIDO_MANUAL';
 
 export type Prioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 
+// Backend representa prioridade como int (decisão antiga, sem enum no
+// domain). Mantemos a interface tipada como string aqui no frontend
+// para clareza e mapeamos só no boundary HTTP.
+const PRIORIDADE_TO_INT: Record<Prioridade, number> = {
+  BAIXA: 1,
+  MEDIA: 2,
+  ALTA: 3,
+  CRITICA: 4,
+};
+const INT_TO_PRIORIDADE: Record<number, Prioridade> = {
+  1: 'BAIXA',
+  2: 'MEDIA',
+  3: 'ALTA',
+  4: 'CRITICA',
+};
+function intToPrioridade(n: number): Prioridade {
+  return INT_TO_PRIORIDADE[n] ?? 'MEDIA';
+}
+
 export interface AlertaConfig {
   id: string;
   tipo: TipoAlerta;
@@ -54,22 +73,31 @@ export interface AlertaDisparado {
   visualizadoPor?: string | null;
 }
 
+// Shape interno das responses do backend (prioridade como int).
+type AlertaConfigRaw = Omit<AlertaConfig, 'prioridade'> & { prioridade: number };
+
 export async function listarConfigs(): Promise<AlertaConfig[]> {
-  const { data } = await api.get<AlertaConfig[]>('/alertas-config');
-  return data;
+  const { data } = await api.get<AlertaConfigRaw[]>('/alertas-config');
+  return data.map((c) => ({ ...c, prioridade: intToPrioridade(c.prioridade) }));
 }
 
 export async function criarConfig(payload: AlertaConfigCreateRequest): Promise<AlertaConfig> {
-  const { data } = await api.post<AlertaConfig>('/alertas-config', payload);
-  return data;
+  const { data } = await api.post<AlertaConfigRaw>('/alertas-config', {
+    ...payload,
+    prioridade: PRIORIDADE_TO_INT[payload.prioridade],
+  });
+  return { ...data, prioridade: intToPrioridade(data.prioridade) };
 }
 
 export async function atualizarConfig(
   id: string,
   payload: AlertaConfigUpdateRequest,
 ): Promise<AlertaConfig> {
-  const { data } = await api.put<AlertaConfig>(`/alertas-config/${id}`, payload);
-  return data;
+  const { data } = await api.put<AlertaConfigRaw>(`/alertas-config/${id}`, {
+    ...payload,
+    prioridade: payload.prioridade ? PRIORIDADE_TO_INT[payload.prioridade] : undefined,
+  });
+  return { ...data, prioridade: intToPrioridade(data.prioridade) };
 }
 
 export async function listarDisparados(filtros: {

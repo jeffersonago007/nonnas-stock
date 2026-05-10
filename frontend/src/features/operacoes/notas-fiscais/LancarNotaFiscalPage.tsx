@@ -370,15 +370,18 @@ export function LancarNotaFiscalPage() {
                     <Input
                       value={item.descricaoOrigem}
                       onChange={(e) => {
+                        // Sincroniza sempre — é a descrição vinda da nota e
+                        // também o nome com que o insumo será cadastrado.
                         atualizarItem(idx, 'descricaoOrigem', e.target.value);
-                        if (!item.nomeInsumo) atualizarItem(idx, 'nomeInsumo', e.target.value);
+                        atualizarItem(idx, 'nomeInsumo', e.target.value);
                       }}
                     />
                   </td>
                   <td className="px-2 py-1.5">
                     <Input
                       type="number"
-                      step="0.0001"
+                      step="1"
+                      min="0"
                       value={item.quantidade}
                       onChange={(e) => atualizarItem(idx, 'quantidade', e.target.value)}
                     />
@@ -403,7 +406,8 @@ export function LancarNotaFiscalPage() {
                   <td className="px-2 py-1.5">
                     <Input
                       type="number"
-                      step="0.0001"
+                      step="0.01"
+                      min="0"
                       value={item.valorUnitario}
                       onChange={(e) => atualizarItem(idx, 'valorUnitario', e.target.value)}
                     />

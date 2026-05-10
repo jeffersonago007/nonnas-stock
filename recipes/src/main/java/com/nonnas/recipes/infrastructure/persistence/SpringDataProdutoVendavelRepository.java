@@ -25,4 +25,7 @@ interface SpringDataProdutoVendavelRepository extends JpaRepository<ProdutoVenda
                                              @Param("ativo") Boolean ativo,
                                              @Param("q") String q,
                                              Pageable pageable);
+
+    @Query("SELECT DISTINCT p.categoria FROM ProdutoVendavelEntity p ORDER BY p.categoria ASC")
+    java.util.List<String> findDistinctCategorias();
 }

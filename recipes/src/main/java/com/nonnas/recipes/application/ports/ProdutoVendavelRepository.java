@@ -19,4 +19,12 @@ public interface ProdutoVendavelRepository {
      * @param q         quando não-nulo/não-vazio aplica busca case-insensitive em nome ou código.
      */
     List<ProdutoVendavel> findFiltered(String categoria, Boolean ativo, String q, int page, int size);
+
+    /**
+     * Categorias distintas em uso pelos produtos cadastrados, ordenadas
+     * alfabeticamente. Usado para popular o combo de filtro/cadastro.
+     * Não inclui categorias não-utilizadas — categoria é texto livre,
+     * não há entidade própria.
+     */
+    List<String> listarCategoriasDistintas();
 }

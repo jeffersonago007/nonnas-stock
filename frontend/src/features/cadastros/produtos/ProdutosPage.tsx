@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ClipboardList, Pencil, Plus, Power } from 'lucide-react';
+import { ClipboardList, Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -23,33 +23,57 @@ import {
   type Produto,
   ativarProduto,
   desativarProduto,
+  listarCategoriasProduto,
   listarProdutos,
 } from './api';
 import { ProdutoFormDialog } from './ProdutoFormDialog';
 
 const ATIVO_TODOS = '__todos__';
+const CATEGORIA_TODAS = '__todas__';
+
+interface FiltrosAplicados {
+  q?: string;
+  categoria?: string;
+  ativo?: boolean;
+}
 
 export function ProdutosPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Produto | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [busca, setBusca] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('');
-  const [ativoFiltro, setAtivoFiltro] = useState(ATIVO_TODOS);
 
-  const filtros = useMemo(
-    () => ({
-      categoria: categoriaFiltro.trim() || undefined,
-      ativo: ativoFiltro === ATIVO_TODOS ? undefined : ativoFiltro === 'true',
-      q: busca.trim() || undefined,
-    }),
-    [categoriaFiltro, ativoFiltro, busca],
-  );
+  // Estado dos campos do formulário (não dispara query)
+  const [buscaInput, setBuscaInput] = useState('');
+  const [categoriaInput, setCategoriaInput] = useState(CATEGORIA_TODAS);
+  const [ativoInput, setAtivoInput] = useState(ATIVO_TODOS);
+
+  // Filtros efetivamente aplicados (só atualiza quando o usuário clica Pesquisar)
+  const [filtros, setFiltros] = useState<FiltrosAplicados>({});
+
+  const categoriasQuery = useQuery({
+    queryKey: ['produtos-categorias'],
+    queryFn: listarCategoriasProduto,
+  });
 
   const produtosQuery = useQuery({
     queryKey: ['produtos', filtros],
     queryFn: () => listarProdutos(filtros),
   });
+
+  function aplicarFiltros() {
+    setFiltros({
+      q: buscaInput.trim() || undefined,
+      categoria: categoriaInput === CATEGORIA_TODAS ? undefined : categoriaInput,
+      ativo: ativoInput === ATIVO_TODOS ? undefined : ativoInput === 'true',
+    });
+  }
+
+  function limparFiltros() {
+    setBuscaInput('');
+    setCategoriaInput(CATEGORIA_TODAS);
+    setAtivoInput(ATIVO_TODOS);
+    setFiltros({});
+  }
 
   const desativarMutation = useMutation({
     mutationFn: desativarProduto,
@@ -113,39 +137,64 @@ export function ProdutosPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-busca">Buscar</Label>
-          <Input
-            id="filtro-busca"
-            placeholder="Nome ou código"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-busca">Buscar</Label>
+            <Input
+              id="filtro-busca"
+              placeholder="Nome ou código"
+              value={buscaInput}
+              onChange={(e) => setBuscaInput(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-categoria">Categoria</Label>
+            <Select value={categoriaInput} onValueChange={setCategoriaInput}>
+              <SelectTrigger id="filtro-categoria">
+                <SelectValue
+                  placeholder={categoriasQuery.isLoading ? 'Carregando…' : 'Todas'}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={CATEGORIA_TODAS}>Todas</SelectItem>
+                {(categoriasQuery.data ?? []).map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-ativo">Status</Label>
+            <Select value={ativoInput} onValueChange={setAtivoInput}>
+              <SelectTrigger id="filtro-ativo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
+                <SelectItem value="true">Ativos</SelectItem>
+                <SelectItem value="false">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-categoria">Categoria</Label>
-          <Input
-            id="filtro-categoria"
-            placeholder="Ex.: Pizzas"
-            value={categoriaFiltro}
-            onChange={(e) => setCategoriaFiltro(e.target.value)}
-          />
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-ativo">Status</Label>
-          <Select value={ativoFiltro} onValueChange={setAtivoFiltro}>
-            <SelectTrigger id="filtro-ativo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
-              <SelectItem value="true">Ativos</SelectItem>
-              <SelectItem value="false">Inativos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      </form>
 
       <DataTable
         data={produtosQuery.data}

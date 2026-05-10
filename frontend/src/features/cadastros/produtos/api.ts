@@ -58,3 +58,8 @@ export async function ativarProduto(id: string): Promise<Produto> {
   const { data } = await api.patch<Produto>(`/produtos-vendaveis/${id}/ativar`);
   return data;
 }
+
+export async function listarCategoriasProduto(): Promise<string[]> {
+  const { data } = await api.get<string[]>('/produtos-vendaveis/categorias');
+  return data;
+}

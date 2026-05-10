@@ -58,6 +58,11 @@ public class ProdutoVendavelController {
                 .map(ProdutoVendavelDto.Response::from).toList();
     }
 
+    @GetMapping("/categorias")
+    public List<String> categorias() {
+        return repo.listarCategoriasDistintas();
+    }
+
     @GetMapping("/{id}")
     public ProdutoVendavelDto.Response buscar(@PathVariable UUID id) {
         return repo.findById(ProdutoVendavelId.of(id))

@@ -52,4 +52,9 @@ class ProdutoVendavelRepositoryImpl implements ProdutoVendavelRepository {
                 .map(RecipesMappers::toDomain)
                 .getContent();
     }
+
+    @Override
+    public List<String> listarCategoriasDistintas() {
+        return jpa.findDistinctCategorias();
+    }
 }

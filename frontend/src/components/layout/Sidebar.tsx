@@ -15,6 +15,7 @@ import {
   Ruler,
   Building,
   Users,
+  FileText,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { to: '/fichas-tecnicas', label: 'Fichas técnicas', icon: ClipboardList },
   { to: '/estoque', label: 'Estoque', icon: Boxes },
   { to: '/movimentacoes', label: 'Movimentações', icon: History },
+  { to: '/notas-fiscais', label: 'Notas fiscais', icon: FileText },
   { to: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
   { to: '/alertas', label: 'Alertas', icon: Bell },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
@@ -45,7 +47,7 @@ const navItems: NavItem[] = [
 
 const adminItems: NavItem[] = [
   { to: '/admin/categorias', label: 'Categorias', icon: Tag, allow: ['ADMIN', 'GERENTE'] },
-  { to: '/admin/unidades', label: 'Unidades', icon: Ruler, allow: ['ADMIN', 'GERENTE'] },
+  { to: '/admin/unidades', label: 'Un. medida', icon: Ruler, allow: ['ADMIN', 'GERENTE'] },
   { to: '/admin/empresas', label: 'Empresas', icon: Building, allow: ['ADMIN'] },
   { to: '/admin/usuarios', label: 'Usuários', icon: Users, allow: ['ADMIN', 'GERENTE'] },
 ];

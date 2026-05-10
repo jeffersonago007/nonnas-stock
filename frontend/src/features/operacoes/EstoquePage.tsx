@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PageHeader } from '@/components/PageHeader';
 import { DataTable, type ColumnDef } from '@/components/data-table/DataTable';
 import { useFilialFiltroStore } from '@/features/filtroGlobal/store';
-import { listarCategorias } from '@/features/cadastros/insumos/api';
+import { listarCategorias, listarInsumos, listarUnidades } from '@/features/cadastros/insumos/api';
 
 import {
   type PosicaoEstoque,
@@ -26,8 +26,14 @@ import {
 
 const CATEGORIA_TODAS = '__todas__';
 
-function fmtNumber(n: number, decimals = 3) {
-  return n.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+/**
+ * Saldo amigável: remove zeros à direita ("1,000" → "1") e justapõe a sigla
+ * da unidade-base ("1 UN", "12,5 KG"). Evita confusão com a notação anglo
+ * (onde "1,000" = mil).
+ */
+function fmtSaldo(n: number, unidade?: string) {
+  const num = n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+  return unidade ? `${num} ${unidade}` : num;
 }
 function fmtMoney(n: number) {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -57,6 +63,27 @@ export function EstoquePage() {
     queryKey: ['categorias-insumo'],
     queryFn: listarCategorias,
   });
+
+  const insumosQuery = useQuery({
+    queryKey: ['insumos', { ativo: undefined }],
+    queryFn: () => listarInsumos({}),
+  });
+  const unidadesQuery = useQuery({
+    queryKey: ['unidades-medida'],
+    queryFn: listarUnidades,
+  });
+
+  const unidadePorInsumo = useMemo(() => {
+    const unidades: Record<string, string> = {};
+    (unidadesQuery.data ?? []).forEach((u) => {
+      unidades[u.id] = u.codigo;
+    });
+    const map: Record<string, string> = {};
+    (insumosQuery.data ?? []).forEach((i) => {
+      map[i.id] = unidades[i.unidadeBaseId] ?? '';
+    });
+    return map;
+  }, [insumosQuery.data, unidadesQuery.data]);
 
   const rupturaSet = useMemo(() => {
     return new Set(rupturaQuery.data?.map((r) => `${r.filialId}|${r.insumoId}`));
@@ -91,8 +118,8 @@ export function EstoquePage() {
     {
       key: 'saldo',
       header: 'Saldo total',
-      cell: (p) => <span className="font-mono">{fmtNumber(p.saldoTotal)}</span>,
-      className: 'text-right w-[140px]',
+      cell: (p) => <span className="font-mono">{fmtSaldo(p.saldoTotal, unidadePorInsumo[p.insumoId])}</span>,
+      className: 'text-right w-[160px]',
     },
     {
       key: 'lotes',

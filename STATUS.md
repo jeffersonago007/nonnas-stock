@@ -42,7 +42,7 @@ Decisões arquiteturais e de sequenciamento ficam em `docs/adr/`. ADRs imutávei
 | 0010 | Reporting cross-context via SQL nativo + perf via JUnit+Duration | Aceita |
 | 0011 | AbstractIntegrationTest distribuído via shared-kernel test-jar | Aceita |
 | 0012 | Estratégia de Backup, Restore e Disaster Recovery (T18) | Aceita |
-| 0013 | Estratégia de importação NF-e (entidade própria, categoria default, lote/validade default true, de-para fornecedor+cProd com aprendizado) | Proposta |
+| 0013 | Estratégia de importação NF-e (entidade própria, categoria default, lote/validade default true, de-para fornecedor+cProd com aprendizado) | Aceita |
 
 ## Ordem de execução decidida
 

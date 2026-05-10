@@ -18,6 +18,8 @@ import { AlertasPage } from '@/features/alertas/AlertasPage';
 import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
 import { NotificacoesPage } from '@/features/notificacoes/NotificacoesPage';
 import { CategoriasPage } from '@/features/admin/categorias/CategoriasPage';
+import { NotasFiscaisPage } from '@/features/operacoes/notas-fiscais/NotasFiscaisPage';
+import { LancarNotaFiscalPage } from '@/features/operacoes/notas-fiscais/LancarNotaFiscalPage';
 import { UnidadesPage } from '@/features/admin/unidades/UnidadesPage';
 import { EmpresasPage } from '@/features/admin/empresas/EmpresasPage';
 import { UsuariosPage } from '@/features/admin/usuarios/UsuariosPage';
@@ -42,6 +44,8 @@ export const router = createBrowserRouter([
       { path: 'fichas-tecnicas', element: <FichasTecnicasPage /> },
       { path: 'estoque', element: <EstoquePage /> },
       { path: 'movimentacoes', element: <MovimentacoesPage /> },
+      { path: 'notas-fiscais', element: <NotasFiscaisPage /> },
+      { path: 'notas-fiscais/lancar', element: <LancarNotaFiscalPage /> },
       { path: 'transferencias', element: <TransferenciasPage /> },
       { path: 'alertas', element: <AlertasPage /> },
       { path: 'relatorios', element: <RelatoriosPage /> },

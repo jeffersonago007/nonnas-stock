@@ -22,6 +22,9 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *   <li>reporting → shared-kernel, web-commons (ADR 0010 — outras
  *       dependências Maven existem só para encadear migrations Flyway, mas
  *       o código Java não importa)</li>
+ *   <li>nfe-importer → shared-kernel, web-commons, catalog, inventory-core,
+ *       operations (T20 — orquestrador de importação resolve fornecedor/
+ *       insumo via catalog e delega persistência para operations)</li>
  *   <li>app → todos (único agregador autorizado)</li>
  * </ul>
  *
@@ -117,4 +120,19 @@ class BoundedContextIsolationTest {
                     "com.nonnas.recipes..",
                     "com.nonnas.operations..",
                     "com.nonnas.alerts..");
+
+    /**
+     * nfe-importer (T20) é orquestrador autorizado a cruzar fronteiras de
+     * catalog (criar/buscar Fornecedor e Insumo), inventory-core (entidades
+     * referenciadas indiretamente) e operations (LancarNotaFiscalUseCase).
+     * NÃO pode acessar identity/recipes/alerts/reporting.
+     */
+    @ArchTest
+    static final ArchRule nfeImporter_naoAcessaContextosForaDoEscopo = noClasses()
+            .that().resideInAPackage("com.nonnas.nfeimporter..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "com.nonnas.identity..",
+                    "com.nonnas.recipes..",
+                    "com.nonnas.alerts..",
+                    "com.nonnas.reporting..");
 }

@@ -96,6 +96,20 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <!-- T20: NotaFiscal + ItemNotaFiscal + FornecedorInsumoDePara
+               (domain) e o pacote application.notafiscal são cobertos pelos
+               ITs do nfe-importer, em outro módulo. JaCoCo do operations
+               sozinho não enxerga essa cobertura, então excluímos no plugin
+               (afeta report e check) para não mascarar quedas em código
+               realmente sem teste. -->
+          <excludes>
+            <exclude>com/nonnas/operations/domain/NotaFiscal*.class</exclude>
+            <exclude>com/nonnas/operations/domain/ItemNotaFiscal*.class</exclude>
+            <exclude>com/nonnas/operations/domain/FornecedorInsumoDePara*.class</exclude>
+            <exclude>com/nonnas/operations/application/notafiscal/**/*.class</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <id>jacoco-check</id>

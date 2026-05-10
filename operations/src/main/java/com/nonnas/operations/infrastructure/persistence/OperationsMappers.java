@@ -4,10 +4,15 @@ import com.nonnas.operations.domain.AjusteEstoque;
 import com.nonnas.operations.domain.AjusteEstoqueId;
 import com.nonnas.operations.domain.CargaInicial;
 import com.nonnas.operations.domain.CargaInicialId;
+import com.nonnas.operations.domain.FornecedorInsumoDePara;
+import com.nonnas.operations.domain.ItemNotaFiscal;
 import com.nonnas.operations.domain.ItemTransferencia;
+import com.nonnas.operations.domain.NotaFiscal;
+import com.nonnas.operations.domain.NotaFiscalId;
 import com.nonnas.operations.domain.Transferencia;
 import com.nonnas.operations.domain.TransferenciaId;
 
+import java.time.Instant;
 import java.util.List;
 
 final class OperationsMappers {
@@ -126,5 +131,83 @@ final class OperationsMappers {
                 e.getFilialId(), e.getHashPlanilha(), e.getNomeArquivo(),
                 e.getRegistrosProcessados(), e.getRegistrosFalhos(),
                 e.getSolicitadoPor(), e.getCreatedAt());
+    }
+
+    // ItemNotaFiscal
+    static ItemNotaFiscalEntity toEntity(ItemNotaFiscal i, Instant agora) {
+        ItemNotaFiscalEntity e = new ItemNotaFiscalEntity();
+        e.setId(i.id());
+        e.setInsumoId(i.insumoId());
+        e.setCodigoFornecedor(i.codigoFornecedorOpt().orElse(null));
+        e.setDescricaoOrigem(i.descricaoOrigem());
+        e.setQuantidade(i.quantidade());
+        e.setUnidadeMedidaId(i.unidadeMedidaId());
+        e.setValorUnitario(i.valorUnitario());
+        e.setValorTotal(i.valorTotal());
+        e.setLote(i.loteOpt().orElse(null));
+        e.setDataValidade(i.dataValidadeOpt().orElse(null));
+        e.setCreatedAt(agora);
+        return e;
+    }
+
+    static ItemNotaFiscal toDomain(ItemNotaFiscalEntity e) {
+        return new ItemNotaFiscal(
+                e.getId(), e.getInsumoId(), e.getCodigoFornecedor(), e.getDescricaoOrigem(),
+                e.getQuantidade(), e.getUnidadeMedidaId(), e.getValorUnitario(), e.getValorTotal(),
+                e.getLote(), e.getDataValidade());
+    }
+
+    // NotaFiscal
+    static NotaFiscalEntity toEntity(NotaFiscal n) {
+        NotaFiscalEntity e = new NotaFiscalEntity();
+        e.setId(n.id().value());
+        e.setFornecedorId(n.fornecedorId());
+        e.setFilialId(n.filialId());
+        e.setNumero(n.numero());
+        e.setSerie(n.serie());
+        e.setChaveNfe(n.chaveNfeOpt().orElse(null));
+        e.setDataEmissao(n.dataEmissao());
+        e.setDataLancamento(n.dataLancamento());
+        e.setValorTotal(n.valorTotal());
+        e.setObservacao(n.observacaoOpt().orElse(null));
+        e.setCreatedByUsuarioId(n.createdByUsuarioId());
+        e.setMovimentacaoEntradaId(n.movimentacaoEntradaId());
+        e.setCreatedAt(n.createdAt());
+        e.setUpdatedAt(n.updatedAt());
+        e.getItens().clear();
+        for (var item : n.itens()) {
+            e.getItens().add(toEntity(item, n.createdAt()));
+        }
+        return e;
+    }
+
+    static NotaFiscal toDomain(NotaFiscalEntity e) {
+        List<ItemNotaFiscal> itens = e.getItens().stream()
+                .map(OperationsMappers::toDomain).toList();
+        return new NotaFiscal(
+                NotaFiscalId.of(e.getId()),
+                e.getFornecedorId(), e.getFilialId(), e.getNumero(), e.getSerie(),
+                e.getChaveNfe(), e.getDataEmissao(), e.getDataLancamento(),
+                e.getValorTotal(), e.getObservacao(),
+                e.getCreatedByUsuarioId(), e.getMovimentacaoEntradaId(),
+                itens, e.getCreatedAt(), e.getUpdatedAt());
+    }
+
+    // FornecedorInsumoDePara
+    static FornecedorInsumoDeParaEntity toEntity(FornecedorInsumoDePara d) {
+        FornecedorInsumoDeParaEntity e = new FornecedorInsumoDeParaEntity();
+        e.setId(d.id());
+        e.setFornecedorId(d.fornecedorId());
+        e.setCodigoFornecedor(d.codigoFornecedor());
+        e.setInsumoId(d.insumoId());
+        e.setCreatedAt(d.createdAt());
+        e.setLastUsedAt(d.lastUsedAt());
+        return e;
+    }
+
+    static FornecedorInsumoDePara toDomain(FornecedorInsumoDeParaEntity e) {
+        return new FornecedorInsumoDePara(
+                e.getId(), e.getFornecedorId(), e.getCodigoFornecedor(),
+                e.getInsumoId(), e.getCreatedAt(), e.getLastUsedAt());
     }
 }

@@ -4,7 +4,6 @@ import com.nonnas.sharedkernel.ValidationException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +28,7 @@ public final class NotaFiscal {
     private final String numero;
     private final String serie;
     private final String chaveNfe;
-    private final OffsetDateTime dataEmissao;
+    private final Instant dataEmissao;
     private final Instant dataLancamento;
     private final BigDecimal valorTotal;
     private final String observacao;
@@ -40,7 +39,7 @@ public final class NotaFiscal {
     private final Instant updatedAt;
 
     public NotaFiscal(NotaFiscalId id, UUID fornecedorId, UUID filialId, String numero, String serie,
-                      String chaveNfe, OffsetDateTime dataEmissao, Instant dataLancamento,
+                      String chaveNfe, Instant dataEmissao, Instant dataLancamento,
                       BigDecimal valorTotal, String observacao, UUID createdByUsuarioId,
                       UUID movimentacaoEntradaId, List<ItemNotaFiscal> itens,
                       Instant createdAt, Instant updatedAt) {
@@ -69,7 +68,7 @@ public final class NotaFiscal {
     }
 
     public static NotaFiscal nova(UUID fornecedorId, UUID filialId, String numero, String serie,
-                                  String chaveNfe, OffsetDateTime dataEmissao,
+                                  String chaveNfe, Instant dataEmissao,
                                   BigDecimal valorTotal, String observacao,
                                   UUID createdByUsuarioId, UUID movimentacaoEntradaId,
                                   List<ItemNotaFiscal> itens, Instant agora) {
@@ -100,7 +99,7 @@ public final class NotaFiscal {
     public String numero() { return numero; }
     public String serie() { return serie; }
     public Optional<String> chaveNfeOpt() { return Optional.ofNullable(chaveNfe); }
-    public OffsetDateTime dataEmissao() { return dataEmissao; }
+    public Instant dataEmissao() { return dataEmissao; }
     public Instant dataLancamento() { return dataLancamento; }
     public BigDecimal valorTotal() { return valorTotal; }
     public Optional<String> observacaoOpt() { return Optional.ofNullable(observacao); }

@@ -8,6 +8,7 @@ export interface Insumo {
   unidadeBaseId: string;
   controlaLote: boolean;
   controlaValidade: boolean;
+  diasAlertaVencimento: number | null;
   ativo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -41,6 +42,7 @@ export interface InsumoUpdateRequest {
   categoriaId?: string;
   controlaLote?: boolean;
   controlaValidade?: boolean;
+  diasAlertaVencimento?: number | null;
 }
 
 export interface InsumosFiltro {

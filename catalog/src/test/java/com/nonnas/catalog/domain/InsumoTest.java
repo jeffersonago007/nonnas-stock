@@ -68,4 +68,34 @@ class InsumoTest {
                 CategoriaInsumoId.generate(), UnidadeMedidaId.generate(), true, true, T0))
                 .isInstanceOf(ValidationException.class);
     }
+
+    @Test
+    void novoVemSemDiasAlertaVencimento() {
+        Insumo i = novoInsumo();
+        assertThat(i.diasAlertaVencimento()).isEmpty();
+    }
+
+    @Test
+    void definirDiasAlertaVencimentoAceitaIntervalo() {
+        Insumo i = novoInsumo();
+        i.definirDiasAlertaVencimento(7, T0);
+        assertThat(i.diasAlertaVencimento()).contains(7);
+        i.definirDiasAlertaVencimento(90, T0);
+        assertThat(i.diasAlertaVencimento()).contains(90);
+        i.definirDiasAlertaVencimento(1, T0);
+        assertThat(i.diasAlertaVencimento()).contains(1);
+        i.definirDiasAlertaVencimento(null, T0);
+        assertThat(i.diasAlertaVencimento()).isEmpty();
+    }
+
+    @Test
+    void definirDiasAlertaVencimentoRejeitaForaDoIntervalo() {
+        Insumo i = novoInsumo();
+        assertThatThrownBy(() -> i.definirDiasAlertaVencimento(0, T0))
+                .isInstanceOf(ValidationException.class);
+        assertThatThrownBy(() -> i.definirDiasAlertaVencimento(91, T0))
+                .isInstanceOf(ValidationException.class);
+        assertThatThrownBy(() -> i.definirDiasAlertaVencimento(-1, T0))
+                .isInstanceOf(ValidationException.class);
+    }
 }

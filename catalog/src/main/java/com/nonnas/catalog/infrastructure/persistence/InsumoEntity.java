@@ -34,6 +34,9 @@ public class InsumoEntity {
     @Column(name = "controla_validade", nullable = false)
     private boolean controlaValidade;
 
+    @Column(name = "dias_alerta_vencimento")
+    private Integer diasAlertaVencimento;
+
     @Column(nullable = false)
     private boolean ativo;
 
@@ -59,6 +62,8 @@ public class InsumoEntity {
     public void setControlaLote(boolean controlaLote) { this.controlaLote = controlaLote; }
     public boolean isControlaValidade() { return controlaValidade; }
     public void setControlaValidade(boolean controlaValidade) { this.controlaValidade = controlaValidade; }
+    public Integer getDiasAlertaVencimento() { return diasAlertaVencimento; }
+    public void setDiasAlertaVencimento(Integer diasAlertaVencimento) { this.diasAlertaVencimento = diasAlertaVencimento; }
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
     public Instant getCreatedAt() { return createdAt; }

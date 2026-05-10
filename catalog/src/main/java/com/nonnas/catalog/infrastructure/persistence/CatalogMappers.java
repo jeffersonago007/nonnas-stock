@@ -144,6 +144,7 @@ final class CatalogMappers {
         e.setUnidadeBaseId(i.unidadeBaseId().value());
         e.setControlaLote(i.controlaLote());
         e.setControlaValidade(i.controlaValidade());
+        e.setDiasAlertaVencimento(i.diasAlertaVencimento().orElse(null));
         e.setAtivo(i.ativo());
         e.setCreatedAt(i.createdAt());
         e.setUpdatedAt(i.updatedAt());
@@ -159,6 +160,7 @@ final class CatalogMappers {
                 UnidadeMedidaId.of(e.getUnidadeBaseId()),
                 e.isControlaLote(),
                 e.isControlaValidade(),
+                e.getDiasAlertaVencimento(),
                 e.isAtivo(),
                 e.getCreatedAt(),
                 e.getUpdatedAt()

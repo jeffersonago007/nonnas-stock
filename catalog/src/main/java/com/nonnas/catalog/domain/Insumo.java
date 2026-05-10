@@ -5,6 +5,7 @@ import com.nonnas.sharedkernel.ValidationException;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class Insumo {
 
@@ -15,13 +16,14 @@ public final class Insumo {
     private UnidadeMedidaId unidadeBaseId;
     private boolean controlaLote;
     private boolean controlaValidade;
+    private Integer diasAlertaVencimento;
     private boolean ativo;
     private final Instant createdAt;
     private Instant updatedAt;
 
     public Insumo(InsumoId id, String codigo, String nome, CategoriaInsumoId categoriaId,
                   UnidadeMedidaId unidadeBaseId, boolean controlaLote, boolean controlaValidade,
-                  boolean ativo, Instant createdAt, Instant updatedAt) {
+                  Integer diasAlertaVencimento, boolean ativo, Instant createdAt, Instant updatedAt) {
         this.id = Objects.requireNonNull(id);
         this.codigo = validarCodigo(codigo);
         this.nome = validarNome(nome);
@@ -29,6 +31,7 @@ public final class Insumo {
         this.unidadeBaseId = Objects.requireNonNull(unidadeBaseId, "unidadeBaseId");
         this.controlaLote = controlaLote;
         this.controlaValidade = controlaValidade;
+        this.diasAlertaVencimento = validarDiasAlertaVencimento(diasAlertaVencimento);
         this.ativo = ativo;
         this.createdAt = Objects.requireNonNull(createdAt);
         this.updatedAt = Objects.requireNonNull(updatedAt);
@@ -38,7 +41,7 @@ public final class Insumo {
                               UnidadeMedidaId unidadeBaseId, boolean controlaLote,
                               boolean controlaValidade, Instant agora) {
         return new Insumo(InsumoId.generate(), codigo, nome, categoriaId, unidadeBaseId,
-                controlaLote, controlaValidade, true, agora, agora);
+                controlaLote, controlaValidade, null, true, agora, agora);
     }
 
     public void renomear(String novoNome, Instant agora) {
@@ -68,6 +71,17 @@ public final class Insumo {
 
     public void definirControlaValidade(boolean controlaValidade, Instant agora) {
         this.controlaValidade = controlaValidade;
+        this.updatedAt = agora;
+    }
+
+    /**
+     * Configura quantos dias antes da validade alertar. Só faz sentido com
+     * controla_validade=true; quando false, valor é guardado mas ignorado
+     * pelos jobs de alerta (decisão pragmática para não perder configuração
+     * caso o flag oscile).
+     */
+    public void definirDiasAlertaVencimento(Integer dias, Instant agora) {
+        this.diasAlertaVencimento = validarDiasAlertaVencimento(dias);
         this.updatedAt = agora;
     }
 
@@ -101,6 +115,15 @@ public final class Insumo {
         return n.toUpperCase(Locale.ROOT);
     }
 
+    private static Integer validarDiasAlertaVencimento(Integer dias) {
+        if (dias == null) return null;
+        if (dias < 1 || dias > 90) {
+            throw new ValidationException(
+                    "diasAlertaVencimento deve estar entre 1 e 90 (recebido: " + dias + ")");
+        }
+        return dias;
+    }
+
     public InsumoId id() { return id; }
     public String codigo() { return codigo; }
     public String nome() { return nome; }
@@ -108,6 +131,7 @@ public final class Insumo {
     public UnidadeMedidaId unidadeBaseId() { return unidadeBaseId; }
     public boolean controlaLote() { return controlaLote; }
     public boolean controlaValidade() { return controlaValidade; }
+    public Optional<Integer> diasAlertaVencimento() { return Optional.ofNullable(diasAlertaVencimento); }
     public boolean ativo() { return ativo; }
     public Instant createdAt() { return createdAt; }
     public Instant updatedAt() { return updatedAt; }

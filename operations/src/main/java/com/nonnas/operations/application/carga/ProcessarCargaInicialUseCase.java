@@ -52,7 +52,12 @@ public class ProcessarCargaInicialUseCase {
                 .map(i -> new RegistrarEntradaMultiItemUseCase.ItemEntrada(
                         i.insumoId, null, null, i.numeroLote,
                         i.dataFabricacao, i.dataValidade, i.valorUnitario,
-                        i.unidadeId, i.quantidade, i.quantidade))
+                        i.unidadeId, i.quantidade, i.quantidade,
+                        // Carga inicial é momento zero, sempre cria lote rastreado.
+                        // Se o insumo for AGREGADOR mais tarde (NF-e), o lote da
+                        // carga inicial fica órfão — gap aceito do MVP. Migração
+                        // retroativa exigiria saldo→agregador, fora de escopo.
+                        true))
                 .toList();
 
         UUID cargaTempId = UUID.randomUUID();  // doc_origem_id placeholder; persistimos o real depois

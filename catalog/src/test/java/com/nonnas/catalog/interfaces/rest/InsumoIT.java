@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -99,6 +100,60 @@ class InsumoIT extends AbstractCatalogIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void putInsumoComDiasAlertaVencimento_persisteValor() throws Exception {
+        UUID categoriaId = criarCategoria("Carnes");
+        UUID unidadeKg = unidadeIdPorCodigo("KG");
+        UUID insumoId = criarInsumo("INS-PUT-OK", "Picanha", categoriaId, unidadeKg);
+
+        String putBody = """
+                {
+                  "nome": "Picanha Premium",
+                  "diasAlertaVencimento": 7
+                }
+                """;
+        mvc.perform(put("/api/v1/insumos/" + insumoId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(putBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nome").value("PICANHA PREMIUM"))
+                .andExpect(jsonPath("$.diasAlertaVencimento").value(7));
+    }
+
+    @Test
+    void putInsumoComDiasAlertaForaDoIntervalo_retorna400() throws Exception {
+        UUID categoriaId = criarCategoria("Hortaliças");
+        UUID unidadeKg = unidadeIdPorCodigo("KG");
+        UUID insumoId = criarInsumo("INS-PUT-RANGE", "Tomate", categoriaId, unidadeKg);
+
+        String putBody = """
+                {
+                  "nome": "Tomate Italiano",
+                  "diasAlertaVencimento": 91
+                }
+                """;
+        mvc.perform(put("/api/v1/insumos/" + insumoId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(putBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    private UUID criarInsumo(String codigo, String nome, UUID categoriaId, UUID unidadeId) throws Exception {
+        String body = """
+                {
+                  "codigo": "%s",
+                  "nome": "%s",
+                  "categoriaId": "%s",
+                  "unidadeBaseId": "%s"
+                }
+                """.formatted(codigo, nome, categoriaId, unidadeId);
+        MvcResult res = mvc.perform(post("/api/v1/insumos")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return UUID.fromString(json.readTree(res.getResponse().getContentAsString()).get("id").asText());
     }
 
     private UUID criarCategoria(String nome) throws Exception {

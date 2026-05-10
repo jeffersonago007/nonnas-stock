@@ -23,7 +23,8 @@ public final class InsumoDto {
             @NotBlank @Size(max = 255) String nome,
             UUID categoriaId,
             Boolean controlaLote,
-            Boolean controlaValidade
+            Boolean controlaValidade,
+            Integer diasAlertaVencimento
     ) {}
 
     public record Response(
@@ -34,6 +35,7 @@ public final class InsumoDto {
             UUID unidadeBaseId,
             boolean controlaLote,
             boolean controlaValidade,
+            Integer diasAlertaVencimento,
             boolean ativo,
             Instant createdAt,
             Instant updatedAt
@@ -41,7 +43,8 @@ public final class InsumoDto {
         public static Response from(Insumo i) {
             return new Response(i.id().value(), i.codigo(), i.nome(),
                     i.categoriaId().value(), i.unidadeBaseId().value(),
-                    i.controlaLote(), i.controlaValidade(), i.ativo(),
+                    i.controlaLote(), i.controlaValidade(),
+                    i.diasAlertaVencimento().orElse(null), i.ativo(),
                     i.createdAt(), i.updatedAt());
         }
     }

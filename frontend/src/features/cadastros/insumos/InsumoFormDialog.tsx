@@ -48,6 +48,12 @@ const updateSchema = z.object({
   categoriaId: z.string().uuid('Selecione uma categoria'),
   controlaLote: z.boolean(),
   controlaValidade: z.boolean(),
+  // string vinda do <Input type="number"> — conversão para number na submissão
+  diasAlertaVencimento: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^\d+$/.test(v), 'Informe um número inteiro')
+    .refine((v) => !v || (Number(v) >= 1 && Number(v) <= 90), 'Entre 1 e 90 dias'),
 });
 
 type CreateValues = z.infer<typeof createSchema>;
@@ -87,7 +93,13 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
   });
   const updateForm = useForm<UpdateValues>({
     resolver: zodResolver(updateSchema),
-    defaultValues: { nome: '', categoriaId: '', controlaLote: true, controlaValidade: true },
+    defaultValues: {
+      nome: '',
+      categoriaId: '',
+      controlaLote: true,
+      controlaValidade: true,
+      diasAlertaVencimento: '',
+    },
   });
 
   useEffect(() => {
@@ -97,6 +109,8 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
         categoriaId: insumo.categoriaId,
         controlaLote: insumo.controlaLote,
         controlaValidade: insumo.controlaValidade,
+        diasAlertaVencimento:
+          insumo.diasAlertaVencimento != null ? String(insumo.diasAlertaVencimento) : '',
       });
     } else if (open && !insumo) {
       createForm.reset();
@@ -114,7 +128,19 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (values: UpdateValues) => atualizarInsumo(insumo!.id, values),
+    mutationFn: (values: UpdateValues) =>
+      atualizarInsumo(insumo!.id, {
+        nome: values.nome,
+        categoriaId: values.categoriaId,
+        controlaLote: values.controlaLote,
+        controlaValidade: values.controlaValidade,
+        // só envia se a flag está ativa e o usuário preencheu — payload null
+        // não toca no campo no backend (decisão consciente do MVP).
+        diasAlertaVencimento:
+          values.controlaValidade && values.diasAlertaVencimento
+            ? Number(values.diasAlertaVencimento)
+            : undefined,
+      }),
     onSuccess: () => {
       toast.success('Insumo atualizado');
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
@@ -181,6 +207,31 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
                 onCheckedChange={(v) => updateForm.setValue('controlaValidade', v)}
               />
             </div>
+            {updateForm.watch('controlaValidade') && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-diasAlertaVencimento">
+                  Dias antes do vencimento para alertar (opcional)
+                </Label>
+                <Input
+                  id="edit-diasAlertaVencimento"
+                  type="number"
+                  min={1}
+                  max={90}
+                  step={1}
+                  placeholder="Ex.: 7"
+                  aria-invalid={Boolean(updateForm.formState.errors.diasAlertaVencimento)}
+                  {...updateForm.register('diasAlertaVencimento')}
+                />
+                {updateForm.formState.errors.diasAlertaVencimento && (
+                  <p className="text-sm text-destructive">
+                    {updateForm.formState.errors.diasAlertaVencimento.message}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Vazio = usa o padrão global de alertas. Range aceito: 1 a 90 dias.
+                </p>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               Atenção: alterar categoria ou controles afeta alertas e movimentações futuras.
               Lotes existentes não são removidos.

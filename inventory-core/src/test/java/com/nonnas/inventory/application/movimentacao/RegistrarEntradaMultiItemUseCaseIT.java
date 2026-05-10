@@ -44,12 +44,12 @@ class RegistrarEntradaMultiItemUseCaseIT extends AbstractInventoryIntegrationTes
                                 insumoA, null, null, "MUSS-001",
                                 LocalDate.parse("2026-04-01"), LocalDate.parse("2026-09-01"),
                                 new BigDecimal("32.50"), unidade,
-                                new BigDecimal("10"), new BigDecimal("10")),
+                                new BigDecimal("10"), new BigDecimal("10"), true),
                         new RegistrarEntradaMultiItemUseCase.ItemEntrada(
                                 insumoB, null, null, "MOLHO-001",
                                 null, LocalDate.parse("2026-12-01"),
                                 new BigDecimal("18.00"), unidade,
-                                new BigDecimal("5"), new BigDecimal("5"))
+                                new BigDecimal("5"), new BigDecimal("5"), true)
                 )
         );
 
@@ -73,7 +73,7 @@ class RegistrarEntradaMultiItemUseCaseIT extends AbstractInventoryIntegrationTes
                 List.of(new RegistrarEntradaMultiItemUseCase.ItemEntrada(
                         UUID.randomUUID(), null, null, "L1",
                         null, null, BigDecimal.TEN, UUID.randomUUID(),
-                        BigDecimal.ONE, BigDecimal.ONE))
+                        BigDecimal.ONE, BigDecimal.ONE, true))
         );
 
         assertThatThrownBy(() -> entradaMulti.execute(cmd))
@@ -99,7 +99,7 @@ class RegistrarEntradaMultiItemUseCaseIT extends AbstractInventoryIntegrationTes
                 List.of(new RegistrarEntradaMultiItemUseCase.ItemEntrada(
                         UUID.randomUUID(), null, null, "  ",
                         null, null, BigDecimal.TEN, UUID.randomUUID(),
-                        BigDecimal.ONE, BigDecimal.ONE))
+                        BigDecimal.ONE, BigDecimal.ONE, true))
         );
 
         assertThatThrownBy(() -> entradaMulti.execute(cmd))

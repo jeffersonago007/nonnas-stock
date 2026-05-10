@@ -135,4 +135,21 @@ class BoundedContextIsolationTest {
                     "com.nonnas.recipes..",
                     "com.nonnas.alerts..",
                     "com.nonnas.reporting..");
+
+    /**
+     * T-LOT-09 (adendo lote opcional): a criação do lote AGREGADOR só pode
+     * passar pelo {@code BuscarOuCriarLoteAgregadorUseCase}. Nenhum outro
+     * lugar pode chamar {@code Lote.novoAgregador} diretamente — protege a
+     * idempotência (unique partial index) e mantém o regime do insumo
+     * estritamente orquestrado. Como {@code novoAgregador} só existe em
+     * {@code Lote}, basta filtrar pelo nome do método.
+     */
+    @ArchTest
+    static final ArchRule loteAgregador_soAcessadoViaUseCase = noClasses()
+            .that().resideOutsideOfPackages(
+                    "com.nonnas.inventory.application.movimentacao..",
+                    "com.nonnas.inventory.domain..")
+            .should().callMethodWhere(
+                    com.tngtech.archunit.core.domain.JavaCall.Predicates.target(
+                            com.tngtech.archunit.core.domain.properties.HasName.Predicates.name("novoAgregador")));
 }

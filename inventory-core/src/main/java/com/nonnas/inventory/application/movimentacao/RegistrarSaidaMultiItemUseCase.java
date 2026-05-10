@@ -6,6 +6,7 @@ import com.nonnas.inventory.application.ports.MovimentacaoRepository;
 import com.nonnas.inventory.domain.ItemMovimentacao;
 import com.nonnas.inventory.domain.Lote;
 import com.nonnas.inventory.domain.Movimentacao;
+import com.nonnas.inventory.domain.SelecionarLotesParaSaidaService;
 import com.nonnas.inventory.domain.SelecionarLotesPorFefoService;
 import com.nonnas.inventory.domain.TipoMovimentacao;
 import com.nonnas.sharedkernel.BusinessRuleException;
@@ -35,18 +36,18 @@ import java.util.UUID;
 @Service
 public class RegistrarSaidaMultiItemUseCase {
 
-    private final SelecionarLotesPorFefoService fefo;
+    private final SelecionarLotesParaSaidaService selecionar;
     private final LoteRepository loteRepo;
     private final MovimentacaoRepository movRepo;
     private final ApplicationEventPublisher eventos;
     private final Clock clock;
 
-    public RegistrarSaidaMultiItemUseCase(SelecionarLotesPorFefoService fefo,
+    public RegistrarSaidaMultiItemUseCase(SelecionarLotesParaSaidaService selecionar,
                                           LoteRepository loteRepo,
                                           MovimentacaoRepository movRepo,
                                           ApplicationEventPublisher eventos,
                                           Clock clock) {
-        this.fefo = fefo;
+        this.selecionar = selecionar;
         this.loteRepo = loteRepo;
         this.movRepo = movRepo;
         this.eventos = eventos;
@@ -75,7 +76,7 @@ public class RegistrarSaidaMultiItemUseCase {
         boolean gerouNegativo = false;
 
         for (var item : cmd.itens) {
-            var resultado = fefo.selecionar(item.insumoId, cmd.filialId, item.quantidadeBase);
+            var resultado = selecionar.selecionar(item.insumoId, cmd.filialId, item.quantidadeBase);
             if (resultado.semLotes()) {
                 throw new BusinessRuleException(ErrorCode.BUSINESS_RULE_VIOLATED,
                         "Sem lote disponível para o insumo " + item.insumoId

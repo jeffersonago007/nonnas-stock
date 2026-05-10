@@ -70,15 +70,16 @@ public class ProcessarNotaFiscalUseCase {
 
         List<LancarNotaFiscalUseCase.Item> itensResolvidos = new ArrayList<>(cmd.itens.size());
         for (ItemEntrada item : cmd.itens) {
-            UUID insumoId = resolverInsumo(item.insumo);
+            Insumo insumo = resolverInsumoEntidade(item.insumo);
             BigDecimal valorTotal = item.valorTotal != null
                     ? item.valorTotal
                     : item.valorUnitario.multiply(item.quantidade);
             itensResolvidos.add(new LancarNotaFiscalUseCase.Item(
-                    insumoId, item.codigoFornecedor, item.descricaoOrigem,
+                    insumo.id().value(), item.codigoFornecedor, item.descricaoOrigem,
                     item.quantidade, item.unidadeMedidaId,
                     item.valorUnitario, valorTotal,
-                    item.lote, item.dataValidade));
+                    item.lote, item.dataValidade,
+                    insumo.controlaValidade()));
         }
 
         var lancamento = new LancarNotaFiscalUseCase.Comando(
@@ -110,16 +111,14 @@ public class ProcessarNotaFiscalUseCase {
         return novo.id().value();
     }
 
-    private UUID resolverInsumo(InsumoEntrada i) {
+    private Insumo resolverInsumoEntidade(InsumoEntrada i) {
         if (i == null) {
             throw new ValidationException("Insumo obrigatório no item");
         }
         if (i.id != null) {
             InsumoId iid = InsumoId.of(i.id);
-            if (insumoRepo.findById(iid).isEmpty()) {
-                throw new NotFoundException("Insumo", i.id);
-            }
-            return i.id;
+            return insumoRepo.findById(iid)
+                    .orElseThrow(() -> new NotFoundException("Insumo", i.id));
         }
         if (i.codigo == null || i.codigo.isBlank() || i.nome == null || i.nome.isBlank()
                 || i.unidadeBaseId == null) {
@@ -128,12 +127,11 @@ public class ProcessarNotaFiscalUseCase {
         }
         Optional<Insumo> existente = insumoRepo.findByCodigo(i.codigo);
         if (existente.isPresent()) {
-            return existente.get().id().value();
+            return existente.get();
         }
-        Insumo novo = criarInsumo.execute(i.codigo, i.nome,
+        return criarInsumo.execute(i.codigo, i.nome,
                 CATEGORIA_A_CLASSIFICAR_ID, i.unidadeBaseId,
                 true, true);
-        return novo.id().value();
     }
 
     public record Comando(

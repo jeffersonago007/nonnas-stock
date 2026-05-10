@@ -2,6 +2,10 @@
 -- regime opcional de rastreabilidade descrito no adendo
 -- (docs/adendo-lote-opcional.md).
 --
+-- Originalmente criada como V020 no commit 0fcf984; renomeada para V021 em
+-- T-LOT-09 porque colidia com catalog/V020 quando alerts/operations
+-- consolidam os dois classpaths no Flyway. STATUS.md detalha.
+--
 -- Adaptação ao modelo atual: a tabela `lotes` é universal (sem filial_id);
 -- saldos por filial vivem em `saldos_lotes`. Logo, o lote AGREGADOR é único
 -- por INSUMO (não por insumo+filial), e cada filial mantém seu saldo nesse

@@ -8,4 +8,6 @@ import java.util.UUID;
 
 interface SpringDataLoteRepository extends JpaRepository<LoteEntity, UUID> {
     Page<LoteEntity> findByInsumoId(UUID insumoId, Pageable pageable);
+
+    java.util.Optional<LoteEntity> findFirstByInsumoIdAndTipo(UUID insumoId, String tipo);
 }

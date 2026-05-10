@@ -11,4 +11,11 @@ public interface LoteRepository {
     Lote save(Lote l);
     Optional<Lote> findById(LoteId id);
     List<Lote> findByInsumo(UUID insumoId, int page, int size);
+
+    /**
+     * Retorna o lote AGREGADOR único do insumo, se já existe. Schema garante
+     * unicidade via index parcial (V020 inventory-core). Lookup é o caminho
+     * quente do {@code BuscarOuCriarLoteAgregadorUseCase}.
+     */
+    Optional<Lote> findAgregadorByInsumo(UUID insumoId);
 }

@@ -38,7 +38,8 @@ public class AtualizarInsumoUseCase {
     public Insumo execute(UUID id, String novoNome,
                           UUID novaCategoriaId,
                           Boolean novoControlaLote,
-                          Boolean novoControlaValidade) {
+                          Boolean novoControlaValidade,
+                          Integer novoDiasAlertaVencimento) {
         Insumo insumo = insumoRepo.findById(InsumoId.of(id))
                 .orElseThrow(() -> new NotFoundException("Insumo", id));
         Instant agora = clock.instant();
@@ -58,6 +59,12 @@ public class AtualizarInsumoUseCase {
         }
         if (novoControlaValidade != null) {
             insumo.definirControlaValidade(novoControlaValidade, agora);
+        }
+        // null = não tocar. Para limpar, cliente passa via setter direto
+        // chamando definirDiasAlertaVencimento(null) — não exposto no
+        // PUT/UpdateRequest atual (limitação consciente do MVP).
+        if (novoDiasAlertaVencimento != null) {
+            insumo.definirDiasAlertaVencimento(novoDiasAlertaVencimento, agora);
         }
 
         return insumoRepo.save(insumo);

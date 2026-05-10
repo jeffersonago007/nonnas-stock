@@ -6,7 +6,7 @@ import com.nonnas.inventory.application.ports.MovimentacaoRepository;
 import com.nonnas.inventory.domain.ItemMovimentacao;
 import com.nonnas.inventory.domain.Lote;
 import com.nonnas.inventory.domain.Movimentacao;
-import com.nonnas.inventory.domain.SelecionarLotesPorFefoService;
+import com.nonnas.inventory.domain.SelecionarLotesParaSaidaService;
 import com.nonnas.inventory.domain.TipoMovimentacao;
 import com.nonnas.sharedkernel.BusinessRuleException;
 import com.nonnas.sharedkernel.ErrorCode;
@@ -30,18 +30,18 @@ import java.util.UUID;
 @Service
 public class RegistrarSaidaManualUseCase {
 
-    private final SelecionarLotesPorFefoService fefo;
+    private final SelecionarLotesParaSaidaService selecionar;
     private final LoteRepository loteRepo;
     private final MovimentacaoRepository movRepo;
     private final ApplicationEventPublisher eventos;
     private final Clock clock;
 
-    public RegistrarSaidaManualUseCase(SelecionarLotesPorFefoService fefo,
+    public RegistrarSaidaManualUseCase(SelecionarLotesParaSaidaService selecionar,
                                        LoteRepository loteRepo,
                                        MovimentacaoRepository movRepo,
                                        ApplicationEventPublisher eventos,
                                        Clock clock) {
-        this.fefo = fefo;
+        this.selecionar = selecionar;
         this.loteRepo = loteRepo;
         this.movRepo = movRepo;
         this.eventos = eventos;
@@ -57,7 +57,7 @@ public class RegistrarSaidaManualUseCase {
             throw new ValidationException("Quantidade base deve ser positiva");
         }
 
-        var resultado = fefo.selecionar(cmd.insumoId, cmd.filialId, cmd.quantidadeBase);
+        var resultado = selecionar.selecionar(cmd.insumoId, cmd.filialId, cmd.quantidadeBase);
         if (resultado.semLotes()) {
             throw new BusinessRuleException(ErrorCode.BUSINESS_RULE_VIOLATED,
                     "Sem lote disponível para o insumo na filial — cadastre uma entrada antes");

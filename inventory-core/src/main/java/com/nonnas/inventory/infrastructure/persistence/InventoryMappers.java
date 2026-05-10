@@ -6,6 +6,7 @@ import com.nonnas.inventory.domain.LoteId;
 import com.nonnas.inventory.domain.Movimentacao;
 import com.nonnas.inventory.domain.MovimentacaoId;
 import com.nonnas.inventory.domain.SaldoLote;
+import com.nonnas.inventory.domain.TipoLote;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ final class InventoryMappers {
         LoteEntity e = new LoteEntity();
         e.setId(l.id().value());
         e.setInsumoId(l.insumoId());
+        e.setTipo(l.tipo().name());
         e.setFornecedorId(l.fornecedorId());
         e.setNotaFiscalId(l.notaFiscalId());
         e.setNumeroLote(l.numeroLote());
@@ -27,7 +29,9 @@ final class InventoryMappers {
     }
 
     static Lote toDomain(LoteEntity e) {
-        return new Lote(LoteId.of(e.getId()), e.getInsumoId(), e.getFornecedorId(),
+        return new Lote(LoteId.of(e.getId()), e.getInsumoId(),
+                TipoLote.valueOf(e.getTipo()),
+                e.getFornecedorId(),
                 e.getNotaFiscalId(), e.getNumeroLote(), e.getDataFabricacao(), e.getDataValidade(),
                 e.getValorUnitario(), e.getCreatedAt());
     }

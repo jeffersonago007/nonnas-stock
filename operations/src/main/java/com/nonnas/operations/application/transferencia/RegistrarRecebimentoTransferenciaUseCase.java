@@ -1,6 +1,7 @@
 package com.nonnas.operations.application.transferencia;
 
 import com.nonnas.inventory.application.movimentacao.RegistrarEntradaMultiItemUseCase;
+import com.nonnas.inventory.application.ports.LoteRepository;
 import com.nonnas.inventory.domain.Movimentacao;
 import com.nonnas.inventory.domain.TipoMovimentacao;
 import com.nonnas.operations.application.ports.AjusteEstoqueRepository;
@@ -39,17 +40,20 @@ public class RegistrarRecebimentoTransferenciaUseCase {
     private final TransferenciaRepository transferenciaRepo;
     private final AjusteEstoqueRepository ajusteRepo;
     private final RegistrarEntradaMultiItemUseCase entradaMulti;
+    private final LoteRepository loteRepo;
     private final OperationsProperties props;
     private final Clock clock;
 
     public RegistrarRecebimentoTransferenciaUseCase(TransferenciaRepository transferenciaRepo,
                                                     AjusteEstoqueRepository ajusteRepo,
                                                     RegistrarEntradaMultiItemUseCase entradaMulti,
+                                                    LoteRepository loteRepo,
                                                     OperationsProperties props,
                                                     Clock clock) {
         this.transferenciaRepo = transferenciaRepo;
         this.ajusteRepo = ajusteRepo;
         this.entradaMulti = entradaMulti;
+        this.loteRepo = loteRepo;
         this.props = props;
         this.clock = clock;
     }
@@ -68,12 +72,18 @@ public class RegistrarRecebimentoTransferenciaUseCase {
         for (ItemTransferencia it : t.itens()) {
             BigDecimal qtdRecebida = qtdsRecebidas.getOrDefault(it.id(), BigDecimal.ZERO);
             if (qtdRecebida.signum() > 0) {
+                // Decisão sobre regime sem importar catalog: se já existe
+                // agregador para o insumo, regime é AGREGADOR e o saldo
+                // recebido vai para esse lote. Caso contrário, mantém o
+                // comportamento legado de lote rastreado TRANSF-<id>.
+                boolean controlaValidade = loteRepo.findAgregadorByInsumo(it.insumoId()).isEmpty();
                 entradas.add(new RegistrarEntradaMultiItemUseCase.ItemEntrada(
                         it.insumoId(), null, null,
                         "TRANSF-%s".formatted(t.id().value()),
                         null, null,
                         BigDecimal.ZERO,  // valor unitário do recebimento; valor real fica no lote origem
-                        it.unidadeId(), qtdRecebida, qtdRecebida));
+                        it.unidadeId(), qtdRecebida, qtdRecebida,
+                        controlaValidade));
             }
         }
 

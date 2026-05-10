@@ -4,7 +4,6 @@ import com.nonnas.e2e.AbstractE2ETest;
 import com.nonnas.e2e.fixtures.Cnpjs;
 import com.nonnas.e2e.fixtures.TestUsers;
 import com.nonnas.e2e.pageobjects.AlertasPage;
-import com.nonnas.e2e.pageobjects.CargaInicialPage;
 import com.nonnas.e2e.pageobjects.DashboardPage;
 import com.nonnas.e2e.pageobjects.EstoquePage;
 import com.nonnas.e2e.pageobjects.FichaTecnicaPage;

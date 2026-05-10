@@ -52,7 +52,7 @@ public class RegistrarEntradaManualUseCase {
             throw new ValidationException("Quantidade base deve ser positiva");
         }
 
-        Lote lote = Lote.novo(cmd.insumoId, cmd.fornecedorId, cmd.notaFiscalId, cmd.numeroLote,
+        Lote lote = Lote.novoRastreado(cmd.insumoId, cmd.fornecedorId, cmd.notaFiscalId, cmd.numeroLote,
                 cmd.dataFabricacao, cmd.dataValidade, cmd.valorUnitario, clock.instant());
         lote = loteRepo.save(lote);
 

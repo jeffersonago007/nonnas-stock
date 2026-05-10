@@ -85,7 +85,8 @@ public class LancarNotaFiscalUseCase {
                     item.valorUnitario,
                     item.unidadeMedidaId,
                     item.quantidade,
-                    item.quantidade));
+                    item.quantidade,
+                    item.controlaValidade));
         }
         var movCmd = new RegistrarEntradaMultiItemUseCase.Comando(
                 cmd.filialId, cmd.usuarioId, TipoMovimentacao.ENTRADA_NF,
@@ -158,6 +159,10 @@ public class LancarNotaFiscalUseCase {
             BigDecimal valorUnitario,
             BigDecimal valorTotal,
             String lote,
-            LocalDate dataValidade
+            LocalDate dataValidade,
+            // Reflete o flag do insumo no momento do lançamento. true = lote
+            // RASTREADO (FEFO); false = encaminha pro lote AGREGADOR. Caller
+            // (orquestrador em nfe-importer) é responsável por preencher.
+            boolean controlaValidade
     ) {}
 }

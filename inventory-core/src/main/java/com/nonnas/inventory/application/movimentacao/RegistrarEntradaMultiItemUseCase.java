@@ -34,15 +34,18 @@ public class RegistrarEntradaMultiItemUseCase {
 
     private final LoteRepository loteRepo;
     private final MovimentacaoRepository movRepo;
+    private final BuscarOuCriarLoteAgregadorUseCase agregador;
     private final ApplicationEventPublisher eventos;
     private final Clock clock;
 
     public RegistrarEntradaMultiItemUseCase(LoteRepository loteRepo,
                                             MovimentacaoRepository movRepo,
+                                            BuscarOuCriarLoteAgregadorUseCase agregador,
                                             ApplicationEventPublisher eventos,
                                             Clock clock) {
         this.loteRepo = loteRepo;
         this.movRepo = movRepo;
+        this.agregador = agregador;
         this.eventos = eventos;
         this.clock = clock;
     }
@@ -62,17 +65,29 @@ public class RegistrarEntradaMultiItemUseCase {
             if (item.valorUnitario == null || item.valorUnitario.signum() < 0) {
                 throw new ValidationException("Valor unitário não pode ser negativo");
             }
-            if (item.numeroLote == null || item.numeroLote.isBlank()) {
-                throw new ValidationException("Número do lote é obrigatório");
+            // numeroLote só é obrigatório no regime RASTREADO (controla_validade=true).
+            // Quando false → roteamos para o lote AGREGADOR e ignoramos o número.
+            if (item.controlaValidade && (item.numeroLote == null || item.numeroLote.isBlank())) {
+                throw new ValidationException("Número do lote é obrigatório para insumo que controla validade");
             }
         }
 
         List<ItemMovimentacao> consolidados = new ArrayList<>();
         for (var item : cmd.itens) {
-            Lote lote = Lote.novo(item.insumoId, item.fornecedorId, item.notaFiscalId,
-                    item.numeroLote, item.dataFabricacao, item.dataValidade,
-                    item.valorUnitario, clock.instant());
-            lote = loteRepo.save(lote);
+            Lote lote;
+            if (item.controlaValidade) {
+                lote = loteRepo.save(Lote.novoRastreado(item.insumoId, item.fornecedorId,
+                        item.notaFiscalId, item.numeroLote,
+                        item.dataFabricacao, item.dataValidade,
+                        item.valorUnitario, clock.instant()));
+            } else {
+                // Lote único do insumo. NF / fornecedor / valor unitário do item
+                // ficam refletidos apenas no histórico de movimentação — o lote
+                // em si é "balde" e não acumula esses metadados (decisão consciente:
+                // valor unitário do agregador fica zerado, custo médio ficaria em
+                // T futuro).
+                lote = agregador.execute(item.insumoId);
+            }
 
             ItemMovimentacao mi = ItemMovimentacao.novo(
                     item.insumoId, lote.id(), item.unidadeLancamentoId,
@@ -109,6 +124,7 @@ public class RegistrarEntradaMultiItemUseCase {
             BigDecimal valorUnitario,
             UUID unidadeLancamentoId,
             BigDecimal quantidadeLancada,
-            BigDecimal quantidadeBase
+            BigDecimal quantidadeBase,
+            boolean controlaValidade
     ) {}
 }

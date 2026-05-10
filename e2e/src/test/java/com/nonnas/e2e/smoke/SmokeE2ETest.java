@@ -70,6 +70,13 @@ class SmokeE2ETest extends AbstractE2ETest {
         unidadeKgCodigo = "KG";
         categoriaNome = unique("Categoria E2E");
         categoriaId = api.criarCategoria(adminToken, categoriaNome);
+
+        // T19 — admin section disponível e tela de categorias lista o que a API
+        // criou. Validação sem PageObject novo, foca em sidebar + render.
+        page.navigate(BASE_URL + "/admin/categorias");
+        page.waitForLoadState();
+        assertThat(page.locator("h1:has-text(\"Categorias de insumo\")").isVisible()).isTrue();
+        assertThat(page.locator("text=" + categoriaNome).first().isVisible()).isTrue();
     }
 
     @Test

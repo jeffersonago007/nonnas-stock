@@ -30,6 +30,11 @@ public final class UnidadeMedida {
         return new UnidadeMedida(UnidadeMedidaId.generate(), codigo, nome, tipo, true, agora, agora);
     }
 
+    public void renomear(String novoNome, Instant agora) {
+        this.nome = validarNome(novoNome);
+        this.updatedAt = agora;
+    }
+
     public void desativar(Instant agora) { this.ativa = false; this.updatedAt = agora; }
     public void ativar(Instant agora) { this.ativa = true; this.updatedAt = agora; }
 

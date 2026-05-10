@@ -14,6 +14,10 @@ public final class CategoriaInsumoDto {
             UUID categoriaPaiId
     ) {}
 
+    public record UpdateRequest(
+            @NotBlank @Size(max = 255) String nome
+    ) {}
+
     public record Response(
             UUID id,
             UUID categoriaPaiId,

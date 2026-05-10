@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/nonnas_stock
-    username: postgres
-    password: postgres
+    username: ${SPRING_DATASOURCE_USERNAME:nonnas}
+    password: ${SPRING_DATASOURCE_PASSWORD:nonnas_dev}
 
 nonnas:
   cors:

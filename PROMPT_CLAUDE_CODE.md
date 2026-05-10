@@ -1046,6 +1046,86 @@ Cada tarefa: objetivo, pré-requisitos, entregáveis, critérios de aceitação.
 
 ---
 
+### T19 — Telas administrativas (Empresa, Usuário, Categoria, Unidade)
+
+**Objetivo:** fechar o gap do MVP 1.0 (seção 1.2) entregando telas administrativas para
+as 4 entidades que têm dado/endpoint mas nunca ganharam UI: Empresa, Usuário,
+Categoria de Insumo, Unidade de Medida. Sem essas telas, dropdowns dos formulários de
+Filial e Insumo nascem vazios e travam o operador.
+
+**Pré-requisitos:** T18 (v1.0.0 entregue).
+
+**Entregáveis:**
+
+Backend (`catalog` + `identity`):
+- 4 use cases novos por entidade (Buscar/Atualizar/Ativar/Desativar) — total 16 use cases
+  seguindo padrão estabelecido em T13.
+- 4 endpoints novos por entidade — total 16: `GET /{id}`, `PUT /{id}`,
+  `PATCH /{id}/ativar`, `PATCH /{id}/desativar`.
+- `UpdateRequest` em cada DTO restringido aos campos editáveis:
+  - `CategoriaInsumo`: `nome` (categoria_pai_id imutável após criação).
+  - `UnidadeMedida`: `nome` (codigo e tipo imutáveis — codigo é UNIQUE).
+  - `Empresa`: `razao_social` (cnpj imutável — UNIQUE).
+  - `Usuario`: `nome` (email e senha em fluxos separados, fora deste T-task).
+- `@PreAuthorize` consistente em todos os endpoints novos:
+  - `categorias-insumo` e `unidades-medida`: `hasAnyRole('ADMIN','GERENTE')`.
+  - `empresas`: `hasRole('ADMIN')`.
+  - `usuarios`: `hasAnyRole('ADMIN','GERENTE')`.
+- Desativar é soft-delete (`ativo=false`/`ativa=false`), nunca DELETE físico.
+  Ativar é idempotente.
+- IT por entidade cobrindo: criar+listar (já existe), buscar/{id}, editar (campo
+  editável e bloqueio dos imutáveis), ativar/desativar, 401 sem JWT, 403 com role
+  insuficiente.
+
+Frontend (`frontend`):
+- 4 features novas em `frontend/src/features/admin/{categorias,unidades,empresas,usuarios}/`,
+  cada uma com `api.ts` + `<Entity>Page.tsx` + `<Entity>FormDialog.tsx` espelhando o
+  padrão dos CRUDs T13.
+- Sidebar ganha separador + seção "Administração" abaixo de "Relatórios" com 4 itens
+  (icons lucide: Tag, Ruler, Building, Users).
+- `RoleGuard` componente e hook (`useHasRole`) que ocultam itens do menu e bloqueiam
+  acesso direto a rotas sem permissão (redirect a `/dashboard` + toast).
+- 4 rotas novas em `AppRouter.tsx`, todas envoltas por `ProtectedRoute` + `RoleGuard`.
+- Combo "Empresa" no `FilialFormDialog` passa a ter dados disponíveis a partir do
+  primeiro cadastro feito na nova tela — sem alteração do componente.
+
+E2E (`e2e`):
+- Estender `SmokeE2ETest` com cenário admin: ADMIN cria empresa → cria filial vinculada
+  → cria categoria → cria insumo usando essa categoria. Reusa `LoginPage` e
+  `ApiClient`. Cenário roda antes do fluxo de carga inicial.
+
+Documentação:
+- `STATUS.md` atualizado, "Ordem de execução decidida" estendida com T19.
+- Não cria ADR — não há decisão arquitetural nova; o padrão é o mesmo do T13.
+
+**Critérios de aceitação:**
+- Reactor `mvn verify` verde, 14/14 SUCCESS, ArchUnit sem violações novas.
+- Cobertura mantida: ≥85% domain, ≥75% application, ≥70% global.
+- 4 telas administrativas acessíveis em `/admin/{categorias,unidades,empresas,usuarios}`.
+- Sidebar mostra seção "Administração" só para usuários com role apropriado;
+  para `OPERADOR`/`CONSULTA` a seção não aparece.
+- Acesso direto a `/admin/empresas` sem role `ADMIN` redireciona para `/dashboard`
+  com toast informativo.
+- Modal "Nova Filial" passa a listar empresas cadastradas. Modal "Novo Insumo" passa
+  a listar categorias cadastradas pela tela. Sem regressão nos modais existentes.
+- Edição parcial respeita imutáveis: tentar editar `cnpj` da empresa, `email` do
+  usuário, `codigo` da unidade ou `categoria_pai_id` da categoria via PUT retorna
+  o registro inalterado nesses campos.
+- Smoke E2E verde, incluindo o novo cenário admin.
+- `npm run build` e `npm test` verdes.
+- Commit no padrão Conventional Commits (`feat(admin): T19 — telas administrativas...`).
+- `STATUS.md` atualizado com data, hash e nota.
+
+**Não-escopo (registrado para ondas futuras):**
+- Hierarquia `categoria_pai_id` na UI (combo "Categoria pai").
+- Página de Conversões de Unidade (ortogonal ao CRUD de Unidade).
+- Reset/troca de senha de usuário (precisa fluxo de auth dedicado).
+- UI de feature flags (T18 deixou seed e service; UI fica para depois).
+- Página de canais de venda (MVP 1.2).
+- Wizard 2FA pelo próprio usuário (gap T16 já registrado).
+
+---
+
 ## 11. Definition of Done
 
 ### Por tarefa

@@ -14,6 +14,10 @@ public final class EmpresaDto {
             @NotBlank String cnpj
     ) {}
 
+    public record UpdateRequest(
+            @NotBlank @Size(max = 255) String razaoSocial
+    ) {}
+
     public record Response(
             UUID id,
             String razaoSocial,

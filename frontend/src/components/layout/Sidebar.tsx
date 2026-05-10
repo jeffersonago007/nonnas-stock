@@ -11,14 +11,22 @@ import {
   History,
   Bell,
   BarChart3,
+  Tag,
+  Ruler,
+  Building,
+  Users,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/features/auth/store';
+import { hasAnyRole } from '@/routes/RoleGuard';
 
 interface NavItem {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
+  /** Roles permitidos. Vazio/undefined = qualquer autenticado. */
+  allow?: string[];
 }
 
 const navItems: NavItem[] = [
@@ -35,11 +43,25 @@ const navItems: NavItem[] = [
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
 
+const adminItems: NavItem[] = [
+  { to: '/admin/categorias', label: 'Categorias', icon: Tag, allow: ['ADMIN', 'GERENTE'] },
+  { to: '/admin/unidades', label: 'Unidades', icon: Ruler, allow: ['ADMIN', 'GERENTE'] },
+  { to: '/admin/empresas', label: 'Empresas', icon: Building, allow: ['ADMIN'] },
+  { to: '/admin/usuarios', label: 'Usuários', icon: Users, allow: ['ADMIN', 'GERENTE'] },
+];
+
 export function Sidebar() {
+  const perfil = useAuthStore((s) => s.user?.perfil);
+  const adminVisible = adminItems.filter((item) => !item.allow || hasAnyRole(perfil, item.allow));
+
   return (
     <aside className="hidden w-60 flex-col border-r border-border bg-neutral-surface md:flex">
-      <div className="flex h-16 items-center border-b border-border px-6">
-        <span className="font-display text-xl text-primary">Nonnas</span>
+      <div className="flex h-36 items-center justify-center border-b border-border px-2">
+        <img
+          src="/logo-nonnas.png"
+          alt="Nonnas Paola — Churrascaria & Pizzaria"
+          className="h-32 w-auto object-contain mix-blend-multiply"
+        />
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map(({ to, label, icon: Icon }) => (
@@ -59,6 +81,31 @@ export function Sidebar() {
             {label}
           </NavLink>
         ))}
+
+        {adminVisible.length > 0 && (
+          <>
+            <div className="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Administração
+            </div>
+            {adminVisible.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground hover:bg-muted',
+                  )
+                }
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
     </aside>
   );

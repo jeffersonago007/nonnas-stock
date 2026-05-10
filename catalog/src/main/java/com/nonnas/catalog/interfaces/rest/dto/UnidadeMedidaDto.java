@@ -4,6 +4,7 @@ import com.nonnas.catalog.domain.UnidadeMedida;
 import com.nonnas.catalog.domain.UnidadeMedidaTipo;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -14,6 +15,10 @@ public final class UnidadeMedidaDto {
             @NotBlank String codigo,
             @NotBlank String nome,
             @NotNull UnidadeMedidaTipo tipo
+    ) {}
+
+    public record UpdateRequest(
+            @NotBlank @Size(max = 100) String nome
     ) {}
 
     public record Response(

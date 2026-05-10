@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { tokenStorage } from '@/lib/tokenStorage';
+import { userStorage } from '@/lib/userStorage';
 import { logoutBackend } from './api';
 
 export interface AuthUser {
@@ -20,9 +21,10 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: tokenStorage.get(),
-  user: null,
+  user: userStorage.get(),
   setSession: (token, user) => {
     tokenStorage.set(token);
+    userStorage.set(user);
     set({ token, user });
   },
   logout: async () => {
@@ -30,6 +32,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     // nesse momento. Falhas no backend são silenciosas (ver logoutBackend).
     await logoutBackend();
     tokenStorage.clear();
+    userStorage.clear();
     set({ token: null, user: null });
   },
 }));

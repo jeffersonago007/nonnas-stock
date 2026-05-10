@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { extractProblem } from '@/lib/api';
 import { login } from './api';
 import { useAuthStore } from './store';
@@ -54,8 +54,12 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-bg px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="font-display text-3xl">Nonnas Stock</CardTitle>
+        <CardHeader className="space-y-3 text-center">
+          <img
+            src="/logo-nonnas.png"
+            alt="Nonnas Paola — Churrascaria & Pizzaria"
+            className="mx-auto h-32 w-auto object-contain"
+          />
           <CardDescription>Acesse o painel de controle de estoque</CardDescription>
         </CardHeader>
         <CardContent>

@@ -21,6 +21,10 @@ public final class UsuarioDto {
             @NotNull Perfil perfil
     ) {}
 
+    public record UpdateRequest(
+            @NotBlank @Size(max = 255) String nome
+    ) {}
+
     public record Response(
             UUID id,
             UUID filialId,

@@ -1,6 +1,7 @@
 package com.nonnas.identity.interfaces.rest;
 
 import com.nonnas.identity.application.auth.AutenticarUseCase;
+import com.nonnas.identity.application.auth.LoginResult;
 import com.nonnas.identity.application.auth.LogoutUseCase;
 import com.nonnas.identity.application.auth.RefreshTokenUseCase;
 import com.nonnas.identity.application.auth.TokenPair;
@@ -29,9 +30,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public AuthDto.TokenResponse login(@Valid @RequestBody AuthDto.LoginRequest req) {
-        TokenPair pair = autenticar.execute(req.email(), req.senha());
-        return AuthDto.TokenResponse.from(pair);
+    public AuthDto.LoginResponse login(@Valid @RequestBody AuthDto.LoginRequest req) {
+        LoginResult result = autenticar.execute(req.email(), req.senha());
+        return AuthDto.LoginResponse.from(result);
     }
 
     @PostMapping("/refresh")

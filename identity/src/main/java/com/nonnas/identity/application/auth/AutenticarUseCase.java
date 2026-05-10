@@ -59,7 +59,7 @@ public class AutenticarUseCase {
      * nunca acumula contagem.
      */
     @Transactional(noRollbackFor = BusinessRuleException.class)
-    public TokenPair execute(String emailRaw, String senhaPlaintext) {
+    public LoginResult execute(String emailRaw, String senhaPlaintext) {
         Email email;
         try {
             email = Email.of(emailRaw);
@@ -111,6 +111,7 @@ public class AutenticarUseCase {
 
         JwtTokenProvider.IssuedToken access = tokenProvider.issueAccess(usuario);
         JwtTokenProvider.IssuedToken refresh = refreshTokens.issueNewFamily(usuario);
-        return new TokenPair(access.value(), access.expiresAt(), refresh.value(), refresh.expiresAt());
+        TokenPair tokens = new TokenPair(access.value(), access.expiresAt(), refresh.value(), refresh.expiresAt());
+        return new LoginResult(tokens, usuario);
     }
 }

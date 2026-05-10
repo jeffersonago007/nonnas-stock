@@ -8,8 +8,10 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string;
+  accessExpiresAt: string;
   refreshToken: string;
-  expiresInSeconds: number;
+  refreshExpiresAt: string;
+  tokenType: string;
   usuario: AuthUser;
 }
 

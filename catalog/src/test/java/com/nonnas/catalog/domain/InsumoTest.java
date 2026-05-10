@@ -26,10 +26,10 @@ class InsumoTest {
     }
 
     @Test
-    void renomearAtualiza() {
+    void renomearAtualizaENormalizaUppercase() {
         Insumo i = novoInsumo();
         i.renomear("Mussarela Light", T0);
-        assertThat(i.nome()).isEqualTo("Mussarela Light");
+        assertThat(i.nome()).isEqualTo("MUSSARELA LIGHT");
     }
 
     @Test

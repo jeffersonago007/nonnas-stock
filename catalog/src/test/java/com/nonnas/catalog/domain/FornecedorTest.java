@@ -13,17 +13,17 @@ class FornecedorTest {
     private static final Instant T0 = Instant.parse("2026-05-08T12:00:00Z");
 
     @Test
-    void novoVemAtivo() {
+    void novoVemAtivoComRazaoNormalizadaUppercase() {
         Fornecedor f = Fornecedor.novo("Atacado SP Ltda", Cnpj.of("11444777000161"), T0);
         assertThat(f.ativo()).isTrue();
-        assertThat(f.razaoSocial()).isEqualTo("Atacado SP Ltda");
+        assertThat(f.razaoSocial()).isEqualTo("ATACADO SP LTDA");
     }
 
     @Test
-    void renomear() {
+    void renomearTambemNormalizaUppercase() {
         Fornecedor f = Fornecedor.novo("Atacado SP", Cnpj.of("11444777000161"), T0);
         f.renomear("Atacado SP Ltda", T0);
-        assertThat(f.razaoSocial()).isEqualTo("Atacado SP Ltda");
+        assertThat(f.razaoSocial()).isEqualTo("ATACADO SP LTDA");
     }
 
     @Test

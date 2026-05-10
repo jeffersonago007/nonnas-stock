@@ -13,11 +13,11 @@ class ProdutoVendavelTest {
     private final Instant agora = Instant.parse("2026-05-08T20:00:00Z");
 
     @Test
-    void novo_aceitaCamposValidos() {
+    void novo_aceitaCamposValidosENormalizaNomeUppercase() {
         var p = ProdutoVendavel.novo("PIZ-001", "Pizza Margherita", "Pizza", agora);
 
         assertThat(p.codigo()).isEqualTo("PIZ-001");
-        assertThat(p.nome()).isEqualTo("Pizza Margherita");
+        assertThat(p.nome()).isEqualTo("PIZZA MARGHERITA");
         assertThat(p.categoria()).isEqualTo("Pizza");
         assertThat(p.ativo()).isTrue();
         assertThat(p.createdAt()).isEqualTo(agora);
@@ -53,7 +53,7 @@ class ProdutoVendavelTest {
 
         p.renomear("Pizza Margherita", depois);
 
-        assertThat(p.nome()).isEqualTo("Pizza Margherita");
+        assertThat(p.nome()).isEqualTo("PIZZA MARGHERITA");
         assertThat(p.updatedAt()).isEqualTo(depois);
     }
 

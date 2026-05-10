@@ -3,6 +3,7 @@ package com.nonnas.catalog.domain;
 import com.nonnas.sharedkernel.ValidationException;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Objects;
 
 public final class Fornecedor {
@@ -36,6 +37,11 @@ public final class Fornecedor {
     public void desativar(Instant agora) { this.ativo = false; this.updatedAt = agora; }
     public void ativar(Instant agora) { this.ativo = true; this.updatedAt = agora; }
 
+    /**
+     * Razão social sempre normalizada em UPPERCASE — convenção de cadastro
+     * para alinhar com dados que chegam via NF-e (que vêm em maiúsculas) e
+     * evitar duplicidade aparente por diferença de capitalização.
+     */
     private static String validarRazao(String value) {
         if (value == null || value.isBlank()) {
             throw new ValidationException("Razão social é obrigatória");
@@ -44,7 +50,7 @@ public final class Fornecedor {
         if (trimmed.length() > 255) {
             throw new ValidationException("Razão social não pode exceder 255 caracteres");
         }
-        return trimmed;
+        return trimmed.toUpperCase(Locale.ROOT);
     }
 
     public FornecedorId id() { return id; }

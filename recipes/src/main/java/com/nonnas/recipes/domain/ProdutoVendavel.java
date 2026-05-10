@@ -3,6 +3,7 @@ package com.nonnas.recipes.domain;
 import com.nonnas.sharedkernel.ValidationException;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -58,6 +59,11 @@ public final class ProdutoVendavel {
         return c;
     }
 
+    /**
+     * Nome sempre normalizado em UPPERCASE — convenção de cadastro para
+     * alinhar com dados que chegam via NF-e (que vêm em maiúsculas) e
+     * evitar duplicidade aparente por diferença de capitalização.
+     */
     private static String validarNome(String nome) {
         if (nome == null || nome.isBlank()) {
             throw new ValidationException("Nome do produto vendável é obrigatório");
@@ -66,7 +72,7 @@ public final class ProdutoVendavel {
         if (n.length() > 150) {
             throw new ValidationException("Nome do produto vendável não pode exceder 150 caracteres");
         }
-        return n;
+        return n.toUpperCase(Locale.ROOT);
     }
 
     private static String validarCategoria(String categoria) {

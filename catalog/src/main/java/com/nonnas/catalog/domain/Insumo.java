@@ -3,6 +3,7 @@ package com.nonnas.catalog.domain;
 import com.nonnas.sharedkernel.ValidationException;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Objects;
 
 public final class Insumo {
@@ -59,6 +60,11 @@ public final class Insumo {
         return c;
     }
 
+    /**
+     * Nome sempre normalizado em UPPERCASE — convenção de cadastro para
+     * alinhar com dados que chegam via NF-e (que vêm em maiúsculas) e
+     * evitar duplicidade aparente por diferença de capitalização.
+     */
     private static String validarNome(String nome) {
         if (nome == null || nome.isBlank()) {
             throw new ValidationException("Nome do insumo é obrigatório");
@@ -67,7 +73,7 @@ public final class Insumo {
         if (n.length() > 255) {
             throw new ValidationException("Nome do insumo não pode exceder 255 caracteres");
         }
-        return n;
+        return n.toUpperCase(Locale.ROOT);
     }
 
     public InsumoId id() { return id; }

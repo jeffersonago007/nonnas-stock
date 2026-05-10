@@ -1,11 +1,17 @@
 package com.nonnas.catalog.infrastructure.persistence;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -31,6 +37,10 @@ public class FornecedorEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "fornecedor_id", nullable = false, updatable = false)
+    private List<ContatoFornecedorEntity> contatos = new ArrayList<>();
+
     public FornecedorEntity() {}
 
     public UUID getId() { return id; }
@@ -45,4 +55,6 @@ public class FornecedorEntity {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public List<ContatoFornecedorEntity> getContatos() { return contatos; }
+    public void setContatos(List<ContatoFornecedorEntity> contatos) { this.contatos = contatos; }
 }

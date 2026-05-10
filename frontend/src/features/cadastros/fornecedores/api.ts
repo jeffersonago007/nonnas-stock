@@ -1,11 +1,19 @@
 import { api } from '@/lib/api';
 
+export interface Contato {
+  id?: string;
+  nome?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+}
+
 export interface Fornecedor {
   id: string;
   razaoSocial: string;
   cnpj: string;
   cnpjFormatado: string;
   ativo: boolean;
+  contatos: Contato[];
   createdAt: string;
   updatedAt: string;
 }
@@ -13,10 +21,12 @@ export interface Fornecedor {
 export interface FornecedorCreateRequest {
   razaoSocial: string;
   cnpj: string;
+  contatos?: Contato[];
 }
 
 export interface FornecedorUpdateRequest {
   razaoSocial: string;
+  contatos?: Contato[];
 }
 
 export interface FornecedoresFiltro {

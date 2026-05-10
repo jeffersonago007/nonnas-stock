@@ -51,7 +51,9 @@ public class FornecedorController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public FornecedorDto.Response create(@Valid @RequestBody FornecedorDto.CreateRequest req) {
-        return FornecedorDto.Response.from(criar.execute(req.razaoSocial(), req.cnpj()));
+        var contatos = req.contatos() == null ? java.util.List.<com.nonnas.catalog.domain.ContatoFornecedor>of()
+                : req.contatos().stream().map(FornecedorDto.ContatoRequest::toDomain).toList();
+        return FornecedorDto.Response.from(criar.execute(req.razaoSocial(), req.cnpj(), contatos));
     }
 
     @GetMapping
@@ -70,7 +72,9 @@ public class FornecedorController {
     @PutMapping("/{id}")
     public FornecedorDto.Response update(@PathVariable UUID id,
                                          @Valid @RequestBody FornecedorDto.UpdateRequest req) {
-        return FornecedorDto.Response.from(atualizar.execute(id, req.razaoSocial()));
+        var contatos = req.contatos() == null ? null
+                : req.contatos().stream().map(FornecedorDto.ContatoRequest::toDomain).toList();
+        return FornecedorDto.Response.from(atualizar.execute(id, req.razaoSocial(), contatos));
     }
 
     @PatchMapping("/{id}/desativar")

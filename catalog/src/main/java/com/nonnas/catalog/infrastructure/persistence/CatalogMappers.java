@@ -3,6 +3,7 @@ package com.nonnas.catalog.infrastructure.persistence;
 import com.nonnas.catalog.domain.CategoriaInsumo;
 import com.nonnas.catalog.domain.CategoriaInsumoId;
 import com.nonnas.catalog.domain.Cnpj;
+import com.nonnas.catalog.domain.ContatoFornecedor;
 import com.nonnas.catalog.domain.ConversaoUnidade;
 import com.nonnas.catalog.domain.Fornecedor;
 import com.nonnas.catalog.domain.FornecedorId;
@@ -97,18 +98,40 @@ final class CatalogMappers {
         e.setAtivo(f.ativo());
         e.setCreatedAt(f.createdAt());
         e.setUpdatedAt(f.updatedAt());
+        e.getContatos().clear();
+        for (ContatoFornecedor c : f.contatos()) {
+            e.getContatos().add(toEntity(c, f.createdAt()));
+        }
         return e;
     }
 
     static Fornecedor toDomain(FornecedorEntity e) {
+        java.util.List<ContatoFornecedor> contatos = e.getContatos().stream()
+                .map(CatalogMappers::toDomain).toList();
         return new Fornecedor(
                 FornecedorId.of(e.getId()),
                 e.getRazaoSocial(),
                 Cnpj.of(e.getCnpj()),
                 e.isAtivo(),
+                contatos,
                 e.getCreatedAt(),
                 e.getUpdatedAt()
         );
+    }
+
+    // ContatoFornecedor
+    static ContatoFornecedorEntity toEntity(ContatoFornecedor c, java.time.Instant agora) {
+        ContatoFornecedorEntity e = new ContatoFornecedorEntity();
+        e.setId(c.id());
+        e.setNome(c.nomeOpt().orElse(null));
+        e.setEmail(c.emailOpt().orElse(null));
+        e.setTelefone(c.telefoneOpt().orElse(null));
+        e.setCreatedAt(agora);
+        return e;
+    }
+
+    static ContatoFornecedor toDomain(ContatoFornecedorEntity e) {
+        return new ContatoFornecedor(e.getId(), e.getNome(), e.getEmail(), e.getTelefone());
     }
 
     // Insumo

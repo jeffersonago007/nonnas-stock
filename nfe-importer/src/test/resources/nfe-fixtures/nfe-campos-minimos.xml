@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+  <infNFe Id="NFe35260511111111000111550010000007891234567892" versao="4.00">
+    <ide>
+      <mod>55</mod>
+      <serie>2</serie>
+      <nNF>789</nNF>
+      <dhEmi>2026-05-09T18:45:00-03:00</dhEmi>
+      <tpNF>1</tpNF>
+    </ide>
+    <emit>
+      <CNPJ>11111111000111</CNPJ>
+      <xNome>Fornecedor Minimo LTDA</xNome>
+    </emit>
+    <det nItem="1">
+      <prod>
+        <cProd>X1</cProd>
+        <xProd>Item sem NCM</xProd>
+        <uCom>UN</uCom>
+        <qCom>5.0000</qCom>
+        <vUnCom>10.0000</vUnCom>
+        <vProd>50.00</vProd>
+      </prod>
+    </det>
+    <total>
+      <ICMSTot>
+        <vNF>50.00</vNF>
+      </ICMSTot>
+    </total>
+  </infNFe>
+</NFe>

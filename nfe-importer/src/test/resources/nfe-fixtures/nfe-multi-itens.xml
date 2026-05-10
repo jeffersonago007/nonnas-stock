@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe>
+    <infNFe Id="NFe35260598765432000180550010000004561234567891" versao="4.00">
+      <ide>
+        <cUF>35</cUF>
+        <cNF>87654321</cNF>
+        <natOp>VENDA DE MERCADORIAS</natOp>
+        <mod>55</mod>
+        <serie>1</serie>
+        <nNF>456</nNF>
+        <dhEmi>2026-05-10T14:30:00-03:00</dhEmi>
+        <tpNF>1</tpNF>
+        <cMunFG>3550308</cMunFG>
+        <tpEmis>1</tpEmis>
+        <cDV>1</cDV>
+        <tpAmb>1</tpAmb>
+        <finNFe>1</finNFe>
+      </ide>
+      <emit>
+        <CNPJ>98765432000180</CNPJ>
+        <xNome>Atacado de Pizzaria Sao Paulo SA</xNome>
+        <IE>987654321098</IE>
+        <CRT>3</CRT>
+      </emit>
+      <det nItem="1">
+        <prod>
+          <cProd>MUS-CX-5KG</cProd>
+          <xProd>Mussarela em caixa de 5kg</xProd>
+          <NCM>04063000</NCM>
+          <CFOP>5102</CFOP>
+          <uCom>CX</uCom>
+          <qCom>10.0000</qCom>
+          <vUnCom>120.0000</vUnCom>
+          <vProd>1200.00</vProd>
+          <indTot>1</indTot>
+        </prod>
+      </det>
+      <det nItem="2">
+        <prod>
+          <cProd>FAR-25KG</cProd>
+          <xProd>Farinha de trigo tipo 1 saco 25kg</xProd>
+          <NCM>11010010</NCM>
+          <CFOP>5102</CFOP>
+          <uCom>SC</uCom>
+          <qCom>20.0000</qCom>
+          <vUnCom>85.5000</vUnCom>
+          <vProd>1710.00</vProd>
+          <indTot>1</indTot>
+        </prod>
+      </det>
+      <det nItem="3">
+        <prod>
+          <cProd>OLE-LT</cProd>
+          <xProd>Oleo de soja garrafa 900ml</xProd>
+          <NCM>15071000</NCM>
+          <CFOP>5102</CFOP>
+          <uCom>UN</uCom>
+          <qCom>48.0000</qCom>
+          <vUnCom>7.2500</vUnCom>
+          <vProd>348.00</vProd>
+          <indTot>1</indTot>
+        </prod>
+      </det>
+      <total>
+        <ICMSTot>
+          <vProd>3258.00</vProd>
+          <vNF>3258.00</vNF>
+        </ICMSTot>
+      </total>
+    </infNFe>
+  </NFe>
+</nfeProc>

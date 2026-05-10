@@ -1126,6 +1126,146 @@ Documentação:
 
 ---
 
+### T20 — Lançamento de Nota Fiscal (manual + import XML NF-e)
+
+**Objetivo:** dar ao operador um fluxo de trabalho centrado na **nota fiscal**
+(em vez de lançamento item-a-item de movimentação) e aproveitar o XML da
+NF-e modelo 55 pra preencher fornecedor + insumos automaticamente. Cobre o
+gap operacional óbvio do dia-a-dia ("chegou nota, lança"). Antecipa parte
+da onda MVP 1.1 (Importador NF-e) descrita na seção 1.2.
+
+**Pré-requisitos:** T19 (telas administrativas, pra editar fornecedor/insumo
+após criação automática).
+
+**Entregáveis:**
+
+Backend (`nfe-importer` + nova entidade em `operations`):
+- Módulo `nfe-importer` (placeholder T00) ganha conteúdo:
+  - Domain `NotaFiscalLida` (record com `EmitenteLido`, lista de `ItemLido`,
+    chave NFe, número, série, data emissão, valor total).
+  - `XmlNfeParser` lê NF-e modelo 55 via JAXP/Stax (sem dep nova; usa
+    `javax.xml.parsers` da JDK), valida assinatura **não** (escopo de
+    importador, não de SEFAZ).
+  - Adapter `NotaFiscalLidaToProcessamentoMapper` traduz para o DTO de
+    operação.
+- Nova entidade `NotaFiscal` em `operations` (migration `V0XX__create_notas_fiscais.sql`):
+  - Tabela `notas_fiscais`: id, fornecedor_id, filial_id, numero, serie,
+    chave_nfe (UNIQUE — bloqueia reentrada da mesma nota), data_emissao,
+    data_lancamento, valor_total, observacao, created_by_usuario_id.
+  - Tabela `notas_fiscais_itens`: id, nota_fiscal_id, insumo_id,
+    codigo_fornecedor (cProd da nota, ou manual), descricao_origem,
+    quantidade, unidade_medida_id, valor_unitario, lote, data_validade.
+- Tabela de **de-para fornecedor → insumo** (decisão 4c):
+  - `fornecedor_insumo_depara`: id, fornecedor_id, codigo_fornecedor (cProd),
+    insumo_id, created_at, last_used_at.
+  - UNIQUE (fornecedor_id, codigo_fornecedor).
+  - Aprendizado automático: ao confirmar lançamento, cada item registra/
+    atualiza linha do de-para. Próxima nota do mesmo fornecedor consulta
+    o de-para antes de sugerir "novo insumo".
+- Use case `ProcessarNotaFiscal`:
+  - Input: payload já editado (fornecedor resolvido por id ou {cnpj+razao
+    pra criar}, lista de itens cada um resolvido por insumo_id ou
+    {codigo+nome+unidadeBaseId pra criar}).
+  - Lógica:
+    1. Idempotência: rejeita se já existe nota com mesma chave_nfe (HTTP 409).
+    2. Localiza/cria Fornecedor (se vier {cnpj+razao}, valida formato CNPJ).
+    3. Pra cada item: localiza/cria Insumo. Insumo novo nasce com
+       `categoria_id` = "A classificar" (decisão 2a, seed), `controla_lote
+       = true`, `controla_validade = true` (decisão 3a).
+    4. Persiste NotaFiscal + itens.
+    5. Cria Movimentação `ENTRADA_NF` multi-item via `RegistrarEntradaMultiItemUseCase`
+       já existente em inventory-core (T05/T06), com `documento_origem_tipo
+       = "NOTA_FISCAL"`, `documento_origem_id = nota.id`.
+    6. Atualiza de-para com cada par (fornecedor_id, codigo_fornecedor) →
+       insumo_id.
+- Endpoints REST em `nfe-importer/interfaces/rest/NotaFiscalController`:
+  - `POST /api/v1/notas-fiscais/preview-xml` (multipart .xml) — devolve
+    `NotaFiscalLida` parseada + sugestão de match por item (insumo
+    existente via de-para, ou "criar novo" como fallback). **Não persiste.**
+  - `POST /api/v1/notas-fiscais/lancar` (JSON editado) — executa
+    ProcessarNotaFiscal.
+  - `GET /api/v1/notas-fiscais` (filtro filial+período) — lista lançadas.
+  - `GET /api/v1/notas-fiscais/{id}` — detalhe.
+- `@PreAuthorize` em todos: `hasAnyRole('ADMIN','GERENTE','OPERADOR')`
+  (operador precisa lançar; CONSULTA fica de fora).
+- Seed `V0XX__seed_categoria_a_classificar.sql` cria categoria fixa
+  "A classificar" com id determinístico (UUID literal) para o use case
+  referenciar via constante.
+
+Frontend (`features/operacoes/notas-fiscais/`):
+- Item novo "Notas fiscais" no menu sidebar (Operações), entre
+  "Movimentações" e "Transferências". Ícone lucide `FileText`.
+- `NotasFiscaisPage` lista notas lançadas (filiais + período), igual
+  padrão T14.
+- `LancarNotaFiscalPage` (rota `/notas-fiscais/lancar`):
+  - Tabs `[Upload XML]` / `[Manual]` no topo.
+  - Upload XML: file input → `POST /preview-xml` → preenche o formulário
+    abaixo com sugestões. Usuário revisa/edita antes de confirmar.
+  - Manual: mesmo formulário em branco.
+  - Cabeçalho: filial (combo, default = filtro global), data (default
+    hoje), fornecedor (combo + "+ Novo fornecedor" abre `FornecedorFormDialog`
+    inline e auto-seleciona resultado), nº nota, série, chave NFe.
+  - Itens (tabela editável estilo `useFieldArray`): insumo (combo + "+ Novo
+    insumo" abre `InsumoFormDialog` inline), código fornecedor (cProd),
+    qtd, unidade-base (read-only do insumo), valor unit., lote, validade.
+  - Botão "Lançar" → `POST /lancar` → toast + redirect a `/notas-fiscais`.
+- Reuso obrigatório dos `FormDialog` existentes (`FornecedorFormDialog`,
+  `InsumoFormDialog`) pra cadastro inline — não duplicar formulário.
+
+Testes:
+- `nfe-importer`: `XmlNfeParserTest` (unit) com 3 fixtures XML — NF-e
+  modelo 55 simples, com múltiplos itens, com campos opcionais ausentes;
+  `NotaFiscalControllerIT` — preview-xml + lançar end-to-end via Zonky.
+- `operations` (estendido): `ProcessarNotaFiscalIT` cobre fornecedor novo
+  + insumo novo + idempotência por chave NFe + aprendizado de de-para
+  (segunda nota do mesmo fornecedor já encontra match).
+- `e2e/SmokeE2ETest`: novo cenário (Order ~9) — upload de fixture XML
+  via Page Object simples, confirma criação de fornecedor + insumo + saldo
+  visível em `/estoque`.
+
+ADR:
+- `0013-nf-import-strategy.md` — formaliza decisões 1–4 (entidade própria,
+  categoria default, controla_lote/validade default, de-para com
+  aprendizado). Documenta opções avaliadas.
+
+Documentação:
+- `docs/runbooks/lancamento-nota-fiscal.md` — fluxo passo-a-passo pro
+  operador, screenshots da UI, casos de borda (NF-e duplicada, fornecedor
+  com CNPJ inválido, item sem unidade-base mapeada).
+
+**Critérios de aceitação:**
+- Reactor `mvn verify` 15/15 SUCCESS, ArchUnit verde, JaCoCo respeitando
+  ≥85% domain / ≥75% application / ≥70% global.
+- Upload de NF-e XML válida → preview lista emitente + N itens + sugestão
+  de match (insumo existente para itens já no de-para; "criar novo" para
+  os outros).
+- Confirmar lançamento: cria fornecedor (se novo), cria insumos novos
+  com categoria "A classificar" + lote+validade=true, cria 1 NotaFiscal
+  + N itens, cria 1 Movimentação ENTRADA_NF com N itens, atualiza saldo
+  por (lote, filial), atualiza de-para por (fornecedor, cProd).
+- Reentrada da mesma nota (mesma chave_nfe) retorna 409 Problem Details
+  sem efeito colateral.
+- Lançamento manual permite o mesmo fluxo sem upload.
+- E2E novo cenário verde.
+- `npm run build` e `npm test` verdes.
+- Commit no padrão Conventional Commits (`feat(nfe): T20 — lançamento de
+  nota fiscal...`).
+- `STATUS.md` atualizado com data, hash e nota.
+
+**Não-escopo (registrado para ondas futuras):**
+- Importação de PDF/DANFE (textract + heurística por layout — alto risco,
+  baixa cobertura). Fica como T21 ou onda 1.2.
+- OCR de cupom fiscal manuscrito.
+- Validação da assinatura digital da NF-e (precisa cadastro de certificados
+  + chamada SEFAZ).
+- Importação em lote (várias notas de uma vez via .zip).
+- Edição de nota lançada (cancelamento sim — registra estorno; alteração não).
+- UI para gerenciar de-para manualmente (admin direto via /admin/depara
+  fica para depois — aprendizado automático cobre 95% do uso).
+- Cálculo de impostos (escopo fiscal pleno, fora do estoque).
+
+---
+
 ## 11. Definition of Done
 
 ### Por tarefa

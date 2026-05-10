@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Power } from 'lucide-react';
+import { AlertCircle, Pencil, Plus, Power } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { DataTable, type ColumnDef } from '@/components/data-table/DataTable';
 import { toastError } from '@/lib/toastError';
+import { useFilialFiltroStore } from '@/features/filtroGlobal/store';
+import { listarPosicao } from '@/features/operacoes/api';
 
 import {
   type Insumo,
@@ -33,6 +35,7 @@ const CATEGORIA_TODAS = '__todas__';
 
 export function InsumosPage() {
   const queryClient = useQueryClient();
+  const filialId = useFilialFiltroStore((s) => s.filialId);
   const [editing, setEditing] = useState<Insumo | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busca, setBusca] = useState('');
@@ -61,6 +64,21 @@ export function InsumosPage() {
     queryKey: ['unidades-medida'],
     queryFn: listarUnidades,
   });
+
+  // Saldo agregado por insumo na filial selecionada — alimenta a coluna
+  // "Estoque" e o badge "Sem estoque". Sem filial selecionada não busca.
+  const posicaoQuery = useQuery({
+    queryKey: ['posicao', { filialId, all: true }],
+    queryFn: () => listarPosicao(filialId),
+    enabled: filialId != null,
+  });
+  const saldoPorInsumo = useMemo(() => {
+    const m = new Map<string, number>();
+    (posicaoQuery.data ?? []).forEach((p) => {
+      m.set(p.insumoId, (m.get(p.insumoId) ?? 0) + p.saldoTotal);
+    });
+    return m;
+  }, [posicaoQuery.data]);
 
   const unidadeMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -105,6 +123,31 @@ export function InsumosPage() {
       header: 'Unidade base',
       cell: (i) => unidadeMap.get(i.unidadeBaseId) ?? i.unidadeBaseId.slice(0, 8),
       className: 'w-[120px]',
+    },
+    {
+      key: 'estoque',
+      header: 'Estoque',
+      className: 'w-[160px]',
+      cell: (i) => {
+        if (filialId == null) {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
+        if (posicaoQuery.isLoading) {
+          return <span className="text-xs text-muted-foreground">…</span>;
+        }
+        const saldo = saldoPorInsumo.get(i.id) ?? 0;
+        const unidade = unidadeMap.get(i.unidadeBaseId) ?? '';
+        if (saldo <= 0) {
+          return (
+            <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+              <AlertCircle className="h-3 w-3" />
+              Sem estoque
+            </span>
+          );
+        }
+        const fmt = saldo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+        return <span className="text-sm font-medium">{fmt} {unidade}</span>;
+      },
     },
     {
       key: 'controles',
@@ -198,7 +241,12 @@ export function InsumosPage() {
         isLoading={insumosQuery.isLoading}
         isError={insumosQuery.isError}
         rowKey={(i) => i.id}
-        rowClassName={(i) => (!i.ativo ? 'opacity-60' : '')}
+        rowClassName={(i) => {
+          if (!i.ativo) return 'opacity-60';
+          // Linha levemente avermelhada pra produto ativo sem saldo na filial.
+          const saldo = filialId ? saldoPorInsumo.get(i.id) ?? 0 : null;
+          return saldo != null && saldo <= 0 ? 'bg-destructive/[0.03]' : '';
+        }}
         emptyState={
           <div className="space-y-3">
             <p>Nenhum produto encontrado para os filtros atuais.</p>

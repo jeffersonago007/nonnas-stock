@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, CheckCircle, Plus, Send, Trash2, XCircle } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, CheckCircle, Plus, Send, Trash2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -312,6 +312,10 @@ function CriarTransferenciaDialog({ open, onOpenChange, defaultFilialOrigem }: C
   });
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'itens' });
 
+  const filiaisAtivas = filiaisQuery.data?.filter((f) => f.ativa) ?? [];
+  const origemAtual = form.watch('filialOrigemId');
+  const destinoAtual = form.watch('filialDestinoId');
+
   useEffect(() => {
     if (open) {
       form.reset({
@@ -322,6 +326,22 @@ function CriarTransferenciaDialog({ open, onOpenChange, defaultFilialOrigem }: C
       });
     }
   }, [open, defaultFilialOrigem, form]);
+
+  // Auto-set destino: quando há exatamente 2 filiais ativas e a origem
+  // está definida, o destino é trivialmente a outra. Operador pode trocar
+  // manualmente depois (ou usar o botão swap).
+  useEffect(() => {
+    if (!open || filiaisAtivas.length !== 2 || !origemAtual || destinoAtual) return;
+    const oposto = filiaisAtivas.find((f) => f.id !== origemAtual);
+    if (oposto) form.setValue('filialDestinoId', oposto.id, { shouldValidate: true });
+  }, [open, filiaisAtivas, origemAtual, destinoAtual, form]);
+
+  function trocarOrigemDestino() {
+    const o = form.getValues('filialOrigemId');
+    const d = form.getValues('filialDestinoId');
+    form.setValue('filialOrigemId', d, { shouldValidate: true });
+    form.setValue('filialDestinoId', o, { shouldValidate: true });
+  }
 
   const mutation = useMutation({
     mutationFn: (values: CriarValues) =>
@@ -338,8 +358,6 @@ function CriarTransferenciaDialog({ open, onOpenChange, defaultFilialOrigem }: C
     onError: (e) => toastError('Não foi possível solicitar a transferência', e),
   });
 
-  const filiaisAtivas = filiaisQuery.data?.filter((f) => f.ativa) ?? [];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -355,7 +373,7 @@ function CriarTransferenciaDialog({ open, onOpenChange, defaultFilialOrigem }: C
           className="space-y-4"
           noValidate
         >
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid items-end gap-3 md:grid-cols-[1fr_auto_1fr]">
             <div className="space-y-2">
               <Label htmlFor="origem">Filial origem</Label>
               <Select
@@ -378,6 +396,19 @@ function CriarTransferenciaDialog({ open, onOpenChange, defaultFilialOrigem }: C
                   {form.formState.errors.filialOrigemId.message}
                 </p>
               )}
+            </div>
+            <div className="flex justify-center pb-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={trocarOrigemDestino}
+                disabled={!origemAtual || !destinoAtual}
+                aria-label="Inverter origem e destino"
+                title="Inverter origem e destino"
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+              </Button>
             </div>
             <div className="space-y-2">
               <Label htmlFor="destino">Filial destino</Label>
@@ -446,7 +477,7 @@ function CriarTransferenciaDialog({ open, onOpenChange, defaultFilialOrigem }: C
                 </Select>
                 <Input
                   type="number"
-                  step="0.001"
+                  step="1"
                   min="0"
                   placeholder="Qtde"
                   {...form.register(`itens.${index}.quantidade`)}

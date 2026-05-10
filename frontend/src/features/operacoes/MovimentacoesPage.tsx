@@ -81,9 +81,9 @@ export function MovimentacoesPage() {
 const entradaSchema = z.object({
   insumoId: z.string().uuid('Selecione um insumo'),
   unidadeLancamentoId: z.string().uuid('Selecione a unidade'),
-  quantidadeLancada: z.coerce.number().positive('Informe quantidade > 0'),
-  quantidadeBase: z.coerce.number().positive('Informe a qty na unidade base'),
-  valorUnitario: z.coerce.number().nonnegative('Valor unitário inválido'),
+  quantidadeLancada: z.coerce.number().positive('Informe a quantidade lançada'),
+  quantidadeBase: z.coerce.number().positive('Informe a quantidade base'),
+  valorUnitario: z.coerce.number().nonnegative('Valor unitário não pode ser negativo'),
   tipo: z.enum(['ENTRADA_NF', 'ENTRADA_AJUSTE', 'ENTRADA_DEVOLUCAO_CLIENTE']),
   fornecedorId: z.string().optional(),
   numeroLote: z.string().optional(),
@@ -199,13 +199,13 @@ function EntradaForm({ filialId }: FormProps) {
             label="Quantidade lançada"
             register={form.register('quantidadeLancada')}
             error={form.formState.errors.quantidadeLancada?.message}
-            step="0.001"
+            step="1"
           />
           <NumField
             label="Quantidade base (após conversão)"
             register={form.register('quantidadeBase')}
             error={form.formState.errors.quantidadeBase?.message}
-            step="0.001"
+            step="1"
           />
           <NumField
             label="Valor unitário (R$)"
@@ -263,7 +263,7 @@ function EntradaForm({ filialId }: FormProps) {
 const saidaSchema = z.object({
   insumoId: z.string().uuid('Selecione um insumo'),
   unidadeLancamentoId: z.string().uuid('Selecione a unidade'),
-  quantidadeBase: z.coerce.number().positive('Informe a qty na unidade base'),
+  quantidadeBase: z.coerce.number().positive('Informe a quantidade base'),
   tipo: z.enum(['SAIDA_AJUSTE', 'SAIDA_PERDA', 'SAIDA_QUEBRA', 'SAIDA_VENCIMENTO']),
   observacao: z.string().optional(),
 });
@@ -355,7 +355,7 @@ function SaidaForm({ filialId }: FormProps) {
             label="Quantidade base"
             register={form.register('quantidadeBase')}
             error={form.formState.errors.quantidadeBase?.message}
-            step="0.001"
+            step="1"
           />
           <SelectField
             id="tipo"
@@ -491,7 +491,7 @@ interface NumFieldProps {
   step?: string;
 }
 
-function NumField({ label, register, error, step = '0.001' }: NumFieldProps) {
+function NumField({ label, register, error, step = '1' }: NumFieldProps) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>

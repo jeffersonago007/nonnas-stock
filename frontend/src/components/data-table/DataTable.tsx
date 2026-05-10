@@ -26,6 +26,7 @@ interface Props<T> {
   emptyState?: ReactNode;
   rowKey: (row: T) => string;
   rowClassName?: (row: T) => string;
+  onRowClick?: (row: T) => void;
 }
 
 export function DataTable<T>({
@@ -36,6 +37,7 @@ export function DataTable<T>({
   emptyState,
   rowKey,
   rowClassName,
+  onRowClick,
 }: Props<T>) {
   if (isLoading) {
     return (
@@ -75,7 +77,11 @@ export function DataTable<T>({
         </TableHeader>
         <TableBody>
           {data.map((row) => (
-            <TableRow key={rowKey(row)} className={cn(rowClassName?.(row))}>
+            <TableRow
+              key={rowKey(row)}
+              className={cn(rowClassName?.(row), onRowClick && 'cursor-pointer hover:bg-muted/50')}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+            >
               {columns.map((c) => (
                 <TableCell key={c.key} className={c.className}>
                   {c.cell(row)}

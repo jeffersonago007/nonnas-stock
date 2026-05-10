@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, FileText } from 'lucide-react';
@@ -8,6 +9,7 @@ import { DataTable, type ColumnDef } from '@/components/data-table/DataTable';
 import { useFilialFiltroStore } from '@/features/filtroGlobal/store';
 
 import { type NotaFiscal, listarNotasFiscais } from './api';
+import { NotaFiscalDetailDialog } from './NotaFiscalDetailDialog';
 
 function formatBRL(valor: number): string {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -20,6 +22,7 @@ function formatDate(iso: string): string {
 export function NotasFiscaisPage() {
   const navigate = useNavigate();
   const filialId = useFilialFiltroStore((s) => s.filialId);
+  const [detalheId, setDetalheId] = useState<string | null>(null);
 
   const notasQuery = useQuery({
     queryKey: ['notas-fiscais', filialId],
@@ -74,6 +77,7 @@ export function NotasFiscaisPage() {
         isLoading={notasQuery.isLoading}
         isError={notasQuery.isError}
         rowKey={(n) => n.id}
+        onRowClick={(n) => setDetalheId(n.id)}
         emptyState={
           <div className="space-y-3">
             <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
@@ -83,6 +87,13 @@ export function NotasFiscaisPage() {
             </Button>
           </div>
         }
+      />
+
+      <NotaFiscalDetailDialog
+        notaId={detalheId}
+        onOpenChange={(open) => {
+          if (!open) setDetalheId(null);
+        }}
       />
     </div>
   );

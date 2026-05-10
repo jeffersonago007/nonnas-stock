@@ -2,7 +2,7 @@
   "java.configuration.updateBuildConfiguration": "automatic",
   "java.import.maven.enabled": true,
   "java.maven.downloadSources": true,
-  "java.compile.nullAnalysis.mode": "automatic",
+  "java.compile.nullAnalysis.mode": "disabled",
   "java.configuration.maven.defaultMojo.preWireCompile": false,
   "java.import.gradle.enabled": false,
   "java.errors.incompleteClasspath.severity": "warning"

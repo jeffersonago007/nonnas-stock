@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Pencil, Plus, Power } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, ArrowDownToLine, Pencil, Plus, Power } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { DataTable, type ColumnDef } from '@/components/data-table/DataTable';
@@ -41,6 +43,7 @@ export function InsumosPage() {
   const [busca, setBusca] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState(CATEGORIA_TODAS);
   const [ativoFiltro, setAtivoFiltro] = useState(ATIVO_TODOS);
+  const [soSemEstoque, setSoSemEstoque] = useState(false);
 
   const filtros = useMemo(
     () => ({
@@ -79,6 +82,15 @@ export function InsumosPage() {
     });
     return m;
   }, [posicaoQuery.data]);
+
+  // Lista filtrada client-side: apenas para o toggle "só sem estoque"
+  // (saldo vive no frontend depois do join com posição). Filtros de
+  // categoria/ativo/q continuam server-side via insumosQuery acima.
+  const insumosFiltrados = useMemo(() => {
+    const base = insumosQuery.data ?? [];
+    if (!soSemEstoque || filialId == null) return base;
+    return base.filter((i) => (saldoPorInsumo.get(i.id) ?? 0) <= 0);
+  }, [insumosQuery.data, soSemEstoque, filialId, saldoPorInsumo]);
 
   const unidadeMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -163,22 +175,32 @@ export function InsumosPage() {
     {
       key: 'actions',
       header: <span className="sr-only">Ações</span>,
-      className: 'text-right w-[200px]',
-      cell: (i) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => { setEditing(i); setDialogOpen(true); }}>
-            <Pencil className="h-4 w-4" /> Editar
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={togglingId === i.id}
-            onClick={() => (i.ativo ? desativarMutation.mutate(i.id) : ativarMutation.mutate(i.id))}
-          >
-            <Power className="h-4 w-4" /> {i.ativo ? 'Desativar' : 'Ativar'}
-          </Button>
-        </div>
-      ),
+      className: 'text-right w-[340px]',
+      cell: (i) => {
+        const semSaldo = filialId != null && (saldoPorInsumo.get(i.id) ?? 0) <= 0;
+        return (
+          <div className="flex justify-end gap-2">
+            {i.ativo && semSaldo && (
+              <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary">
+                <Link to={`/movimentacoes?tab=entrada&insumoId=${i.id}`}>
+                  <ArrowDownToLine className="h-4 w-4" /> Lançar entrada
+                </Link>
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => { setEditing(i); setDialogOpen(true); }}>
+              <Pencil className="h-4 w-4" /> Editar
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={togglingId === i.id}
+              onClick={() => (i.ativo ? desativarMutation.mutate(i.id) : ativarMutation.mutate(i.id))}
+            >
+              <Power className="h-4 w-4" /> {i.ativo ? 'Desativar' : 'Ativar'}
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -233,10 +255,26 @@ export function InsumosPage() {
             </SelectContent>
           </Select>
         </div>
+        <div className="md:col-span-3 flex items-center gap-2 pt-1">
+          <Switch
+            id="filtro-sem-estoque"
+            checked={soSemEstoque}
+            onCheckedChange={setSoSemEstoque}
+            disabled={filialId == null}
+          />
+          <Label htmlFor="filtro-sem-estoque" className="cursor-pointer text-sm">
+            Só sem estoque
+          </Label>
+          {filialId == null && (
+            <span className="text-xs text-muted-foreground">
+              (selecione uma filial no topo pra usar)
+            </span>
+          )}
+        </div>
       </div>
 
       <DataTable
-        data={insumosQuery.data}
+        data={insumosFiltrados}
         columns={columns}
         isLoading={insumosQuery.isLoading}
         isError={insumosQuery.isError}

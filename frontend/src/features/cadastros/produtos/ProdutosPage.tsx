@@ -143,11 +143,11 @@ export function ProdutosPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Produtos"
-        description="Produtos vendáveis pela rede. Cada produto pode ter uma ficha técnica vigente."
+        title="Cardápio"
+        description="Itens vendáveis pela rede. Cada item do cardápio pode ter uma ficha técnica vigente que define o consumo de produtos por venda."
         actions={
           <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-            <Plus className="h-4 w-4" /> Novo produto
+            <Plus className="h-4 w-4" /> Novo item
           </Button>
         }
       />
@@ -222,9 +222,9 @@ export function ProdutosPage() {
         rowClassName={(p) => (!p.ativo ? 'opacity-60' : '')}
         emptyState={
           <div className="space-y-3">
-            <p>Nenhum produto encontrado.</p>
+            <p>Nenhum item de cardápio encontrado.</p>
             <Button variant="outline" onClick={() => { setEditing(null); setDialogOpen(true); }}>
-              <Plus className="h-4 w-4" /> Cadastrar produto
+              <Plus className="h-4 w-4" /> Cadastrar item
             </Button>
           </div>
         }

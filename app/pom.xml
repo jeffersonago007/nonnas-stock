@@ -73,6 +73,15 @@
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
 
+    <!-- DevTools: restart automático quando classes mudam, só em dev.
+         optional=true impede que vá pro jar de produção. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-devtools</artifactId>
+      <optional>true</optional>
+      <scope>runtime</scope>
+    </dependency>
+
     <!-- Métricas Prometheus (master doc 15.2 / T17) — expõe /actuator/prometheus -->
     <dependency>
       <groupId>io.micrometer</groupId>

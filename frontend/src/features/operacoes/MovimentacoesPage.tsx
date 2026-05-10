@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +24,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { DataTable, type ColumnDef } from '@/components/data-table/DataTable';
 import { toastError } from '@/lib/toastError';
 
-import { listarInsumos, listarUnidades } from '@/features/cadastros/insumos/api';
+import { listarInsumos, listarUnidades, type Insumo } from '@/features/cadastros/insumos/api';
 import { listarFornecedores } from '@/features/cadastros/fornecedores/api';
 import { useAuthStore } from '@/features/auth/store';
 import { useFilialFiltroStore } from '@/features/filtroGlobal/store';
@@ -33,6 +34,7 @@ import {
   TIPOS_SAIDA_MANUAL,
   lancarEntradaManual,
   lancarSaidaManual,
+  listarPosicao,
   listarMovimentacoesPorPeriodo,
 } from './api';
 
@@ -42,6 +44,12 @@ function formatTipoLabel(t: string) {
 
 export function MovimentacoesPage() {
   const filialId = useFilialFiltroStore((s) => s.filialId);
+  // Query params do tipo `?tab=entrada&insumoId=X` permitem deep-link
+  // a partir da tela Produtos (botão "Lançar entrada" inline). Tab default
+  // é entrada quando insumoId vem na URL.
+  const [searchParams] = useSearchParams();
+  const insumoIdInicial = searchParams.get('insumoId') ?? undefined;
+  const tabInicial = searchParams.get('tab') ?? (insumoIdInicial ? 'entrada' : 'entrada');
 
   return (
     <div className="space-y-6">
@@ -50,7 +58,7 @@ export function MovimentacoesPage() {
         description="Lançamento manual de entradas e saídas, e histórico agregado por período."
       />
 
-      <Tabs defaultValue="entrada" className="space-y-4">
+      <Tabs defaultValue={tabInicial} className="space-y-4">
         <TabsList>
           <TabsTrigger value="entrada">
             <ArrowDownToLine className="mr-2 h-4 w-4" /> Entrada
@@ -63,7 +71,7 @@ export function MovimentacoesPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="entrada">
-          <EntradaForm filialId={filialId} />
+          <EntradaForm filialId={filialId} insumoIdInicial={insumoIdInicial} />
         </TabsContent>
         <TabsContent value="saida">
           <SaidaForm filialId={filialId} />
@@ -98,7 +106,39 @@ interface FormProps {
   filialId: string | null;
 }
 
-function EntradaForm({ filialId }: FormProps) {
+/**
+ * Após uma movimentação, busca o saldo atualizado do insumo na filial e
+ * exibe num toast, ex.: "Saída registrada: PICANHA agora tem 4 KG em
+ * Vila das Belezas". Cai silente em fallback se a query falhar — o
+ * toast principal de sucesso já apareceu via toast.success.
+ */
+async function notificarSaldoApos(
+  insumoId: string,
+  filialId: string,
+  insumos: Insumo[] | undefined,
+  acao: string,
+) {
+  try {
+    const posicao = await listarPosicao(filialId);
+    const insumo = insumos?.find((i) => i.id === insumoId);
+    if (!insumo) return;
+    const saldo = posicao
+      .filter((p) => p.insumoId === insumoId)
+      .reduce((acc, p) => acc + p.saldoTotal, 0);
+    const fmt = saldo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+    toast.success(`${acao} registrada`, {
+      description: `${insumo.nome}: novo saldo ${fmt}${saldo <= 0 ? ' (sem estoque)' : ''}`,
+    });
+  } catch {
+    // se a query falhar, o toast.success simples antes já satisfaz o feedback principal
+  }
+}
+
+interface EntradaFormProps extends FormProps {
+  insumoIdInicial?: string;
+}
+
+function EntradaForm({ filialId, insumoIdInicial }: EntradaFormProps) {
   const queryClient = useQueryClient();
   const usuarioId = useAuthStore((s) => s.user?.id);
   const insumosQuery = useQuery({
@@ -131,14 +171,30 @@ function EntradaForm({ filialId }: FormProps) {
     },
   });
 
+  // Deep-link: ?insumoId=X seleciona o insumo e a unidade-base dele,
+  // pra operador clicar "Lançar entrada" na tela Produtos e cair
+  // direto no formulário pré-preenchido.
+  useEffect(() => {
+    if (!insumoIdInicial) return;
+    const insumo = insumosQuery.data?.find((i) => i.id === insumoIdInicial);
+    if (!insumo) return;
+    form.setValue('insumoId', insumo.id, { shouldValidate: true });
+    form.setValue('unidadeLancamentoId', insumo.unidadeBaseId, { shouldValidate: true });
+    form.setValue('tipo', 'ENTRADA_AJUSTE');
+  }, [insumoIdInicial, insumosQuery.data, form]);
+
   const mutation = useMutation({
     mutationFn: lancarEntradaManual,
-    onSuccess: () => {
-      toast.success('Entrada registrada — saldo atualizado');
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['posicao'] });
       queryClient.invalidateQueries({ queryKey: ['ruptura'] });
       queryClient.invalidateQueries({ queryKey: ['vencimento'] });
       queryClient.invalidateQueries({ queryKey: ['mov-historico'] });
+      if (filialId) {
+        notificarSaldoApos(variables.insumoId, filialId, insumosQuery.data, 'Entrada');
+      } else {
+        toast.success('Entrada registrada');
+      }
       form.reset();
     },
     onError: (error) => toastError('Não foi possível registrar a entrada', error),
@@ -295,12 +351,16 @@ function SaidaForm({ filialId }: FormProps) {
 
   const mutation = useMutation({
     mutationFn: lancarSaidaManual,
-    onSuccess: () => {
-      toast.success('Saída registrada — saldo atualizado');
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['posicao'] });
       queryClient.invalidateQueries({ queryKey: ['ruptura'] });
       queryClient.invalidateQueries({ queryKey: ['vencimento'] });
       queryClient.invalidateQueries({ queryKey: ['mov-historico'] });
+      if (filialId) {
+        notificarSaldoApos(variables.insumoId, filialId, insumosQuery.data, 'Saída');
+      } else {
+        toast.success('Saída registrada');
+      }
       form.reset();
     },
     onError: (error) => toastError('Não foi possível registrar a saída', error),

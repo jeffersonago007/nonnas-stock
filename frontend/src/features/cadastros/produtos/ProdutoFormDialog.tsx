@@ -90,16 +90,16 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
   const createMutation = useMutation({
     mutationFn: criarProduto,
     onSuccess: () => {
-      toast.success('Produto criado');
+      toast.success('Item do cardápio criado');
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       onOpenChange(false);
     },
-    onError: (error) => toastError('Não foi possível criar o produto', error),
+    onError: (error) => toastError('Não foi possível criar o item', error),
   });
   const updateMutation = useMutation({
     mutationFn: (values: UpdateValues) => atualizarProduto(produto!.id, values),
     onSuccess: () => {
-      toast.success('Produto atualizado');
+      toast.success('Item do cardápio atualizado');
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       onOpenChange(false);
     },

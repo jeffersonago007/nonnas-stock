@@ -64,7 +64,7 @@ Um sistema web centralizado, com saldos separados por filial, que cobre:
 
 1. **Modular Monolith** com bounded contexts independentes. Cada módulo é um Maven module separado, com camadas internas próprias. Acoplamento entre módulos só por contratos públicos (`api` package) ou eventos de aplicação.
 2. **Saldo é projeção, movimentação é a verdade.** Toda alteração de estoque é uma `Movimentacao` imutável. O saldo materializado é cache, sempre reconstrutível.
-3. **Saldo por `(lote, filial)`**. Granularidade fina é obrigatória — sem isso, FEFO é impossível.
+3. **Saldo por `(lote, filial)`, lote pode ser rastreado ou agregador.** Insumos com `controla_validade = true` usam lotes rastreados com validade obrigatória, saída por FEFO. Insumos com `controla_validade = false` usam lote agregador único por `(insumo, filial)`, saída direta. O modelo de dados é uniforme; o regime é dado. Ver [adendo de lote opcional](docs/adendo-lote-opcional.md) e sequência T-LOT-01..09 no STATUS.md.
 4. **Unidade base canônica por insumo**. Toda matemática interna em unidade base. Conversão acontece nas bordas (entrada e exibição).
 5. **Multi-filial é literal**. Saldo separado, transferência orquestrada com estados, relatórios sempre filtráveis por filial.
 6. **Ficha técnica versionada**. Mudança de receita não afeta histórico. Venda registrada captura snapshot.

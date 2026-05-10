@@ -26,6 +26,7 @@ import {
 import { toastError } from '@/lib/toastError';
 
 import { type Produto, atualizarProduto, criarProduto, listarCategoriasProduto } from './api';
+import { listarCategorias as listarCategoriasInsumo } from '@/features/cadastros/insumos/api';
 
 const createSchema = z.object({
   codigo: z.string().min(1, 'Código é obrigatório'),
@@ -50,11 +51,24 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
   const isEdit = produto !== null;
   const queryClient = useQueryClient();
 
-  const categoriasQuery = useQuery({
+  // Combo unificado igual à ProdutosPage — categorias do admin + as já
+  // em uso pelos produtos cadastrados.
+  const categoriasProdutoQuery = useQuery({
     queryKey: ['produtos-categorias'],
     queryFn: listarCategoriasProduto,
     enabled: open,
   });
+  const categoriasAdminQuery = useQuery({
+    queryKey: ['categorias-insumo'],
+    queryFn: listarCategoriasInsumo,
+    enabled: open,
+  });
+  const categoriasUnificadas = (() => {
+    const set = new Set<string>();
+    (categoriasAdminQuery.data ?? []).filter((c) => c.ativa).forEach((c) => set.add(c.nome));
+    (categoriasProdutoQuery.data ?? []).forEach((c) => set.add(c));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  })();
 
   const createForm = useForm<CreateValues>({
     resolver: zodResolver(createSchema),
@@ -110,7 +124,7 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
             onSubmit={updateForm.handleSubmit((v) => updateMutation.mutate(v))}
             noValidate
           >
-            <FormFields form={updateForm} hideCodigo categorias={categoriasQuery.data ?? []} />
+            <FormFields form={updateForm} hideCodigo categorias={categoriasUnificadas} />
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
@@ -126,7 +140,7 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
             onSubmit={createForm.handleSubmit((v) => createMutation.mutate(v))}
             noValidate
           >
-            <FormFields form={createForm} categorias={categoriasQuery.data ?? []} />
+            <FormFields form={createForm} categorias={categoriasUnificadas} />
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar

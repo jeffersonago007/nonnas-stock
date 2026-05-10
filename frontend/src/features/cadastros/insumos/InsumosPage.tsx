@@ -77,7 +77,7 @@ export function InsumosPage() {
   const desativarMutation = useMutation({
     mutationFn: desativarInsumo,
     onSuccess: () => {
-      toast.success('Insumo desativado');
+      toast.success('Produto desativado');
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
     },
     onError: (error) => toastError('Não foi possível desativar', error),
@@ -85,7 +85,7 @@ export function InsumosPage() {
   const ativarMutation = useMutation({
     mutationFn: ativarInsumo,
     onSuccess: () => {
-      toast.success('Insumo reativado');
+      toast.success('Produto reativado');
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
     },
     onError: (error) => toastError('Não foi possível ativar', error),
@@ -142,11 +142,11 @@ export function InsumosPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Insumos"
-        description="Catálogo central de insumos com unidades-base, lote e validade."
+        title="Produtos"
+        description="Catálogo central de produtos com unidades-base, lote e validade."
         actions={
           <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-            <Plus className="h-4 w-4" /> Novo insumo
+            <Plus className="h-4 w-4" /> Novo produto
           </Button>
         }
       />
@@ -201,9 +201,9 @@ export function InsumosPage() {
         rowClassName={(i) => (!i.ativo ? 'opacity-60' : '')}
         emptyState={
           <div className="space-y-3">
-            <p>Nenhum insumo encontrado para os filtros atuais.</p>
+            <p>Nenhum produto encontrado para os filtros atuais.</p>
             <Button variant="outline" onClick={() => { setEditing(null); setDialogOpen(true); }}>
-              <Plus className="h-4 w-4" /> Cadastrar insumo
+              <Plus className="h-4 w-4" /> Cadastrar produto
             </Button>
           </div>
         }

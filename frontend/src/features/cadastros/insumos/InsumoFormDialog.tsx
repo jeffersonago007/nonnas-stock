@@ -120,11 +120,11 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
   const createMutation = useMutation({
     mutationFn: criarInsumo,
     onSuccess: () => {
-      toast.success('Insumo criado');
+      toast.success('Produto criado');
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       onOpenChange(false);
     },
-    onError: (error) => toastError('Não foi possível criar o insumo', error),
+    onError: (error) => toastError('Não foi possível criar o produto', error),
   });
 
   const updateMutation = useMutation({
@@ -142,22 +142,22 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
             : undefined,
       }),
     onSuccess: () => {
-      toast.success('Insumo atualizado');
+      toast.success('Produto atualizado');
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       onOpenChange(false);
     },
-    onError: (error) => toastError('Não foi possível atualizar o insumo', error),
+    onError: (error) => toastError('Não foi possível atualizar o produto', error),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar insumo' : 'Novo insumo'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Editar produto' : 'Novo produto'}</DialogTitle>
           <DialogDescription>
             {isEdit
               ? 'Você pode editar nome, categoria e controles de lote/validade. Código e unidade-base permanecem imutáveis (afetam histórico de movimentações).'
-              : 'Cadastre um novo insumo com unidade-base e controles de lote/validade.'}
+              : 'Cadastre um novo produto com unidade-base e controles de lote/validade.'}
           </DialogDescription>
         </DialogHeader>
 

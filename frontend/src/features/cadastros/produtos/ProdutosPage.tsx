@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -26,6 +26,7 @@ import {
   listarCategoriasProduto,
   listarProdutos,
 } from './api';
+import { listarCategorias as listarCategoriasInsumo } from '@/features/cadastros/insumos/api';
 import { ProdutoFormDialog } from './ProdutoFormDialog';
 
 const ATIVO_TODOS = '__todos__';
@@ -50,10 +51,24 @@ export function ProdutosPage() {
   // Filtros efetivamente aplicados (só atualiza quando o usuário clica Pesquisar)
   const [filtros, setFiltros] = useState<FiltrosAplicados>({});
 
-  const categoriasQuery = useQuery({
+  // Combo unificado: une categorias já em uso por produtos + categorias
+  // do admin (catalog/CategoriaInsumo). Decisão consciente do MVP — pro
+  // operador do restaurante "categoria" é uma só, embora o domínio separe
+  // matéria-prima (insumo) de item vendido (produto).
+  const categoriasProdutoQuery = useQuery({
     queryKey: ['produtos-categorias'],
     queryFn: listarCategoriasProduto,
   });
+  const categoriasAdminQuery = useQuery({
+    queryKey: ['categorias-insumo'],
+    queryFn: listarCategoriasInsumo,
+  });
+  const categoriasUnificadas = useMemo(() => {
+    const set = new Set<string>();
+    (categoriasAdminQuery.data ?? []).filter((c) => c.ativa).forEach((c) => set.add(c.nome));
+    (categoriasProdutoQuery.data ?? []).forEach((c) => set.add(c));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [categoriasAdminQuery.data, categoriasProdutoQuery.data]);
 
   const produtosQuery = useQuery({
     queryKey: ['produtos', filtros],
@@ -159,12 +174,14 @@ export function ProdutosPage() {
             <Select value={categoriaInput} onValueChange={setCategoriaInput}>
               <SelectTrigger id="filtro-categoria">
                 <SelectValue
-                  placeholder={categoriasQuery.isLoading ? 'Carregando…' : 'Todas'}
+                  placeholder={categoriasAdminQuery.isLoading || categoriasProdutoQuery.isLoading
+                    ? 'Carregando…'
+                    : 'Todas'}
                 />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={CATEGORIA_TODAS}>Todas</SelectItem>
-                {(categoriasQuery.data ?? []).map((c) => (
+                {categoriasUnificadas.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
                   </SelectItem>

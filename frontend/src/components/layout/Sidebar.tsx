@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  Package,
   Truck,
   ShoppingBasket,
   ClipboardList,
@@ -30,12 +29,16 @@ interface NavItem {
   allow?: string[];
 }
 
+// "Insumos" renomeado para "Produtos" pra alinhar com a linguagem do operador
+// (no domínio interno, /insumos é matéria-prima — mas pro restaurante "produto"
+// é tudo que entra/sai do estoque). A página /produtos antiga (produto vendável
+// + ficha técnica) fica oculta nesta onda — quando reabrir, vai precisar de um
+// nome distinto pra não conflitar (ex.: "Cardápio").
 const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/filiais', label: 'Filiais', icon: Building2 },
-  { to: '/insumos', label: 'Insumos', icon: Package },
+  { to: '/insumos', label: 'Produtos', icon: ShoppingBasket },
   { to: '/fornecedores', label: 'Fornecedores', icon: Truck },
-  { to: '/produtos', label: 'Produtos', icon: ShoppingBasket },
   { to: '/fichas-tecnicas', label: 'Fichas técnicas', icon: ClipboardList },
   { to: '/estoque', label: 'Estoque', icon: Boxes },
   { to: '/movimentacoes', label: 'Movimentações', icon: History },

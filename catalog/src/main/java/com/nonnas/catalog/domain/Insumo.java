@@ -46,6 +46,31 @@ public final class Insumo {
         this.updatedAt = agora;
     }
 
+    /**
+     * Permite reclassificar o insumo. Não há regra de negócio impedindo;
+     * alertas/relatórios atrelados ao escopo CATEGORIA passam a aplicar à
+     * nova categoria após o save.
+     */
+    public void mudarCategoria(CategoriaInsumoId novaCategoriaId, Instant agora) {
+        this.categoriaId = Objects.requireNonNull(novaCategoriaId, "categoriaId");
+        this.updatedAt = agora;
+    }
+
+    /**
+     * Liga/desliga rastreamento de lote. Não bloqueia se já existem lotes
+     * registrados — fica como ressalva operacional (lotes existentes
+     * continuam, novas movimentações deixam de exigir lote).
+     */
+    public void definirControlaLote(boolean controlaLote, Instant agora) {
+        this.controlaLote = controlaLote;
+        this.updatedAt = agora;
+    }
+
+    public void definirControlaValidade(boolean controlaValidade, Instant agora) {
+        this.controlaValidade = controlaValidade;
+        this.updatedAt = agora;
+    }
+
     public void desativar(Instant agora) { this.ativo = false; this.updatedAt = agora; }
     public void ativar(Instant agora) { this.ativo = true; this.updatedAt = agora; }
 

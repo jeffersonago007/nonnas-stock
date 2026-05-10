@@ -74,7 +74,8 @@ public class InsumoController {
     @PutMapping("/{id}")
     public InsumoDto.Response update(@PathVariable UUID id,
                                      @Valid @RequestBody InsumoDto.UpdateRequest req) {
-        return InsumoDto.Response.from(atualizar.execute(id, req.nome()));
+        return InsumoDto.Response.from(atualizar.execute(
+                id, req.nome(), req.categoriaId(), req.controlaLote(), req.controlaValidade()));
     }
 
     @PatchMapping("/{id}/desativar")

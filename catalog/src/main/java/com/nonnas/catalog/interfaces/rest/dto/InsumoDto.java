@@ -20,7 +20,10 @@ public final class InsumoDto {
     ) {}
 
     public record UpdateRequest(
-            @NotBlank @Size(max = 255) String nome
+            @NotBlank @Size(max = 255) String nome,
+            UUID categoriaId,
+            Boolean controlaLote,
+            Boolean controlaValidade
     ) {}
 
     public record Response(

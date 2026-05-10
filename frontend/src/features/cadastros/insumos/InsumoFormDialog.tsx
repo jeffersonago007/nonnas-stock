@@ -45,6 +45,9 @@ const createSchema = z.object({
 
 const updateSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255),
+  categoriaId: z.string().uuid('Selecione uma categoria'),
+  controlaLote: z.boolean(),
+  controlaValidade: z.boolean(),
 });
 
 type CreateValues = z.infer<typeof createSchema>;
@@ -63,7 +66,7 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
   const categoriasQuery = useQuery({
     queryKey: ['categorias-insumo'],
     queryFn: listarCategorias,
-    enabled: open && !isEdit,
+    enabled: open,
   });
   const unidadesQuery = useQuery({
     queryKey: ['unidades-medida'],
@@ -84,12 +87,17 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
   });
   const updateForm = useForm<UpdateValues>({
     resolver: zodResolver(updateSchema),
-    defaultValues: { nome: '' },
+    defaultValues: { nome: '', categoriaId: '', controlaLote: true, controlaValidade: true },
   });
 
   useEffect(() => {
     if (open && insumo) {
-      updateForm.reset({ nome: insumo.nome });
+      updateForm.reset({
+        nome: insumo.nome,
+        categoriaId: insumo.categoriaId,
+        controlaLote: insumo.controlaLote,
+        controlaValidade: insumo.controlaValidade,
+      });
     } else if (open && !insumo) {
       createForm.reset();
     }
@@ -122,7 +130,7 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
           <DialogTitle>{isEdit ? 'Editar insumo' : 'Novo insumo'}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Apenas o nome pode ser editado. Código, categoria e unidade base são imutáveis após cadastro.'
+              ? 'Você pode editar nome, categoria e controles de lote/validade. Código e unidade-base permanecem imutáveis (afetam histórico de movimentações).'
               : 'Cadastre um novo insumo com unidade-base e controles de lote/validade.'}
           </DialogDescription>
         </DialogHeader>
@@ -136,6 +144,47 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
                 <p className="text-sm text-destructive">{updateForm.formState.errors.nome.message}</p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-categoriaId">Categoria</Label>
+              <Select
+                value={updateForm.watch('categoriaId')}
+                onValueChange={(v) => updateForm.setValue('categoriaId', v, { shouldValidate: true })}
+              >
+                <SelectTrigger id="edit-categoriaId">
+                  <SelectValue placeholder={categoriasQuery.isLoading ? 'Carregando…' : 'Selecione…'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoriasQuery.data?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {updateForm.formState.errors.categoriaId && (
+                <p className="text-sm text-destructive">{updateForm.formState.errors.categoriaId.message}</p>
+              )}
+            </div>
+            <div className="flex flex-col gap-3">
+              <ToggleRow
+                id="edit-controlaLote"
+                label="Controla lote"
+                description="Movimentações terão lote obrigatório"
+                checked={updateForm.watch('controlaLote')}
+                onCheckedChange={(v) => updateForm.setValue('controlaLote', v)}
+              />
+              <ToggleRow
+                id="edit-controlaValidade"
+                label="Controla validade"
+                description="Lotes terão data de validade obrigatória"
+                checked={updateForm.watch('controlaValidade')}
+                onCheckedChange={(v) => updateForm.setValue('controlaValidade', v)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Atenção: alterar categoria ou controles afeta alertas e movimentações futuras.
+              Lotes existentes não são removidos.
+            </p>
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar

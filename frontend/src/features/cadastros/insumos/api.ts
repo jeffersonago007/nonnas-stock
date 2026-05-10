@@ -38,6 +38,9 @@ export interface InsumoCreateRequest {
 
 export interface InsumoUpdateRequest {
   nome: string;
+  categoriaId?: string;
+  controlaLote?: boolean;
+  controlaValidade?: boolean;
 }
 
 export interface InsumosFiltro {

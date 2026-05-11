@@ -31,28 +31,33 @@ interface NavItem {
   allow?: string[];
 }
 
+// Ordem do menu reflete frequência de uso do operador no dia-a-dia. Bloco
+// operacional (alta frequência) primeiro; cadastros (frequência média) depois;
+// Administração (baixa frequência: filiais, fornecedores, configs) por último.
+//
 // "Insumos" renomeado para "Produtos" pra alinhar com a linguagem do operador
 // (no domínio interno, /insumos é matéria-prima — mas pro restaurante "produto"
-// é tudo que entra/sai do estoque). A página /produtos antiga (produto vendável
-// + ficha técnica) fica oculta nesta onda — quando reabrir, vai precisar de um
-// nome distinto pra não conflitar (ex.: "Cardápio").
-const navItems: NavItem[] = [
+// é tudo que entra/sai do estoque). /produtos vendável virou "Cardápio".
+const navItemsOperacional: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/filiais', label: 'Filiais', icon: Building2 },
-  { to: '/insumos', label: 'Produtos', icon: ShoppingBasket },
-  { to: '/fornecedores', label: 'Fornecedores', icon: Truck },
-  { to: '/produtos', label: 'Cardápio', icon: BookOpen },
-  { to: '/fichas-tecnicas', label: 'Fichas técnicas', icon: ClipboardList },
+  { to: '/notas-fiscais', label: 'Notas fiscais', icon: FileText },
   { to: '/estoque', label: 'Estoque', icon: Boxes },
   { to: '/vendas', label: 'Vendas', icon: Receipt },
-  { to: '/movimentacoes', label: 'Movimentações', icon: History },
-  { to: '/notas-fiscais', label: 'Notas fiscais', icon: FileText },
-  { to: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
-  { to: '/alertas', label: 'Alertas', icon: Bell },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { to: '/alertas', label: 'Alertas', icon: Bell },
+];
+
+const navItemsCadastros: NavItem[] = [
+  { to: '/insumos', label: 'Produtos', icon: ShoppingBasket },
+  { to: '/fichas-tecnicas', label: 'Fichas técnicas', icon: ClipboardList },
+  { to: '/produtos', label: 'Cardápio', icon: BookOpen },
+  { to: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
+  { to: '/movimentacoes', label: 'Movimentações', icon: History },
 ];
 
 const adminItems: NavItem[] = [
+  { to: '/filiais', label: 'Filiais', icon: Building2 },
+  { to: '/fornecedores', label: 'Fornecedores', icon: Truck },
   { to: '/admin/categorias', label: 'Categorias', icon: Tag, allow: ['ADMIN', 'GERENTE'] },
   { to: '/admin/unidades', label: 'Un. medida', icon: Ruler, allow: ['ADMIN', 'GERENTE'] },
   { to: '/admin/empresas', label: 'Empresas', icon: Building, allow: ['ADMIN'] },
@@ -73,7 +78,27 @@ export function Sidebar() {
         />
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {navItemsOperacional.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted',
+              )
+            }
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </NavLink>
+        ))}
+
+        <div className="my-2 border-t border-border/60" />
+
+        {navItemsCadastros.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

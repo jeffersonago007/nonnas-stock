@@ -14,6 +14,7 @@ import { useAuthStore } from '@/features/auth/store';
 import { listarProdutos } from '@/features/cadastros/produtos/api';
 
 import { registrarVenda } from './api';
+import { ConfirmarVendaDialog } from './ConfirmarVendaDialog';
 
 export function VendasPage() {
   const queryClient = useQueryClient();
@@ -21,6 +22,10 @@ export function VendasPage() {
   const usuarioId = useAuthStore((s) => s.user?.id);
   const [busca, setBusca] = useState('');
   const [quantidades, setQuantidades] = useState<Record<string, string>>({});
+  const [confirmacao, setConfirmacao] = useState<
+    | { produtoId: string; produtoNome: string; quantidade: number }
+    | null
+  >(null);
 
   const produtosQuery = useQuery({
     queryKey: ['produtos', { ativo: true, all: true }],
@@ -46,6 +51,7 @@ export function VendasPage() {
       });
       // Limpa quantidade do produto vendido e invalida saldos.
       setQuantidades((prev) => ({ ...prev, [variables.produtoVendavelId]: '' }));
+      setConfirmacao(null);
       queryClient.invalidateQueries({ queryKey: ['posicao'] });
       queryClient.invalidateQueries({ queryKey: ['ruptura'] });
       queryClient.invalidateQueries({ queryKey: ['mov-historico'] });
@@ -53,7 +59,7 @@ export function VendasPage() {
     onError: (e) => toastError('Não foi possível registrar a venda', e),
   });
 
-  function handleVender(produtoId: string) {
+  function handleVender(produtoId: string, produtoNome: string) {
     if (!filialId) {
       toast.error('Selecione uma filial no topo');
       return;
@@ -68,11 +74,16 @@ export function VendasPage() {
       toast.error('Informe uma quantidade > 0');
       return;
     }
+    setConfirmacao({ produtoId, produtoNome, quantidade: q });
+  }
+
+  function confirmarVenda() {
+    if (!confirmacao || !filialId || !usuarioId) return;
     mutation.mutate({
-      produtoVendavelId: produtoId,
+      produtoVendavelId: confirmacao.produtoId,
       filialId,
       usuarioId,
-      quantidadeVendida: q,
+      quantidadeVendida: confirmacao.quantidade,
     });
   }
 
@@ -115,6 +126,19 @@ export function VendasPage() {
         </Card>
       )}
 
+      <ConfirmarVendaDialog
+        open={!!confirmacao}
+        onOpenChange={(open) => {
+          if (!open && !mutation.isPending) setConfirmacao(null);
+        }}
+        produtoVendavelId={confirmacao?.produtoId ?? null}
+        produtoNome={confirmacao?.produtoNome ?? ''}
+        filialId={filialId ?? ''}
+        quantidade={confirmacao?.quantidade ?? 0}
+        confirmando={mutation.isPending}
+        onConfirm={confirmarVenda}
+      />
+
       {filialId && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {produtosFiltrados.map((p) => (
@@ -145,7 +169,7 @@ export function VendasPage() {
                     />
                   </div>
                   <Button
-                    onClick={() => handleVender(p.id)}
+                    onClick={() => handleVender(p.id, p.nome)}
                     disabled={
                       mutation.isPending && mutation.variables?.produtoVendavelId === p.id
                     }

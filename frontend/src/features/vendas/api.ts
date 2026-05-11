@@ -29,3 +29,36 @@ export async function registrarVenda(payload: RegistrarVendaPayload): Promise<Ve
   const { data } = await api.post<VendaResposta>('/vendas-simuladas', payload);
   return data;
 }
+
+export interface LoteConsumidoPreview {
+  loteId: string;
+  numero: string | null;
+  validade: string | null;
+  quantidade: number;
+}
+
+export interface ItemBaixaPreview {
+  insumoId: string;
+  insumoNome: string;
+  quantidadeBase: number;
+  unidadeBase: string;
+  controlaValidade: boolean;
+  lotes: LoteConsumidoPreview[];
+  saldoRestanteAposBaixa: number;
+}
+
+export interface PreviewVendaResposta {
+  itens: ItemBaixaPreview[];
+  gerouNegativo: boolean;
+}
+
+export interface PreviewVendaPayload {
+  produtoVendavelId: string;
+  filialId: string;
+  quantidadeVendida: number;
+}
+
+export async function obterPreviewVenda(payload: PreviewVendaPayload): Promise<PreviewVendaResposta> {
+  const { data } = await api.post<PreviewVendaResposta>('/vendas-simuladas/preview', payload);
+  return data;
+}

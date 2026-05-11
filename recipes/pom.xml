@@ -58,6 +58,18 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <!--
+      catalog em test-scope para encadear as Flyway migrations de catalog
+      (insumos, unidades_medida, categorias_insumo) no classpath de teste,
+      necessárias pelo PreviewVendaQueriesJdbc (SQL nativo cross-context).
+      ADR 0010: SEM importar classes de catalog — ArchUnit roda só sobre main.
+    -->
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>catalog</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>

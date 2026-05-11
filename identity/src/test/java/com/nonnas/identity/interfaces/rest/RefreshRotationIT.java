@@ -1,6 +1,5 @@
 package com.nonnas.identity.interfaces.rest;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nonnas.identity.testsupport.AbstractIdentityIntegrationTest;
 import org.junit.jupiter.api.Test;

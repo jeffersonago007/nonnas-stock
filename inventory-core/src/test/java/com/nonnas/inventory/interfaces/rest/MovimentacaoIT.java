@@ -1,7 +1,5 @@
 package com.nonnas.inventory.interfaces.rest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nonnas.inventory.testsupport.AbstractInventoryIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +21,6 @@ class MovimentacaoIT extends AbstractInventoryIntegrationTest {
 
     @Autowired
     private MockMvc mvc;
-
-    @Autowired
-    private ObjectMapper json;
 
     @Test
     void entrada_atualizaSaldoMaterializado() throws Exception {
@@ -76,14 +71,13 @@ class MovimentacaoIT extends AbstractInventoryIntegrationTest {
                 }
                 """.formatted(filial, usuario, insumo, unidade);
 
-        var res = mvc.perform(post("/api/v1/movimentacoes/saida-manual")
+        mvc.perform(post("/api/v1/movimentacoes/saida-manual")
                         .contentType(MediaType.APPLICATION_JSON).content(saida))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.itens.length()").value(2))
                 .andExpect(jsonPath("$.itens[0].quantidadeBase").value(5))
                 .andExpect(jsonPath("$.itens[1].quantidadeBase").value(2))
-                .andExpect(jsonPath("$.gerouNegativo").value(false))
-                .andReturn();
+                .andExpect(jsonPath("$.gerouNegativo").value(false));
 
         // Saldo final = 15 - 7 = 8
         mvc.perform(get("/api/v1/saldos")

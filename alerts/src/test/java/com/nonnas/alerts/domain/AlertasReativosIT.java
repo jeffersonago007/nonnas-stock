@@ -141,8 +141,4 @@ class AlertasReativosIT extends AbstractAlertsIntegrationTest {
                 StatusAlerta.ATIVO, filialId, insumoId, null, null, null);
     }
 
-    private ListarAlertasDisparadosUseCase.Filtros filtroAtivosPorTipo(TipoAlerta tipo) {
-        return new ListarAlertasDisparadosUseCase.Filtros(
-                StatusAlerta.ATIVO, null, null, tipo, null, null);
-    }
 }

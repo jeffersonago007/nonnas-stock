@@ -50,7 +50,11 @@ switch ($Target) {
     'logs'    { docker compose logs -f postgres }
     'test'    { & $Mvn -B test }
     'verify'  { & $Mvn -B verify }
-    'run'     { & $Mvn -pl app -am spring-boot:run }
+    'run'     {
+        & $Mvn -B -pl app -am install '-DskipTests' '-Djacoco.skip=true'
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $Mvn -B -pl app spring-boot:run
+    }
     'clean'   { & $Mvn -B clean }
     'rebuild' {
         & $Mvn -B clean

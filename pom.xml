@@ -269,6 +269,11 @@
           Devs podem rodar local: `./mvnw -P security-scan org.owasp:dependency-check-maven:aggregate`.
         -->
         <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
+        </plugin>
+        <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
           <version>${dependency-check-maven.version}</version>

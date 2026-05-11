@@ -23,6 +23,7 @@ import { LancarNotaFiscalPage } from '@/features/operacoes/notas-fiscais/LancarN
 import { UnidadesPage } from '@/features/admin/unidades/UnidadesPage';
 import { EmpresasPage } from '@/features/admin/empresas/EmpresasPage';
 import { UsuariosPage } from '@/features/admin/usuarios/UsuariosPage';
+import { VendasPage } from '@/features/vendas/VendasPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: 'produtos', element: <ProdutosPage /> },
       { path: 'fichas-tecnicas', element: <FichasTecnicasPage /> },
       { path: 'estoque', element: <EstoquePage /> },
+      { path: 'vendas', element: <VendasPage /> },
       { path: 'movimentacoes', element: <MovimentacoesPage /> },
       { path: 'notas-fiscais', element: <NotasFiscaisPage /> },
       { path: 'notas-fiscais/lancar', element: <LancarNotaFiscalPage /> },

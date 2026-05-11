@@ -16,6 +16,7 @@ import {
   Users,
   FileText,
   BookOpen,
+  Receipt,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { to: '/produtos', label: 'Cardápio', icon: BookOpen },
   { to: '/fichas-tecnicas', label: 'Fichas técnicas', icon: ClipboardList },
   { to: '/estoque', label: 'Estoque', icon: Boxes },
+  { to: '/vendas', label: 'Vendas', icon: Receipt },
   { to: '/movimentacoes', label: 'Movimentações', icon: History },
   { to: '/notas-fiscais', label: 'Notas fiscais', icon: FileText },
   { to: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },

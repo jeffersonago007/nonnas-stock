@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftRight, ArrowRight, CheckCircle, Plus, Send, Trash2, XCircle } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, CheckCircle, Plus, Search, Send, Trash2, X, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -66,7 +66,13 @@ export function TransferenciasPage() {
   const filialId = useFilialFiltroStore((s) => s.filialId);
   const queryClient = useQueryClient();
   const usuarioId = useAuthStore((s) => s.user?.id);
+
+  // Input (não dispara query).
+  const [statusInput, setStatusInput] = useState(STATUS_TODOS);
+
+  // Filtro aplicado (só muda ao clicar Pesquisar).
   const [statusFiltro, setStatusFiltro] = useState(STATUS_TODOS);
+
   const [criarOpen, setCriarOpen] = useState(false);
   const [receberOpen, setReceberOpen] = useState<Transferencia | null>(null);
   const [cancelarOpen, setCancelarOpen] = useState<Transferencia | null>(null);
@@ -78,6 +84,15 @@ export function TransferenciasPage() {
     }),
     [filialId, statusFiltro],
   );
+
+  function aplicarFiltros() {
+    setStatusFiltro(statusInput);
+  }
+
+  function limparFiltros() {
+    setStatusInput(STATUS_TODOS);
+    setStatusFiltro(STATUS_TODOS);
+  }
 
   const transferenciasQuery = useQuery({
     queryKey: ['transferencias', params],
@@ -215,32 +230,48 @@ export function TransferenciasPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-3">
-        <div className="space-y-1.5 md:col-span-2">
-          <Label>Filtro de filial</Label>
-          <p className="text-sm text-muted-foreground">
-            {filialId
-              ? `Mostrando transferências envolvendo ${filialMap.get(filialId) ?? '(filial selecionada)'} (origem ou destino).`
-              : 'Mostrando todas as transferências da rede. Selecione uma filial no header para focar.'}
-          </p>
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-1.5 md:col-span-2">
+            <Label>Filtro de filial</Label>
+            <p className="text-sm text-muted-foreground">
+              {filialId
+                ? `Mostrando transferências envolvendo ${filialMap.get(filialId) ?? '(filial selecionada)'} (origem ou destino).`
+                : 'Mostrando todas as transferências da rede. Selecione uma filial no header para focar.'}
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-status">Status</Label>
+            <Select value={statusInput} onValueChange={setStatusInput}>
+              <SelectTrigger id="filtro-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={STATUS_TODOS}>Todos</SelectItem>
+                {(Object.keys(STATUS_LABELS) as StatusTransferencia[]).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-status">Status</Label>
-          <Select value={statusFiltro} onValueChange={setStatusFiltro}>
-            <SelectTrigger id="filtro-status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={STATUS_TODOS}>Todos</SelectItem>
-              {(Object.keys(STATUS_LABELS) as StatusTransferencia[]).map((s) => (
-                <SelectItem key={s} value={s}>
-                  {STATUS_LABELS[s]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-      </div>
+      </form>
 
       <DataTable
         data={transferenciasQuery.data}
@@ -539,7 +570,7 @@ function ReceberDialog({
     if (transferencia) {
       const inicial: Record<string, string> = {};
       transferencia.itens.forEach((it) => {
-        inicial[it.itemId] = it.quantidade.toString();
+        inicial[it.id] = it.quantidadeSolicitada.toString();
       });
       setQuantidades(inicial);
     }
@@ -549,8 +580,10 @@ function ReceberDialog({
     mutationFn: () => {
       if (!transferencia) throw new Error('Sem transferência');
       const itens = transferencia.itens.map((it) => ({
-        itemId: it.itemId,
-        quantidadeRecebida: Number(quantidades[it.itemId] ?? 0),
+        // Backend espera `itemId` no request (ItemRecebido DTO) mas o response
+        // ItemResponse tem só `id` — daí o mapeamento aqui.
+        itemId: it.id,
+        quantidadeRecebida: Number(quantidades[it.id] ?? 0),
       }));
       return receberTransferencia(transferencia.id, usuarioId ?? '', itens);
     },
@@ -576,22 +609,22 @@ function ReceberDialog({
         {transferencia && (
           <div className="space-y-3">
             {transferencia.itens.map((it) => (
-              <div key={it.itemId} className="grid gap-2 sm:grid-cols-[1fr_120px]">
+              <div key={it.id} className="grid gap-2 sm:grid-cols-[1fr_120px]">
                 <div className="space-y-1">
                   <span className="font-mono text-xs text-muted-foreground">
                     {it.insumoId.slice(0, 8)}…
                   </span>
                   <p className="text-xs text-muted-foreground">
-                    Solicitado: <strong>{it.quantidade}</strong>
+                    Solicitado: <strong>{it.quantidadeSolicitada}</strong>
                   </p>
                 </div>
                 <Input
                   type="number"
                   step="0.001"
                   min="0"
-                  value={quantidades[it.itemId] ?? ''}
+                  value={quantidades[it.id] ?? ''}
                   onChange={(e) =>
-                    setQuantidades((prev) => ({ ...prev, [it.itemId]: e.target.value }))
+                    setQuantidades((prev) => ({ ...prev, [it.id]: e.target.value }))
                   }
                 />
               </div>

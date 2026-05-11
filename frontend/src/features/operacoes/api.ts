@@ -159,10 +159,10 @@ export type StatusTransferencia =
   | 'CANCELADA';
 
 export interface TransferenciaItem {
-  itemId: string;
+  id: string;
   insumoId: string;
   unidadeId: string;
-  quantidade: number;
+  quantidadeSolicitada: number;
   quantidadeRecebida?: number | null;
 }
 

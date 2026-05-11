@@ -48,20 +48,23 @@ public class TransferenciasPage {
     }
 
     public TransferenciasPage aprovarPrimeira() {
-        page.locator("tr:has-text('Solicitada') >> button:has-text('Aprovar')").first().click();
+        // Botão "Aprovar" só aparece em transferências SOLICITADA.
+        page.locator("button:has-text('Aprovar')").first().click();
         page.waitForSelector("text=Transferência aprovada");
         return this;
     }
 
     public TransferenciasPage despacharPrimeira() {
-        page.locator("tr:has-text('Aprovada') >> button:has-text('Despachar')").first().click();
+        // Botão "Despachar" só aparece em transferências APROVADA.
+        page.locator("button:has-text('Despachar')").first().click();
         page.waitForSelector("text=Envio registrado");
         return this;
     }
 
     public TransferenciasPage abrirRecebimentoDaPrimeira() {
-        page.locator("tr:has-text('Em trânsito') >> button:has-text('Receber')").first().click();
-        page.waitForSelector("text=Receber transferência");
+        page.waitForSelector("tr:has-text('Em trânsito')");
+        page.locator("tr button:has-text('Receber')").first().click();
+        page.waitForSelector("[role=dialog] input[type=number]");
         return this;
     }
 

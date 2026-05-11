@@ -2,6 +2,7 @@ package com.nonnas.e2e.pageobjects;
 
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.options.AriaRole;
 
 public class EstoquePage {
 
@@ -21,6 +22,8 @@ public class EstoquePage {
 
     public EstoquePage filtrarPorInsumo(String termo) {
         page.locator("input#filtro-busca").fill(termo);
+        // A partir de 2026-05-10 o filtro só aplica ao clicar Pesquisar.
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Pesquisar")).click();
         return this;
     }
 

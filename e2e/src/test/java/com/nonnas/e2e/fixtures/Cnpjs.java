@@ -7,10 +7,10 @@ package com.nonnas.e2e.fixtures;
  */
 public final class Cnpjs {
 
-    public static final String EMPRESA_E2E = "22333444000180";
-    public static final String FILIAL_E2E_PRINCIPAL = "33444555000180";
-    public static final String FILIAL_E2E_SECUNDARIA = "84411474000146";
-    public static final String FORNECEDOR_E2E = "76024099000179";
+    public static final String EMPRESA_E2E = "22333444000181";
+    public static final String FILIAL_E2E_PRINCIPAL = "33444555000181";
+    public static final String FILIAL_E2E_SECUNDARIA = "84411474000116";
+    public static final String FORNECEDOR_E2E = "76024099000123";
 
     private Cnpjs() {}
 }

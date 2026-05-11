@@ -11,8 +11,10 @@ import com.nonnas.e2e.pageobjects.FiliaisPage;
 import com.nonnas.e2e.pageobjects.InsumosPage;
 import com.nonnas.e2e.pageobjects.LoginPage;
 import com.nonnas.e2e.pageobjects.MovimentacoesPage;
+import com.nonnas.e2e.pageobjects.NotaFiscalPage;
 import com.nonnas.e2e.pageobjects.ProdutosPage;
 import com.nonnas.e2e.pageobjects.TransferenciasPage;
+import com.nonnas.e2e.pageobjects.VendasPosPage;
 import com.nonnas.e2e.support.ApiClient;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -45,6 +47,8 @@ class SmokeE2ETest extends AbstractE2ETest {
     private static String unidadeKgCodigo;
     private static String insumoId;
     private static String insumoNome;
+    private static String insumoNovoNomeViaNF;
+    private static String produtoVendavelNome;
     private static ApiClient api;
 
     private static String unique(String prefix) {
@@ -103,10 +107,10 @@ class SmokeE2ETest extends AbstractE2ETest {
         insumoId = api.idInsumoPorNome(adminToken, insumoNome);
 
         // Produto vendável + ficha técnica.
-        String produtoNome = unique("Pizza Margherita E2E");
+        produtoVendavelNome = unique("Pizza Margherita E2E");
         var produtos = new ProdutosPage(page, BASE_URL).abrir();
-        produtos.criar(unique("PROD"), produtoNome, "Pizzas E2E");
-        FichaTecnicaPage ficha = produtos.abrirFichaDe(produtoNome);
+        produtos.criar(unique("PROD"), produtoVendavelNome, "Pizzas E2E");
+        FichaTecnicaPage ficha = produtos.abrirFichaDe(produtoVendavelNome);
         ficha.adicionarPrimeiroItem(insumoNome, unidadeKgCodigo, "0.250");
         ficha.salvarPrimeiraVersao();
         assertThat(ficha.exibeVersaoVigenteV1()).isTrue();
@@ -195,6 +199,57 @@ class SmokeE2ETest extends AbstractE2ETest {
         // Relatório de posição (oitavo cenário do master doc 7.3).
         var estoque = new EstoquePage(page, BASE_URL).abrir().filtrarPorInsumo(insumoNome);
         assertThat(estoque.linhaTemSaldo(insumoNome, "")).isTrue();
+    }
+
+    @Test
+    @Order(9)
+    void cenario09_lancarNotaFiscalManualCriaInsumoNovo() {
+        loginViaUI();
+        new DashboardPage(page, BASE_URL).abrir().selecionarFilialNoHeader(filialPrincipalNome);
+
+        // Caminho "cria insumo novo via NF": código + descrição inéditos ⇒
+        // ProcessarNotaFiscalUseCase.resolverInsumoEntidade vai cair no ramo
+        // criarInsumo (categoria "A classificar", controla_lote=true). Mais
+        // limpo do que reaproveitar o insumo do cenário 3 — exercita o "cria
+        // insumo via NF" do ADR 0013 sem mexer no saldo de Farinha.
+        insumoNovoNomeViaNF = unique("Açúcar Refinado E2E");
+
+        new NotaFiscalPage(page, BASE_URL)
+                .abrirLista()
+                .abrirLancamento()
+                .trocarParaAbaManual()
+                // dataEmissao=null preserva o default (hoje, useState do componente).
+                .preencherCabecalho(filialPrincipalNome, null, "220.00",
+                        "E2E-9001", "1", null)
+                .preencherFornecedor(Cnpjs.FORNECEDOR_E2E, "Fornecedor E2E NF Manual")
+                .preencherPrimeiroItem("INS-NF-E2E", insumoNovoNomeViaNF,
+                        "20", unidadeKgCodigo, "11.00")
+                .confirmarLancamento();
+
+        // Saldo do insumo NOVO aparece em /estoque como 20 KG; saldo do
+        // insumo original (Farinha) permanece 110 KG.
+        var estoque = new EstoquePage(page, BASE_URL).abrir().filtrarPorInsumo(insumoNovoNomeViaNF);
+        assertThat(estoque.linhaTemSaldo(insumoNovoNomeViaNF, "20")).isTrue();
+    }
+
+    @Test
+    @Order(10)
+    void cenario10_vendaPosConsumeInsumoViaFichaTecnica() {
+        loginViaUI();
+        new DashboardPage(page, BASE_URL).abrir().selecionarFilialNoHeader(filialPrincipalNome);
+
+        var vendas = new VendasPosPage(page, BASE_URL).abrir().pesquisar("Pizza");
+        vendas.preencherQtdEVender(produtoVendavelNome, "4");
+
+        // 4 × 0.250 KG = 1 KG de Farinha 00 a debitar.
+        // fmtSaldo do dialog usa pt-BR mas sem casas pra valores inteiros ⇒ "1 KG".
+        assertThat(vendas.previewMostraInsumoComQtd(insumoNome, "1")).isTrue();
+        vendas.confirmarVenda();
+
+        // Saldo cai 110 → 109 KG (insumo "Farinha 00 E2E" não foi tocado em
+        // cenario09 porque lá criamos um insumo novo).
+        var estoque = new EstoquePage(page, BASE_URL).abrir().filtrarPorInsumo(insumoNome);
+        assertThat(estoque.linhaTemSaldo(insumoNome, "109")).isTrue();
     }
 
     private void loginViaUI() {

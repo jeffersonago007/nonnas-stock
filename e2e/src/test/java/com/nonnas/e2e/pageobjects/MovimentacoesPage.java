@@ -40,6 +40,10 @@ public class MovimentacoesPage {
         page.locator("text=Quantidade lançada").locator("xpath=../input").fill(qtdLancada);
         page.locator("text=Quantidade base").locator("xpath=../input").fill(qtdBase);
         page.locator("text=Valor unitário").locator("xpath=../input").fill(valorUnitario);
+        // Backend exige numero de lote + validade pra insumos com controla_lote=true
+        // (caso padrão de Farinha cadastrada nos cenários anteriores).
+        page.locator("input#numeroLote").fill("LOTE-E2E");
+        page.locator("input#dataValidade").fill("2027-12-31");
         return this;
     }
 

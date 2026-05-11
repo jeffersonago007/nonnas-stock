@@ -34,10 +34,25 @@ public class ApiClient {
         return extractJsonString(resp.body(), "accessToken");
     }
 
+    /**
+     * Idempotente: se já existe empresa com o CNPJ, devolve o id existente.
+     * Útil pra re-execuções locais sem precisar dropar o banco entre runs.
+     */
     public String criarEmpresa(String token, String razaoSocial, String cnpj) {
+        String existing = idEmpresaPorCnpj(token, cnpj);
+        if (existing != null) return existing;
         String body = "{\"razaoSocial\":\"" + razaoSocial + "\",\"cnpj\":\"" + cnpj + "\"}";
         HttpResponse<String> resp = post("/api/v1/empresas", token, body);
         return extractJsonString(resp.body(), "id");
+    }
+
+    public String idEmpresaPorCnpj(String token, String cnpj) {
+        HttpResponse<String> resp = get("/api/v1/empresas", token);
+        Pattern p = Pattern.compile(
+                "\\{\"id\":\"([^\"]+)\"[^}]*\"cnpj\":\"" + Pattern.quote(cnpj) + "\"",
+                Pattern.DOTALL);
+        Matcher m = p.matcher(resp.body());
+        return m.find() ? m.group(1) : null;
     }
 
     public String criarFilial(String token, String empresaId, String nome, String cnpj) {
@@ -68,9 +83,12 @@ public class ApiClient {
 
     public String idInsumoPorNome(String token, String nome) {
         HttpResponse<String> resp = get("/api/v1/insumos", token);
+        // Catalog faz UPPERCASE em nomes (commit 3a12308). Comparação aqui é
+        // case-insensitive pra absorver tanto o input do test quanto o nome
+        // canonizado pelo backend.
         Pattern p = Pattern.compile(
                 "\\{\"id\":\"([^\"]+)\"[^}]*\"nome\":\"" + Pattern.quote(nome) + "\"",
-                Pattern.DOTALL);
+                Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(resp.body());
         if (!m.find()) {
             throw new IllegalStateException("Insumo " + nome + " não encontrado no backend");

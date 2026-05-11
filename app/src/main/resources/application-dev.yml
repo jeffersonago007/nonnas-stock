@@ -3,10 +3,19 @@ spring:
     url: jdbc:postgresql://localhost:5432/nonnas_stock
     username: ${SPRING_DATASOURCE_USERNAME:nonnas}
     password: ${SPRING_DATASOURCE_PASSWORD:nonnas_dev}
+  flyway:
+    # Dev only: V021 teve o SQL ajustado depois de aplicada (T-LOT-09 renomeou a partir
+    # de V020). Em prod o profile usa validate-on-migrate=true padrão. Repair real fica
+    # pendente; ver `flyway:repair` quando o plugin for adicionado.
+    validate-on-migrate: false
 
 nonnas:
   cors:
     allowed-origins: http://localhost:5173,http://localhost:3000
+  rate-limit:
+    # Dev local + E2E têm polling intenso (notificações, posicao, ruptura) +
+    # navegação rápida que estoura facilmente 100 req/min. Desligado em dev.
+    enabled: false
 
 logging:
   level:

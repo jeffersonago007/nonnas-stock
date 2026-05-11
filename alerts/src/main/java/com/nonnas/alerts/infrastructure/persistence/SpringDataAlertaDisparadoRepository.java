@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataAlertaDisparadoRepository extends JpaRepository<AlertaDisparadoEntity, UUID> {
+public interface SpringDataAlertaDisparadoRepository extends JpaRepository<AlertaDisparadoEntity, UUID> {
 
     @Query("""
         SELECT a FROM AlertaDisparadoEntity a

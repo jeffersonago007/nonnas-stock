@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.UUID;
 
-interface SpringDataNotificacaoRepository extends JpaRepository<NotificacaoEntity, UUID> {
+public interface SpringDataNotificacaoRepository extends JpaRepository<NotificacaoEntity, UUID> {
 
     @Query("""
             SELECT n FROM NotificacaoEntity n

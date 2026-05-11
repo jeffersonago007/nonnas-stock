@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-interface SpringDataAlertaConfigRepository extends JpaRepository<AlertaConfigEntity, UUID> {
+public interface SpringDataAlertaConfigRepository extends JpaRepository<AlertaConfigEntity, UUID> {
 
     @Query("""
         SELECT c FROM AlertaConfigEntity c

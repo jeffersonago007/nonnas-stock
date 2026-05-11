@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataNotaFiscalRepository extends JpaRepository<NotaFiscalEntity, UUID> {
+public interface SpringDataNotaFiscalRepository extends JpaRepository<NotaFiscalEntity, UUID> {
 
     Optional<NotaFiscalEntity> findByChaveNfe(String chaveNfe);
 

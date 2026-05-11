@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataFichaTecnicaRepository extends JpaRepository<FichaTecnicaEntity, UUID> {
+public interface SpringDataFichaTecnicaRepository extends JpaRepository<FichaTecnicaEntity, UUID> {
 
     Optional<FichaTecnicaEntity> findByProdutoVendavelIdAndAtivaIsTrue(UUID produtoVendavelId);
 

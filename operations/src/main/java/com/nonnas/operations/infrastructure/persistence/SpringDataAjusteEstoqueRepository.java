@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
-interface SpringDataAjusteEstoqueRepository extends JpaRepository<AjusteEstoqueEntity, UUID> {
+public interface SpringDataAjusteEstoqueRepository extends JpaRepository<AjusteEstoqueEntity, UUID> {
 
     List<AjusteEstoqueEntity> findByFilialIdAndStatusOrderByDataSolicitacaoDesc(
             UUID filialId, StatusAjuste status, Pageable pageable);

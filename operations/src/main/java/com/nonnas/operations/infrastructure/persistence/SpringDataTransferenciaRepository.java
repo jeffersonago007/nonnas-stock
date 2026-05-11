@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-interface SpringDataTransferenciaRepository extends JpaRepository<TransferenciaEntity, UUID> {
+public interface SpringDataTransferenciaRepository extends JpaRepository<TransferenciaEntity, UUID> {
 
     List<TransferenciaEntity> findByFilialOrigemIdOrderByDataSolicitacaoDesc(UUID filialOrigemId, Pageable pageable);
 

@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataInsumoRepository extends JpaRepository<InsumoEntity, UUID> {
+public interface SpringDataInsumoRepository extends JpaRepository<InsumoEntity, UUID> {
     Optional<InsumoEntity> findByCodigo(String codigo);
     boolean existsByCodigo(String codigo);
 

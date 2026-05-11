@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataConversaoUnidadeRepository extends JpaRepository<ConversaoUnidadeEntity, UUID> {
+public interface SpringDataConversaoUnidadeRepository extends JpaRepository<ConversaoUnidadeEntity, UUID> {
 
     @Query("""
         SELECT c FROM ConversaoUnidadeEntity c

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataSaldoLoteRepository extends JpaRepository<SaldoLoteEntity, SaldoLoteEntity.SaldoLoteId> {
+public interface SpringDataSaldoLoteRepository extends JpaRepository<SaldoLoteEntity, SaldoLoteEntity.SaldoLoteId> {
 
     @Query("""
         SELECT COALESCE(SUM(s.quantidadeBase), 0) FROM SaldoLoteEntity s

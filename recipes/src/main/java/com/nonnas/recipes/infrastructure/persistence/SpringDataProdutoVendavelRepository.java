@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataProdutoVendavelRepository extends JpaRepository<ProdutoVendavelEntity, UUID> {
+public interface SpringDataProdutoVendavelRepository extends JpaRepository<ProdutoVendavelEntity, UUID> {
     Optional<ProdutoVendavelEntity> findByCodigo(String codigo);
     boolean existsByCodigo(String codigo);
 

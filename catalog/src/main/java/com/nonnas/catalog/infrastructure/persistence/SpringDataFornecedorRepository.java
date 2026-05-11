@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-interface SpringDataFornecedorRepository extends JpaRepository<FornecedorEntity, UUID> {
+public interface SpringDataFornecedorRepository extends JpaRepository<FornecedorEntity, UUID> {
     Optional<FornecedorEntity> findByCnpj(String cnpj);
     boolean existsByCnpj(String cnpj);
 

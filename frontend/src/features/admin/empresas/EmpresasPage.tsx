@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Power } from 'lucide-react';
+import { Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -32,8 +32,13 @@ export function EmpresasPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Empresa | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [busca, setBusca] = useState('');
-  const [ativaFiltro, setAtivaFiltro] = useState(ATIVA_TODOS);
+
+  // Inputs (não disparam filtragem).
+  const [buscaInput, setBuscaInput] = useState('');
+  const [ativaInput, setAtivaInput] = useState(ATIVA_TODOS);
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
+  const [filtros, setFiltros] = useState({ q: '', ativa: ATIVA_TODOS });
 
   const empresasQuery = useQuery({
     queryKey: ['admin-empresas'],
@@ -42,10 +47,10 @@ export function EmpresasPage() {
 
   const filtradas = useMemo(() => {
     const todas = empresasQuery.data ?? [];
-    const termo = busca.trim().toLowerCase();
+    const termo = filtros.q.trim().toLowerCase();
     return todas.filter((e) => {
-      if (ativaFiltro === 'true' && !e.ativa) return false;
-      if (ativaFiltro === 'false' && e.ativa) return false;
+      if (filtros.ativa === 'true' && !e.ativa) return false;
+      if (filtros.ativa === 'false' && e.ativa) return false;
       if (
         termo &&
         !e.razaoSocial.toLowerCase().includes(termo) &&
@@ -55,7 +60,17 @@ export function EmpresasPage() {
       }
       return true;
     });
-  }, [empresasQuery.data, busca, ativaFiltro]);
+  }, [empresasQuery.data, filtros]);
+
+  function aplicarFiltros() {
+    setFiltros({ q: buscaInput, ativa: ativaInput });
+  }
+
+  function limparFiltros() {
+    setBuscaInput('');
+    setAtivaInput(ATIVA_TODOS);
+    setFiltros({ q: '', ativa: ATIVA_TODOS });
+  }
 
   const desativarMutation = useMutation({
     mutationFn: desativarEmpresa,
@@ -133,30 +148,46 @@ export function EmpresasPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-3">
-        <div className="space-y-1.5 md:col-span-2">
-          <Label htmlFor="filtro-busca">Buscar</Label>
-          <Input
-            id="filtro-busca"
-            placeholder="Razão social ou CNPJ"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="filtro-busca">Buscar</Label>
+            <Input
+              id="filtro-busca"
+              placeholder="Razão social ou CNPJ"
+              value={buscaInput}
+              onChange={(e) => setBuscaInput(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-ativa">Status</Label>
+            <Select value={ativaInput} onValueChange={setAtivaInput}>
+              <SelectTrigger id="filtro-ativa">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ATIVA_TODOS}>Todas</SelectItem>
+                <SelectItem value="true">Ativas</SelectItem>
+                <SelectItem value="false">Inativas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-ativa">Status</Label>
-          <Select value={ativaFiltro} onValueChange={setAtivaFiltro}>
-            <SelectTrigger id="filtro-ativa">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ATIVA_TODOS}>Todas</SelectItem>
-              <SelectItem value="true">Ativas</SelectItem>
-              <SelectItem value="false">Inativas</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-      </div>
+      </form>
 
       <DataTable
         data={filtradas}

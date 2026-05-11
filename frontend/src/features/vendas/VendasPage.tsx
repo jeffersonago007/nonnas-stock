@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Receipt, Search } from 'lucide-react';
+import { Receipt, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,20 @@ export function VendasPage() {
   const queryClient = useQueryClient();
   const filialId = useFilialFiltroStore((s) => s.filialId);
   const usuarioId = useAuthStore((s) => s.user?.id);
+  // Input (não dispara filtragem).
+  const [buscaInput, setBuscaInput] = useState('');
+  // Filtro aplicado (só muda ao clicar Pesquisar).
   const [busca, setBusca] = useState('');
   const [quantidades, setQuantidades] = useState<Record<string, string>>({});
+
+  function aplicarFiltros() {
+    setBusca(buscaInput);
+  }
+
+  function limparFiltros() {
+    setBuscaInput('');
+    setBusca('');
+  }
   const [confirmacao, setConfirmacao] = useState<
     | { produtoId: string; produtoNome: string; quantidade: number }
     | null
@@ -94,19 +106,35 @@ export function VendasPage() {
         description="Registre vendas de itens do cardápio. A baixa de produtos do estoque é feita automaticamente via ficha técnica vigente (FEFO)."
       />
 
-      <div className="rounded-md border bg-card p-4">
-        <Label htmlFor="busca-venda">Buscar item do cardápio</Label>
-        <div className="relative mt-1.5">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="busca-venda"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Nome ou código…"
-            className="pl-9"
-          />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor="busca-venda">Buscar item do cardápio</Label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="busca-venda"
+              value={buscaInput}
+              onChange={(e) => setBuscaInput(e.target.value)}
+              placeholder="Nome ou código…"
+              className="pl-9"
+            />
+          </div>
         </div>
-      </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
+        </div>
+      </form>
 
       {!filialId && (
         <Card>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BellOff, CheckCircle2, Pencil, Plus } from 'lucide-react';
+import { Bell, BellOff, CheckCircle2, Pencil, Plus, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -109,6 +109,12 @@ function DisparadosTab() {
   const queryClient = useQueryClient();
   const usuarioId = useAuthStore((s) => s.user?.id);
   const filialId = useFilialFiltroStore((s) => s.filialId);
+
+  // Inputs (não disparam query).
+  const [statusInput, setStatusInput] = useState<StatusAlerta | '__todos__'>('ATIVO');
+  const [tipoInput, setTipoInput] = useState<TipoAlerta | '__todos__'>('__todos__');
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
   const [statusFiltro, setStatusFiltro] = useState<StatusAlerta | '__todos__'>('ATIVO');
   const [tipoFiltro, setTipoFiltro] = useState<TipoAlerta | '__todos__'>('__todos__');
 
@@ -120,6 +126,18 @@ function DisparadosTab() {
     }),
     [filialId, statusFiltro, tipoFiltro],
   );
+
+  function aplicarFiltros() {
+    setStatusFiltro(statusInput);
+    setTipoFiltro(tipoInput);
+  }
+
+  function limparFiltros() {
+    setStatusInput('ATIVO');
+    setTipoInput('__todos__');
+    setStatusFiltro('ATIVO');
+    setTipoFiltro('__todos__');
+  }
 
   const disparadosQuery = useQuery({
     queryKey: ['alertas-disparados', filtros],
@@ -214,43 +232,59 @@ function DisparadosTab() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-status">Status</Label>
-          <Select value={statusFiltro} onValueChange={(v) => setStatusFiltro(v as StatusAlerta | '__todos__')}>
-            <SelectTrigger id="filtro-status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__todos__">Todos</SelectItem>
-              <SelectItem value="ATIVO">Ativos</SelectItem>
-              <SelectItem value="RESOLVIDO_AUTO">Resolvidos (auto)</SelectItem>
-              <SelectItem value="RESOLVIDO_MANUAL">Resolvidos (manual)</SelectItem>
-            </SelectContent>
-          </Select>
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-status">Status</Label>
+            <Select value={statusInput} onValueChange={(v) => setStatusInput(v as StatusAlerta | '__todos__')}>
+              <SelectTrigger id="filtro-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__todos__">Todos</SelectItem>
+                <SelectItem value="ATIVO">Ativos</SelectItem>
+                <SelectItem value="RESOLVIDO_AUTO">Resolvidos (auto)</SelectItem>
+                <SelectItem value="RESOLVIDO_MANUAL">Resolvidos (manual)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-tipo">Tipo</Label>
+            <Select value={tipoInput} onValueChange={(v) => setTipoInput(v as TipoAlerta | '__todos__')}>
+              <SelectTrigger id="filtro-tipo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__todos__">Todos</SelectItem>
+                {(Object.keys(TIPO_LABELS) as TipoAlerta[]).map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {TIPO_LABELS[t]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end">
+            <p className="text-xs text-muted-foreground">
+              Filtro de filial vem do header. Disparos novos aparecem no próximo refetch (30s).
+            </p>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-tipo">Tipo</Label>
-          <Select value={tipoFiltro} onValueChange={(v) => setTipoFiltro(v as TipoAlerta | '__todos__')}>
-            <SelectTrigger id="filtro-tipo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__todos__">Todos</SelectItem>
-              {(Object.keys(TIPO_LABELS) as TipoAlerta[]).map((t) => (
-                <SelectItem key={t} value={t}>
-                  {TIPO_LABELS[t]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-        <div className="flex items-end">
-          <p className="text-xs text-muted-foreground">
-            Filtro de filial vem do header. Disparos novos aparecem no próximo refetch (30s).
-          </p>
-        </div>
-      </div>
+      </form>
 
       <DataTable
         data={disparadosQuery.data}

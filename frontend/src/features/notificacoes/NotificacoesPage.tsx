@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, CheckCheck, ExternalLink, Eye } from 'lucide-react';
+import { Archive, CheckCheck, ExternalLink, Eye, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/PageHeader';
 import { DataTable, type ColumnDef } from '@/components/data-table/DataTable';
 import { toastError } from '@/lib/toastError';
@@ -46,16 +45,34 @@ const PRIORIDADE_TONES: Record<Prioridade, string> = {
 
 export function NotificacoesPage() {
   const queryClient = useQueryClient();
-  const [tipoFiltro, setTipoFiltro] = useState(TIPO_TODOS);
-  const [somenteNaoLidas, setSomenteNaoLidas] = useState(false);
+
+  // Inputs (não disparam query).
+  const [tipoInput, setTipoInput] = useState(TIPO_TODOS);
+  const [somenteNaoLidasInput, setSomenteNaoLidasInput] = useState(false);
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
+  const [filtrosAplicados, setFiltrosAplicados] = useState({
+    tipo: TIPO_TODOS,
+    somenteNaoLidas: false,
+  });
 
   const filtros = useMemo(
     () => ({
-      tipo: tipoFiltro === TIPO_TODOS ? undefined : tipoFiltro,
-      somenteNaoLidas,
+      tipo: filtrosAplicados.tipo === TIPO_TODOS ? undefined : filtrosAplicados.tipo,
+      somenteNaoLidas: filtrosAplicados.somenteNaoLidas,
     }),
-    [tipoFiltro, somenteNaoLidas],
+    [filtrosAplicados],
   );
+
+  function aplicarFiltros() {
+    setFiltrosAplicados({ tipo: tipoInput, somenteNaoLidas: somenteNaoLidasInput });
+  }
+
+  function limparFiltros() {
+    setTipoInput(TIPO_TODOS);
+    setSomenteNaoLidasInput(false);
+    setFiltrosAplicados({ tipo: TIPO_TODOS, somenteNaoLidas: false });
+  }
 
   const query = useQuery({
     queryKey: ['notificacoes', filtros],
@@ -169,11 +186,17 @@ export function NotificacoesPage() {
         }
       />
 
-      <Card>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="filtro-tipo">Tipo</Label>
-            <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+            <Select value={tipoInput} onValueChange={setTipoInput}>
               <SelectTrigger id="filtro-tipo">
                 <SelectValue />
               </SelectTrigger>
@@ -190,8 +213,8 @@ export function NotificacoesPage() {
           <div className="space-y-1.5">
             <Label htmlFor="filtro-status">Status</Label>
             <Select
-              value={somenteNaoLidas ? 'nao-lidas' : 'todas'}
-              onValueChange={(v) => setSomenteNaoLidas(v === 'nao-lidas')}
+              value={somenteNaoLidasInput ? 'nao-lidas' : 'todas'}
+              onValueChange={(v) => setSomenteNaoLidasInput(v === 'nao-lidas')}
             >
               <SelectTrigger id="filtro-status">
                 <SelectValue />
@@ -202,8 +225,16 @@ export function NotificacoesPage() {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
+        </div>
+      </form>
 
       <DataTable
         data={query.data}
@@ -214,7 +245,7 @@ export function NotificacoesPage() {
         rowClassName={(n) => (n.lidaEm ? 'opacity-70' : '')}
         emptyState={
           <p>
-            {somenteNaoLidas
+            {filtrosAplicados.somenteNaoLidas
               ? 'Sem notificações novas.'
               : 'Você ainda não recebeu nenhuma notificação.'}
           </p>

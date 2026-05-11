@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Power } from 'lucide-react';
+import { Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -40,9 +40,18 @@ export function UnidadesPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Unidade | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [busca, setBusca] = useState('');
-  const [ativaFiltro, setAtivaFiltro] = useState(ATIVA_TODOS);
-  const [tipoFiltro, setTipoFiltro] = useState(TIPO_TODOS);
+
+  // Inputs (não disparam filtragem).
+  const [buscaInput, setBuscaInput] = useState('');
+  const [ativaInput, setAtivaInput] = useState(ATIVA_TODOS);
+  const [tipoInput, setTipoInput] = useState(TIPO_TODOS);
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
+  const [filtros, setFiltros] = useState({
+    q: '',
+    ativa: ATIVA_TODOS,
+    tipo: TIPO_TODOS,
+  });
 
   const unidadesQuery = useQuery({
     queryKey: ['admin-unidades'],
@@ -51,11 +60,11 @@ export function UnidadesPage() {
 
   const filtradas = useMemo(() => {
     const todas = unidadesQuery.data ?? [];
-    const termo = busca.trim().toLowerCase();
+    const termo = filtros.q.trim().toLowerCase();
     return todas.filter((u) => {
-      if (ativaFiltro === 'true' && !u.ativa) return false;
-      if (ativaFiltro === 'false' && u.ativa) return false;
-      if (tipoFiltro !== TIPO_TODOS && u.tipo !== tipoFiltro) return false;
+      if (filtros.ativa === 'true' && !u.ativa) return false;
+      if (filtros.ativa === 'false' && u.ativa) return false;
+      if (filtros.tipo !== TIPO_TODOS && u.tipo !== filtros.tipo) return false;
       if (
         termo &&
         !u.nome.toLowerCase().includes(termo) &&
@@ -65,7 +74,18 @@ export function UnidadesPage() {
       }
       return true;
     });
-  }, [unidadesQuery.data, busca, ativaFiltro, tipoFiltro]);
+  }, [unidadesQuery.data, filtros]);
+
+  function aplicarFiltros() {
+    setFiltros({ q: buscaInput, ativa: ativaInput, tipo: tipoInput });
+  }
+
+  function limparFiltros() {
+    setBuscaInput('');
+    setAtivaInput(ATIVA_TODOS);
+    setTipoInput(TIPO_TODOS);
+    setFiltros({ q: '', ativa: ATIVA_TODOS, tipo: TIPO_TODOS });
+  }
 
   const desativarMutation = useMutation({
     mutationFn: desativarUnidade,
@@ -145,44 +165,60 @@ export function UnidadesPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-4">
-        <div className="space-y-1.5 md:col-span-2">
-          <Label htmlFor="filtro-busca">Buscar</Label>
-          <Input
-            id="filtro-busca"
-            placeholder="Nome ou código"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="filtro-busca">Buscar</Label>
+            <Input
+              id="filtro-busca"
+              placeholder="Nome ou código"
+              value={buscaInput}
+              onChange={(e) => setBuscaInput(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-tipo">Tipo</Label>
+            <Select value={tipoInput} onValueChange={setTipoInput}>
+              <SelectTrigger id="filtro-tipo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TIPO_TODOS}>Todos</SelectItem>
+                <SelectItem value="PESO">Peso</SelectItem>
+                <SelectItem value="VOLUME">Volume</SelectItem>
+                <SelectItem value="UNIDADE">Unidade</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-ativa">Status</Label>
+            <Select value={ativaInput} onValueChange={setAtivaInput}>
+              <SelectTrigger id="filtro-ativa">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ATIVA_TODOS}>Todas</SelectItem>
+                <SelectItem value="true">Ativas</SelectItem>
+                <SelectItem value="false">Inativas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-tipo">Tipo</Label>
-          <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-            <SelectTrigger id="filtro-tipo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TIPO_TODOS}>Todos</SelectItem>
-              <SelectItem value="PESO">Peso</SelectItem>
-              <SelectItem value="VOLUME">Volume</SelectItem>
-              <SelectItem value="UNIDADE">Unidade</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-ativa">Status</Label>
-          <Select value={ativaFiltro} onValueChange={setAtivaFiltro}>
-            <SelectTrigger id="filtro-ativa">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ATIVA_TODOS}>Todas</SelectItem>
-              <SelectItem value="true">Ativas</SelectItem>
-              <SelectItem value="false">Inativas</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      </form>
 
       <DataTable
         data={filtradas}

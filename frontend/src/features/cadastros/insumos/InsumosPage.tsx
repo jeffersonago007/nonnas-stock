@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { AlertCircle, ArrowDownToLine, Pencil, Plus, Power } from 'lucide-react';
+import { AlertCircle, ArrowDownToLine, Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -40,19 +40,51 @@ export function InsumosPage() {
   const filialId = useFilialFiltroStore((s) => s.filialId);
   const [editing, setEditing] = useState<Insumo | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [busca, setBusca] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState(CATEGORIA_TODAS);
-  const [ativoFiltro, setAtivoFiltro] = useState(ATIVO_TODOS);
-  const [soSemEstoque, setSoSemEstoque] = useState(false);
+
+  // Inputs (não disparam query).
+  const [buscaInput, setBuscaInput] = useState('');
+  const [categoriaInput, setCategoriaInput] = useState(CATEGORIA_TODAS);
+  const [ativoInput, setAtivoInput] = useState(ATIVO_TODOS);
+  const [soSemEstoqueInput, setSoSemEstoqueInput] = useState(false);
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
+  const [filtrosAplicados, setFiltrosAplicados] = useState({
+    q: '',
+    categoria: CATEGORIA_TODAS,
+    ativo: ATIVO_TODOS,
+    soSemEstoque: false,
+  });
 
   const filtros = useMemo(
     () => ({
-      categoriaId: categoriaFiltro === CATEGORIA_TODAS ? undefined : categoriaFiltro,
-      ativo: ativoFiltro === ATIVO_TODOS ? undefined : ativoFiltro === 'true',
-      q: busca.trim() || undefined,
+      categoriaId: filtrosAplicados.categoria === CATEGORIA_TODAS ? undefined : filtrosAplicados.categoria,
+      ativo: filtrosAplicados.ativo === ATIVO_TODOS ? undefined : filtrosAplicados.ativo === 'true',
+      q: filtrosAplicados.q.trim() || undefined,
     }),
-    [categoriaFiltro, ativoFiltro, busca],
+    [filtrosAplicados],
   );
+
+  function aplicarFiltros() {
+    setFiltrosAplicados({
+      q: buscaInput,
+      categoria: categoriaInput,
+      ativo: ativoInput,
+      soSemEstoque: soSemEstoqueInput,
+    });
+  }
+
+  function limparFiltros() {
+    setBuscaInput('');
+    setCategoriaInput(CATEGORIA_TODAS);
+    setAtivoInput(ATIVO_TODOS);
+    setSoSemEstoqueInput(false);
+    setFiltrosAplicados({
+      q: '',
+      categoria: CATEGORIA_TODAS,
+      ativo: ATIVO_TODOS,
+      soSemEstoque: false,
+    });
+  }
 
   const insumosQuery = useQuery({
     queryKey: ['insumos', filtros],
@@ -88,9 +120,9 @@ export function InsumosPage() {
   // categoria/ativo/q continuam server-side via insumosQuery acima.
   const insumosFiltrados = useMemo(() => {
     const base = insumosQuery.data ?? [];
-    if (!soSemEstoque || filialId == null) return base;
+    if (!filtrosAplicados.soSemEstoque || filialId == null) return base;
     return base.filter((i) => (saldoPorInsumo.get(i.id) ?? 0) <= 0);
-  }, [insumosQuery.data, soSemEstoque, filialId, saldoPorInsumo]);
+  }, [insumosQuery.data, filtrosAplicados.soSemEstoque, filialId, saldoPorInsumo]);
 
   const unidadeMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -216,50 +248,58 @@ export function InsumosPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-busca">Buscar</Label>
-          <Input
-            id="filtro-busca"
-            placeholder="Nome ou código"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-busca">Buscar</Label>
+            <Input
+              id="filtro-busca"
+              placeholder="Nome ou código"
+              value={buscaInput}
+              onChange={(e) => setBuscaInput(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-categoria">Categoria</Label>
+            <Select value={categoriaInput} onValueChange={setCategoriaInput}>
+              <SelectTrigger id="filtro-categoria">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={CATEGORIA_TODAS}>Todas</SelectItem>
+                {categoriasQuery.data?.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-ativo">Status</Label>
+            <Select value={ativoInput} onValueChange={setAtivoInput}>
+              <SelectTrigger id="filtro-ativo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
+                <SelectItem value="true">Ativos</SelectItem>
+                <SelectItem value="false">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-categoria">Categoria</Label>
-          <Select value={categoriaFiltro} onValueChange={setCategoriaFiltro}>
-            <SelectTrigger id="filtro-categoria">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={CATEGORIA_TODAS}>Todas</SelectItem>
-              {categoriasQuery.data?.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-ativo">Status</Label>
-          <Select value={ativoFiltro} onValueChange={setAtivoFiltro}>
-            <SelectTrigger id="filtro-ativo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
-              <SelectItem value="true">Ativos</SelectItem>
-              <SelectItem value="false">Inativos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="md:col-span-3 flex items-center gap-2 pt-1">
+        <div className="flex items-center gap-2 pt-1">
           <Switch
             id="filtro-sem-estoque"
-            checked={soSemEstoque}
-            onCheckedChange={setSoSemEstoque}
+            checked={soSemEstoqueInput}
+            onCheckedChange={setSoSemEstoqueInput}
             disabled={filialId == null}
           />
           <Label htmlFor="filtro-sem-estoque" className="cursor-pointer text-sm">
@@ -271,7 +311,15 @@ export function InsumosPage() {
             </span>
           )}
         </div>
-      </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
+        </div>
+      </form>
 
       <DataTable
         data={insumosFiltrados}

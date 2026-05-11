@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Power } from 'lucide-react';
+import { Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -32,16 +32,34 @@ export function FornecedoresPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Fornecedor | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [busca, setBusca] = useState('');
-  const [ativoFiltro, setAtivoFiltro] = useState(ATIVO_TODOS);
+
+  // Inputs (não disparam query).
+  const [buscaInput, setBuscaInput] = useState('');
+  const [ativoInput, setAtivoInput] = useState(ATIVO_TODOS);
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
+  const [filtrosAplicados, setFiltrosAplicados] = useState({
+    q: '',
+    ativo: ATIVO_TODOS,
+  });
 
   const filtros = useMemo(
     () => ({
-      ativo: ativoFiltro === ATIVO_TODOS ? undefined : ativoFiltro === 'true',
-      q: busca.trim() || undefined,
+      ativo: filtrosAplicados.ativo === ATIVO_TODOS ? undefined : filtrosAplicados.ativo === 'true',
+      q: filtrosAplicados.q.trim() || undefined,
     }),
-    [ativoFiltro, busca],
+    [filtrosAplicados],
   );
+
+  function aplicarFiltros() {
+    setFiltrosAplicados({ q: buscaInput, ativo: ativoInput });
+  }
+
+  function limparFiltros() {
+    setBuscaInput('');
+    setAtivoInput(ATIVO_TODOS);
+    setFiltrosAplicados({ q: '', ativo: ATIVO_TODOS });
+  }
 
   const fornecedoresQuery = useQuery({
     queryKey: ['fornecedores', filtros],
@@ -104,30 +122,46 @@ export function FornecedoresPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-3">
-        <div className="space-y-1.5 md:col-span-2">
-          <Label htmlFor="filtro-busca">Buscar</Label>
-          <Input
-            id="filtro-busca"
-            placeholder="Razão social ou CNPJ"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="filtro-busca">Buscar</Label>
+            <Input
+              id="filtro-busca"
+              placeholder="Razão social ou CNPJ"
+              value={buscaInput}
+              onChange={(e) => setBuscaInput(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-ativo">Status</Label>
+            <Select value={ativoInput} onValueChange={setAtivoInput}>
+              <SelectTrigger id="filtro-ativo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
+                <SelectItem value="true">Ativos</SelectItem>
+                <SelectItem value="false">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-ativo">Status</Label>
-          <Select value={ativoFiltro} onValueChange={setAtivoFiltro}>
-            <SelectTrigger id="filtro-ativo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
-              <SelectItem value="true">Ativos</SelectItem>
-              <SelectItem value="false">Inativos</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-      </div>
+      </form>
 
       <DataTable
         data={fornecedoresQuery.data}

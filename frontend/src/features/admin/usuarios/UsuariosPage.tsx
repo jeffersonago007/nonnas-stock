@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Power } from 'lucide-react';
+import { Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -41,9 +41,18 @@ export function UsuariosPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Usuario | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [busca, setBusca] = useState('');
-  const [ativoFiltro, setAtivoFiltro] = useState(ATIVO_TODOS);
-  const [perfilFiltro, setPerfilFiltro] = useState(PERFIL_TODOS);
+
+  // Inputs (não disparam filtragem).
+  const [buscaInput, setBuscaInput] = useState('');
+  const [ativoInput, setAtivoInput] = useState(ATIVO_TODOS);
+  const [perfilInput, setPerfilInput] = useState(PERFIL_TODOS);
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
+  const [filtros, setFiltros] = useState({
+    q: '',
+    ativo: ATIVO_TODOS,
+    perfil: PERFIL_TODOS,
+  });
 
   const usuariosQuery = useQuery({
     queryKey: ['admin-usuarios'],
@@ -52,11 +61,11 @@ export function UsuariosPage() {
 
   const filtrados = useMemo(() => {
     const todos = usuariosQuery.data ?? [];
-    const termo = busca.trim().toLowerCase();
+    const termo = filtros.q.trim().toLowerCase();
     return todos.filter((u) => {
-      if (ativoFiltro === 'true' && !u.ativo) return false;
-      if (ativoFiltro === 'false' && u.ativo) return false;
-      if (perfilFiltro !== PERFIL_TODOS && u.perfil !== perfilFiltro) return false;
+      if (filtros.ativo === 'true' && !u.ativo) return false;
+      if (filtros.ativo === 'false' && u.ativo) return false;
+      if (filtros.perfil !== PERFIL_TODOS && u.perfil !== filtros.perfil) return false;
       if (
         termo &&
         !u.nome.toLowerCase().includes(termo) &&
@@ -66,7 +75,18 @@ export function UsuariosPage() {
       }
       return true;
     });
-  }, [usuariosQuery.data, busca, ativoFiltro, perfilFiltro]);
+  }, [usuariosQuery.data, filtros]);
+
+  function aplicarFiltros() {
+    setFiltros({ q: buscaInput, ativo: ativoInput, perfil: perfilInput });
+  }
+
+  function limparFiltros() {
+    setBuscaInput('');
+    setAtivoInput(ATIVO_TODOS);
+    setPerfilInput(PERFIL_TODOS);
+    setFiltros({ q: '', ativo: ATIVO_TODOS, perfil: PERFIL_TODOS });
+  }
 
   const desativarMutation = useMutation({
     mutationFn: desativarUsuario,
@@ -163,45 +183,61 @@ export function UsuariosPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-4">
-        <div className="space-y-1.5 md:col-span-2">
-          <Label htmlFor="filtro-busca">Buscar</Label>
-          <Input
-            id="filtro-busca"
-            placeholder="Nome ou e-mail"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="filtro-busca">Buscar</Label>
+            <Input
+              id="filtro-busca"
+              placeholder="Nome ou e-mail"
+              value={buscaInput}
+              onChange={(e) => setBuscaInput(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-perfil">Perfil</Label>
+            <Select value={perfilInput} onValueChange={setPerfilInput}>
+              <SelectTrigger id="filtro-perfil">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={PERFIL_TODOS}>Todos</SelectItem>
+                <SelectItem value="ADMIN">Administrador</SelectItem>
+                <SelectItem value="GERENTE">Gerente</SelectItem>
+                <SelectItem value="OPERADOR">Operador</SelectItem>
+                <SelectItem value="CONSULTA">Consulta</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro-ativo">Status</Label>
+            <Select value={ativoInput} onValueChange={setAtivoInput}>
+              <SelectTrigger id="filtro-ativo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
+                <SelectItem value="true">Ativos</SelectItem>
+                <SelectItem value="false">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-perfil">Perfil</Label>
-          <Select value={perfilFiltro} onValueChange={setPerfilFiltro}>
-            <SelectTrigger id="filtro-perfil">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={PERFIL_TODOS}>Todos</SelectItem>
-              <SelectItem value="ADMIN">Administrador</SelectItem>
-              <SelectItem value="GERENTE">Gerente</SelectItem>
-              <SelectItem value="OPERADOR">Operador</SelectItem>
-              <SelectItem value="CONSULTA">Consulta</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro-ativo">Status</Label>
-          <Select value={ativoFiltro} onValueChange={setAtivoFiltro}>
-            <SelectTrigger id="filtro-ativo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ATIVO_TODOS}>Todos</SelectItem>
-              <SelectItem value="true">Ativos</SelectItem>
-              <SelectItem value="false">Inativos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      </form>
 
       <DataTable
         data={filtrados}

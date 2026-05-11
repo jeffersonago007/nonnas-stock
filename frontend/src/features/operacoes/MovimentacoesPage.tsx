@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDownToLine, ArrowUpFromLine, History, Save } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, History, Save, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -190,10 +190,9 @@ function EntradaForm({ filialId, insumoIdInicial }: EntradaFormProps) {
       queryClient.invalidateQueries({ queryKey: ['ruptura'] });
       queryClient.invalidateQueries({ queryKey: ['vencimento'] });
       queryClient.invalidateQueries({ queryKey: ['mov-historico'] });
+      toast.success('Entrada registrada');
       if (filialId) {
         notificarSaldoApos(variables.insumoId, filialId, insumosQuery.data, 'Entrada');
-      } else {
-        toast.success('Entrada registrada');
       }
       form.reset();
     },
@@ -356,10 +355,9 @@ function SaidaForm({ filialId }: FormProps) {
       queryClient.invalidateQueries({ queryKey: ['ruptura'] });
       queryClient.invalidateQueries({ queryKey: ['vencimento'] });
       queryClient.invalidateQueries({ queryKey: ['mov-historico'] });
+      toast.success('Saída registrada');
       if (filialId) {
         notificarSaldoApos(variables.insumoId, filialId, insumosQuery.data, 'Saída');
-      } else {
-        toast.success('Saída registrada');
       }
       form.reset();
     },
@@ -445,17 +443,32 @@ function SaidaForm({ filialId }: FormProps) {
 function HistoricoTab({ filialId }: FormProps) {
   const hoje = new Date().toISOString().slice(0, 10);
   const seteDiasAtras = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const [inicio, setInicio] = useState(seteDiasAtras);
-  const [fim, setFim] = useState(hoje);
 
-  const inicioIso = useMemo(() => `${inicio}T00:00:00Z`, [inicio]);
-  const fimIso = useMemo(() => `${fim}T23:59:59Z`, [fim]);
+  // Inputs (não disparam query).
+  const [inicioInput, setInicioInput] = useState(seteDiasAtras);
+  const [fimInput, setFimInput] = useState(hoje);
+
+  // Filtros aplicados (só mudam ao clicar Pesquisar).
+  const [filtros, setFiltros] = useState({ inicio: seteDiasAtras, fim: hoje });
+
+  const inicioIso = useMemo(() => `${filtros.inicio}T00:00:00Z`, [filtros.inicio]);
+  const fimIso = useMemo(() => `${filtros.fim}T23:59:59Z`, [filtros.fim]);
+
+  function aplicarFiltros() {
+    setFiltros({ inicio: inicioInput, fim: fimInput });
+  }
+
+  function limparFiltros() {
+    setInicioInput(seteDiasAtras);
+    setFimInput(hoje);
+    setFiltros({ inicio: seteDiasAtras, fim: hoje });
+  }
 
   const query = useQuery({
     queryKey: ['mov-historico', { filialId, inicioIso, fimIso }],
     queryFn: () =>
       listarMovimentacoesPorPeriodo({ filialId, inicio: inicioIso, fim: fimIso }),
-    enabled: Boolean(inicio && fim),
+    enabled: Boolean(filtros.inicio && filtros.fim),
   });
 
   const columns: ColumnDef<MovimentacaoResumo>[] = [
@@ -488,16 +501,32 @@ function HistoricoTab({ filialId }: FormProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="inicio">Início</Label>
-          <Input id="inicio" type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} />
+      <form
+        className="space-y-3 rounded-md border bg-card p-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          aplicarFiltros();
+        }}
+      >
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="inicio">Início</Label>
+            <Input id="inicio" type="date" value={inicioInput} onChange={(e) => setInicioInput(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="fim">Fim</Label>
+            <Input id="fim" type="date" value={fimInput} onChange={(e) => setFimInput(e.target.value)} />
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="fim">Fim</Label>
-          <Input id="fim" type="date" value={fim} onChange={(e) => setFim(e.target.value)} />
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={limparFiltros}>
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+          <Button type="submit">
+            <Search className="h-4 w-4" /> Pesquisar
+          </Button>
         </div>
-      </div>
+      </form>
 
       <DataTable
         data={query.data}

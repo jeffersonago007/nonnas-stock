@@ -73,24 +73,22 @@ class AlertaDisparadoRepositoryImpl implements AlertaDisparadoRepository {
         static NomesParaExibicao vazio() { return new NomesParaExibicao(null, null, null); }
     }
 
+    // filialNome fica null aqui — `filiais` mora em identity, alerts não conhece.
+    // Listener em identity faz fallback shortId; resolucao bonita pode subir pra la depois.
     private NomesParaExibicao buscarNomesParaExibicao(UUID insumoId, UUID filialId) {
         String sql = """
                 SELECT i.nome AS insumo_nome,
-                       u.codigo AS unidade_codigo,
-                       f.nome AS filial_nome
+                       u.codigo AS unidade_codigo
                 FROM insumos i
                 LEFT JOIN unidades_medida u ON u.id = i.unidade_base_id
-                LEFT JOIN filiais f ON f.id = :filialId
                 WHERE i.id = :insumoId
                 """;
         try {
             return jdbc.queryForObject(sql,
-                    new MapSqlParameterSource()
-                            .addValue("insumoId", insumoId)
-                            .addValue("filialId", filialId),
+                    new MapSqlParameterSource().addValue("insumoId", insumoId),
                     (rs, rn) -> new NomesParaExibicao(
                             rs.getString("insumo_nome"),
-                            rs.getString("filial_nome"),
+                            null,
                             rs.getString("unidade_codigo")));
         } catch (EmptyResultDataAccessException e) {
             return NomesParaExibicao.vazio();

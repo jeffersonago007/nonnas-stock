@@ -1,5 +1,17 @@
 # Changelog
 
+Atualizado automaticamente pelo semantic-release.
+
+## [0.1.2](https://github.com/jeffersonago007/nonnas-stock/compare/v0.1.1...v0.1.2) (2026-05-12)
+
+### Bug Fixes
+
+* **app:** springdoc 2.6.0 -> 2.8.17 (compat com Spring Boot 3.5.12) ([b9c3d19](https://github.com/jeffersonago007/nonnas-stock/commit/b9c3d197991ef02966940a29d22db8abf6c368f6))
+* **ci:** instala conventional-changelog-conventionalcommits no semantic-release ([bf64088](https://github.com/jeffersonago007/nonnas-stock/commit/bf6408896c6de66f16bb1062afc42524dcaca628))
+* **docker:** inclui e2e/pom.xml e nfe-importer/src no build stage ([47a7d1b](https://github.com/jeffersonago007/nonnas-stock/commit/47a7d1b64cfd5f1180811d9f5b1c8f6e6c4253e9))
+
+# Changelog
+
 Notas de release do Nonnas Stock. Formato baseado em [Keep a Changelog](https://keepachangelog.com/), versionamento [SemVer](https://semver.org/).
 
 `1.0.0-rc.1` (T15) é o snapshot pré-release com smoke E2E completo, docs operacionais e auditoria de segurança inicial. `1.0.0` (T18) é a versão estável com hardening LGPD, observabilidade interna e DR validado.

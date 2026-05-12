@@ -137,7 +137,7 @@ export function DashboardPage() {
                     {dadosGrafico.map((entry, idx) => (
                       <Cell
                         key={`cell-${idx}`}
-                        fill={entry.situacao === 'RUPTURA' ? '#D62828' : '#D97706'}
+                        fill={entry.situacao === 'RUPTURA_TOTAL' ? '#D62828' : '#D97706'}
                       />
                     ))}
                   </Bar>

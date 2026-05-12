@@ -1,80 +1,29 @@
 import { api } from '@/lib/api';
 
-// ─────────────────────────── Saldos / Estoque ────────────────────────────
+// ─────────────────── Reports re-exports (single source of truth) ─────────
+//
+// Tipos e listagens de relatórios moraram historicamente aqui, mas a tela
+// /relatorios precisava deles centralizados. Mantemos os re-exports para
+// não quebrar imports antigos de `@/features/operacoes/api` (EstoquePage,
+// DashboardPage, MovimentacoesPage etc.).
+export {
+  listarPosicao,
+  listarRuptura,
+  listarVencimentos,
+  listarMovimentacoesPorPeriodo,
+} from '@/features/relatorios/api';
+export type {
+  PosicaoEstoque,
+  RupturaItem,
+  SituacaoRuptura,
+  VencimentoItem,
+  MovimentacaoResumo,
+  TipoMovimentacao,
+} from '@/features/relatorios/api';
 
-export interface PosicaoEstoque {
-  filialId: string;
-  insumoId: string;
-  codigo: string;
-  nome: string;
-  saldoTotal: number;
-  valorEstoque: number;
-  quantidadeLotes: number;
-}
-
-export interface RupturaItem {
-  filialId: string;
-  insumoId: string;
-  codigo: string;
-  nome: string;
-  saldoTotal: number;
-  estoqueMinimo: number;
-  pontoPedido: number;
-  situacao: 'RUPTURA' | 'EM_PONTO_DE_PEDIDO' | 'NORMAL';
-}
-
-export interface VencimentoItem {
-  filialId: string;
-  insumoId: string;
-  loteId: string;
-  codigo: string;
-  nome: string;
-  numeroLote: string;
-  dataValidade: string;
-  diasParaVencer: number;
-  saldo: number;
-  valorUnitario: number;
-}
-
-export async function listarPosicao(filialId?: string | null, categoriaId?: string): Promise<PosicaoEstoque[]> {
-  const params: Record<string, string> = {};
-  if (filialId) params.filialId = filialId;
-  if (categoriaId) params.categoriaId = categoriaId;
-  const { data } = await api.get<PosicaoEstoque[]>('/relatorios/posicao', { params });
-  return data;
-}
-
-export async function listarRuptura(filialId?: string | null): Promise<RupturaItem[]> {
-  const params: Record<string, string> = {};
-  if (filialId) params.filialId = filialId;
-  const { data } = await api.get<RupturaItem[]>('/relatorios/ruptura', { params });
-  return data;
-}
-
-export async function listarVencimentos(
-  filialId?: string | null,
-  diasJanela = 30,
-): Promise<VencimentoItem[]> {
-  const params: Record<string, string | number> = { diasJanela };
-  if (filialId) params.filialId = filialId;
-  const { data } = await api.get<VencimentoItem[]>('/relatorios/vencimento', { params });
-  return data;
-}
+import type { TipoMovimentacao } from '@/features/relatorios/api';
 
 // ─────────────────────────── Movimentações ───────────────────────────────
-
-export type TipoMovimentacao =
-  | 'ENTRADA_NF'
-  | 'ENTRADA_AJUSTE'
-  | 'ENTRADA_TRANSFERENCIA'
-  | 'ENTRADA_DEVOLUCAO_CLIENTE'
-  | 'ENTRADA_CARGA_INICIAL'
-  | 'SAIDA_VENDA'
-  | 'SAIDA_AJUSTE'
-  | 'SAIDA_TRANSFERENCIA'
-  | 'SAIDA_PERDA'
-  | 'SAIDA_QUEBRA'
-  | 'SAIDA_VENCIMENTO';
 
 export const TIPOS_ENTRADA_MANUAL: TipoMovimentacao[] = [
   'ENTRADA_NF',
@@ -115,17 +64,6 @@ export interface SaidaManualRequest {
   observacao?: string;
 }
 
-export interface MovimentacaoResumo {
-  filialId: string;
-  insumoId: string;
-  codigo: string;
-  nome: string;
-  tipoMovimentacao: string;
-  quantidadeMovimentacoes: number;
-  quantidadeTotal: number;
-  valorTotal: number;
-}
-
 export async function lancarEntradaManual(payload: EntradaManualRequest) {
   const { data } = await api.post('/movimentacoes/entrada-manual', payload);
   return data;
@@ -133,19 +71,6 @@ export async function lancarEntradaManual(payload: EntradaManualRequest) {
 
 export async function lancarSaidaManual(payload: SaidaManualRequest) {
   const { data } = await api.post('/movimentacoes/saida-manual', payload);
-  return data;
-}
-
-export async function listarMovimentacoesPorPeriodo(params: {
-  filialId?: string | null;
-  inicio: string;
-  fim: string;
-  tipo?: string;
-}): Promise<MovimentacaoResumo[]> {
-  const q: Record<string, string> = { inicio: params.inicio, fim: params.fim };
-  if (params.filialId) q.filialId = params.filialId;
-  if (params.tipo) q.tipo = params.tipo;
-  const { data } = await api.get<MovimentacaoResumo[]>('/relatorios/movimentacoes', { params: q });
   return data;
 }
 

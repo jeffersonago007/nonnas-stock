@@ -2,6 +2,12 @@
 
 Atualizado automaticamente pelo semantic-release.
 
+## [0.1.4](https://github.com/jeffersonago007/nonnas-stock/compare/v0.1.3...v0.1.4) (2026-05-12)
+
+### Bug Fixes
+
+* **security:** pina postgresql 42.7.11 em dependencyManagement (Trivy) ([7db052b](https://github.com/jeffersonago007/nonnas-stock/commit/7db052b6708bbf0f409ff882e85fe0317d6b25e4))
+
 ## [0.1.3](https://github.com/jeffersonago007/nonnas-stock/compare/v0.1.2...v0.1.3) (2026-05-12)
 
 ### Bug Fixes

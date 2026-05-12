@@ -74,6 +74,15 @@
         <scope>import</scope>
       </dependency>
 
+      <!-- Override do BOM do Spring Boot pra CVE-2026-42198 (HIGH).
+           Property `postgresql.version` ja resolve no efetivo, mas Trivy
+           le pom.xml direto e nao avalia o BOM — pin explicito aqui. -->
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${postgresql.version}</version>
+      </dependency>
+
       <!-- Internal modules -->
       <dependency>
         <groupId>com.nonnas</groupId>

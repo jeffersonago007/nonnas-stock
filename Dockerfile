@@ -19,6 +19,7 @@ COPY sales-channels-api/pom.xml sales-channels-api/
 COPY nfe-importer/pom.xml nfe-importer/
 COPY quality-tests/pom.xml quality-tests/
 COPY app/pom.xml app/
+COPY e2e/pom.xml e2e/
 
 # Pré-baixa dependências (cache de layer Docker melhora rebuilds).
 RUN --mount=type=cache,target=/root/.m2 \
@@ -34,6 +35,7 @@ COPY recipes/src recipes/src
 COPY operations/src operations/src
 COPY alerts/src alerts/src
 COPY reporting/src reporting/src
+COPY nfe-importer/src nfe-importer/src
 COPY app/src app/src
 COPY .mvn .mvn
 COPY mvnw mvnw

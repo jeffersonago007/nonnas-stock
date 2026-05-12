@@ -16,7 +16,7 @@
   <description>Composição: main class, configuração Spring, perfis e migrations Flyway centralizadas.</description>
 
   <properties>
-    <springdoc.version>2.6.0</springdoc.version>
+    <springdoc.version>2.8.17</springdoc.version>
     <bucket4j.version>8.10.1</bucket4j.version>
     <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     <zonky.embedded-postgres.version>2.0.7</zonky.embedded-postgres.version>

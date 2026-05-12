@@ -2,6 +2,12 @@
 
 Atualizado automaticamente pelo semantic-release.
 
+## [0.1.3](https://github.com/jeffersonago007/nonnas-stock/compare/v0.1.2...v0.1.3) (2026-05-12)
+
+### Bug Fixes
+
+* **security,ci:** postgresql 42.7.11 (CVE-2026-42198) + corrige test-reporter glob ([248f842](https://github.com/jeffersonago007/nonnas-stock/commit/248f842ed6fc9a1f7d8351e6441da459c6406632))
+
 ## [0.1.2](https://github.com/jeffersonago007/nonnas-stock/compare/v0.1.1...v0.1.2) (2026-05-12)
 
 ### Bug Fixes

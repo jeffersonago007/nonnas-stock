@@ -46,7 +46,11 @@ export function FiliaisPage() {
     onError: (error) => toastError('Não foi possível ativar', error),
   });
 
-  const togglingId = desativarMutation.variables ?? ativarMutation.variables;
+  const togglingId = desativarMutation.isPending
+    ? desativarMutation.variables
+    : ativarMutation.isPending
+      ? ativarMutation.variables
+      : undefined;
 
   const columns: ColumnDef<Filial>[] = [
     { key: 'nome', header: 'Nome', cell: (f) => <span className="font-medium">{f.nome}</span> },

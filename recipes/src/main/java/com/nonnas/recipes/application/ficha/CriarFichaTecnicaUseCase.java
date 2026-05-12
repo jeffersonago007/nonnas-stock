@@ -4,7 +4,9 @@ import com.nonnas.recipes.application.ports.FichaTecnicaRepository;
 import com.nonnas.recipes.application.ports.ProdutoVendavelRepository;
 import com.nonnas.recipes.domain.FichaTecnica;
 import com.nonnas.recipes.domain.ItemFichaTecnica;
+import com.nonnas.recipes.domain.ProdutoVendavel;
 import com.nonnas.recipes.domain.ProdutoVendavelId;
+import com.nonnas.recipes.domain.TipoProdutoVendavel;
 import com.nonnas.sharedkernel.BusinessRuleException;
 import com.nonnas.sharedkernel.ErrorCode;
 import com.nonnas.sharedkernel.NotFoundException;
@@ -38,8 +40,11 @@ public class CriarFichaTecnicaUseCase {
     @Transactional
     public FichaTecnica execute(Comando cmd) {
         ProdutoVendavelId produtoId = ProdutoVendavelId.of(cmd.produtoVendavelId);
-        if (produtoRepo.findById(produtoId).isEmpty()) {
-            throw new NotFoundException("Produto vendável", cmd.produtoVendavelId);
+        ProdutoVendavel produto = produtoRepo.findById(produtoId)
+                .orElseThrow(() -> new NotFoundException("Produto vendável", cmd.produtoVendavelId));
+        if (produto.tipo() == TipoProdutoVendavel.REVENDA) {
+            throw new BusinessRuleException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                    "Produtos de revenda não têm ficha técnica — a baixa é 1:1 do insumo vinculado");
         }
         if (fichaRepo.findVigentePorProduto(produtoId).isPresent()) {
             throw new BusinessRuleException(ErrorCode.CONFLICT,

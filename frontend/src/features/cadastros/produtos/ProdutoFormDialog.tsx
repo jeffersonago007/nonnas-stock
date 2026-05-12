@@ -26,13 +26,20 @@ import {
 import { toastError } from '@/lib/toastError';
 
 import { type Produto, atualizarProduto, criarProduto, listarCategoriasProduto } from './api';
-import { listarCategorias as listarCategoriasInsumo } from '@/features/cadastros/insumos/api';
+import { listarCategorias as listarCategoriasInsumo, listarInsumos } from '@/features/cadastros/insumos/api';
 
-const createSchema = z.object({
-  codigo: z.string().min(1, 'Código é obrigatório'),
-  nome: z.string().min(1, 'Nome é obrigatório'),
-  categoria: z.string().min(1, 'Categoria é obrigatória'),
-});
+const createSchema = z
+  .object({
+    codigo: z.string().min(1, 'Código é obrigatório'),
+    nome: z.string().min(1, 'Nome é obrigatório'),
+    categoria: z.string().min(1, 'Categoria é obrigatória'),
+    tipo: z.enum(['FABRICADO', 'REVENDA']),
+    insumoRevendaId: z.string().optional(),
+  })
+  .refine((d) => d.tipo !== 'REVENDA' || !!d.insumoRevendaId, {
+    message: 'Produto de revenda exige um insumo vinculado',
+    path: ['insumoRevendaId'],
+  });
 const updateSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   categoria: z.string().min(1, 'Categoria é obrigatória'),
@@ -51,8 +58,6 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
   const isEdit = produto !== null;
   const queryClient = useQueryClient();
 
-  // Combo unificado igual à ProdutosPage — categorias do admin + as já
-  // em uso pelos produtos cadastrados.
   const categoriasProdutoQuery = useQuery({
     queryKey: ['produtos-categorias'],
     queryFn: listarCategoriasProduto,
@@ -72,7 +77,7 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
 
   const createForm = useForm<CreateValues>({
     resolver: zodResolver(createSchema),
-    defaultValues: { codigo: '', nome: '', categoria: '' },
+    defaultValues: { codigo: '', nome: '', categoria: '', tipo: 'FABRICADO', insumoRevendaId: '' },
   });
   const updateForm = useForm<UpdateValues>({
     resolver: zodResolver(updateSchema),
@@ -83,23 +88,30 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
     if (open && produto) {
       updateForm.reset({ nome: produto.nome, categoria: produto.categoria });
     } else if (open && !produto) {
-      createForm.reset();
+      createForm.reset({ codigo: '', nome: '', categoria: '', tipo: 'FABRICADO', insumoRevendaId: '' });
     }
   }, [open, produto, createForm, updateForm]);
 
   const createMutation = useMutation({
-    mutationFn: criarProduto,
+    mutationFn: (values: CreateValues) =>
+      criarProduto({
+        codigo: values.codigo,
+        nome: values.nome,
+        categoria: values.categoria,
+        tipo: values.tipo,
+        insumoRevendaId: values.tipo === 'REVENDA' ? values.insumoRevendaId || null : null,
+      }),
     onSuccess: () => {
-      toast.success('Item do cardápio criado');
+      toast.success('Produto criado');
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       onOpenChange(false);
     },
-    onError: (error) => toastError('Não foi possível criar o item', error),
+    onError: (error) => toastError('Não foi possível criar o produto', error),
   });
   const updateMutation = useMutation({
     mutationFn: (values: UpdateValues) => atualizarProduto(produto!.id, values),
     onSuccess: () => {
-      toast.success('Item do cardápio atualizado');
+      toast.success('Produto atualizado');
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       onOpenChange(false);
     },
@@ -113,8 +125,8 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
           <DialogTitle>{isEdit ? 'Editar produto' : 'Novo produto vendável'}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Código não pode ser alterado.'
-              : 'Cadastre um produto que será vendido pela rede.'}
+              ? `Código e tipo não podem ser alterados. Tipo atual: ${produto?.tipo === 'REVENDA' ? 'Revenda' : 'Fabricado'}.`
+              : 'Fabricado usa ficha técnica (pizza, lasanha). Revenda vincula direto a 1 insumo (Coca-Cola, sorvete).'}
           </DialogDescription>
         </DialogHeader>
 
@@ -124,7 +136,7 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
             onSubmit={updateForm.handleSubmit((v) => updateMutation.mutate(v))}
             noValidate
           >
-            <FormFields form={updateForm} hideCodigo categorias={categoriasUnificadas} />
+            <UpdateFields form={updateForm} categorias={categoriasUnificadas} />
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
@@ -140,7 +152,7 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
             onSubmit={createForm.handleSubmit((v) => createMutation.mutate(v))}
             noValidate
           >
-            <FormFields form={createForm} categorias={categoriasUnificadas} />
+            <CreateFields form={createForm} categorias={categoriasUnificadas} />
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
@@ -156,40 +168,68 @@ export function ProdutoFormDialog({ open, onOpenChange, produto }: Props) {
   );
 }
 
-interface FieldsProps {
+interface CreateFieldsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: any;
-  hideCodigo?: boolean;
   categorias: string[];
 }
 
 const SENTINEL_NOVA = '__nova__';
 
-function FormFields({ form, hideCodigo = false, categorias }: FieldsProps) {
-  const categoriaAtual: string = form.watch('categoria') ?? '';
-  // "modo nova" quando a categoria atual é vazia (criação) ou não está na
-  // lista existente (edição de um produto cuja categoria saiu do uso, ou
-  // usuário escolheu "Cadastrar nova"). Sentinela controlado por flag.
-  const [modoNova, setModoNova] = useState(false);
-  const usandoNova = modoNova || (categoriaAtual !== '' && !categorias.includes(categoriaAtual));
+function CreateFields({ form, categorias }: CreateFieldsProps) {
+  const tipo: 'FABRICADO' | 'REVENDA' = form.watch('tipo');
+  const insumosQuery = useQuery({
+    queryKey: ['insumos-ativos-revenda'],
+    queryFn: () => listarInsumos({ ativo: true }),
+    enabled: tipo === 'REVENDA',
+  });
 
   return (
     <>
-      {!hideCodigo && (
-        <div className="space-y-2">
-          <Label htmlFor="codigo">Código</Label>
-          <Input
-            id="codigo"
-            aria-invalid={Boolean(form.formState.errors.codigo)}
-            {...form.register('codigo')}
-          />
-          {form.formState.errors.codigo && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.codigo.message as string}
-            </p>
-          )}
+      <div className="space-y-2">
+        <Label>Tipo</Label>
+        <div className="flex gap-2">
+          <label className="flex flex-1 items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-accent">
+            <input
+              type="radio"
+              value="FABRICADO"
+              checked={tipo === 'FABRICADO'}
+              onChange={() => form.setValue('tipo', 'FABRICADO', { shouldValidate: true })}
+            />
+            <span>
+              <strong>Fabricado</strong>
+              <p className="text-xs text-muted-foreground">Usa ficha técnica (pizza, lasanha)</p>
+            </span>
+          </label>
+          <label className="flex flex-1 items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-accent">
+            <input
+              type="radio"
+              value="REVENDA"
+              checked={tipo === 'REVENDA'}
+              onChange={() => form.setValue('tipo', 'REVENDA', { shouldValidate: true })}
+            />
+            <span>
+              <strong>Revenda</strong>
+              <p className="text-xs text-muted-foreground">Vincula a 1 insumo (Coca, sorvete)</p>
+            </span>
+          </label>
         </div>
-      )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="codigo">Código</Label>
+        <Input
+          id="codigo"
+          aria-invalid={Boolean(form.formState.errors.codigo)}
+          {...form.register('codigo')}
+        />
+        {form.formState.errors.codigo && (
+          <p className="text-sm text-destructive">
+            {form.formState.errors.codigo.message as string}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="nome">Nome</Label>
         <Input
@@ -203,62 +243,135 @@ function FormFields({ form, hideCodigo = false, categorias }: FieldsProps) {
           </p>
         )}
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="categoria">Categoria</Label>
-        {usandoNova ? (
-          <div className="flex gap-2">
-            <Input
-              id="categoria"
-              placeholder="Nova categoria (ex.: Pizzas)"
-              aria-invalid={Boolean(form.formState.errors.categoria)}
-              {...form.register('categoria')}
-            />
-            {categorias.length > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setModoNova(false);
-                  form.setValue('categoria', '', { shouldValidate: false });
-                }}
-              >
-                Escolher existente
-              </Button>
-            )}
-          </div>
-        ) : (
+
+      <CategoriaField form={form} categorias={categorias} />
+
+      {tipo === 'REVENDA' && (
+        <div className="space-y-2">
+          <Label htmlFor="insumoRevendaId">Insumo vinculado</Label>
           <Select
-            value={categoriaAtual || ''}
-            onValueChange={(v) => {
-              if (v === SENTINEL_NOVA) {
-                setModoNova(true);
-                form.setValue('categoria', '', { shouldValidate: false });
-              } else {
-                form.setValue('categoria', v, { shouldValidate: true });
-              }
-            }}
+            value={form.watch('insumoRevendaId') || ''}
+            onValueChange={(v) => form.setValue('insumoRevendaId', v, { shouldValidate: true })}
           >
-            <SelectTrigger id="categoria">
-              <SelectValue
-                placeholder={categorias.length === 0 ? 'Cadastre a primeira…' : 'Selecione…'}
-              />
+            <SelectTrigger id="insumoRevendaId">
+              <SelectValue placeholder="Selecione o insumo…" />
             </SelectTrigger>
             <SelectContent>
-              {categorias.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
+              {(insumosQuery.data ?? []).map((i) => (
+                <SelectItem key={i.id} value={i.id}>
+                  {i.codigo} — {i.nome}
                 </SelectItem>
               ))}
-              <SelectItem value={SENTINEL_NOVA}>+ Nova categoria…</SelectItem>
             </SelectContent>
           </Select>
-        )}
-        {form.formState.errors.categoria && (
+          {form.formState.errors.insumoRevendaId && (
+            <p className="text-sm text-destructive">
+              {form.formState.errors.insumoRevendaId.message as string}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            A venda baixa 1 unidade desse insumo do estoque a cada produto vendido.
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+interface UpdateFieldsProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: any;
+  categorias: string[];
+}
+
+function UpdateFields({ form, categorias }: UpdateFieldsProps) {
+  return (
+    <>
+      <div className="space-y-2">
+        <Label htmlFor="nome">Nome</Label>
+        <Input
+          id="nome"
+          aria-invalid={Boolean(form.formState.errors.nome)}
+          {...form.register('nome')}
+        />
+        {form.formState.errors.nome && (
           <p className="text-sm text-destructive">
-            {form.formState.errors.categoria.message as string}
+            {form.formState.errors.nome.message as string}
           </p>
         )}
       </div>
+      <CategoriaField form={form} categorias={categorias} />
     </>
+  );
+}
+
+interface CategoriaProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: any;
+  categorias: string[];
+}
+
+function CategoriaField({ form, categorias }: CategoriaProps) {
+  const categoriaAtual: string = form.watch('categoria') ?? '';
+  const [modoNova, setModoNova] = useState(false);
+  const usandoNova = modoNova || (categoriaAtual !== '' && !categorias.includes(categoriaAtual));
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="categoria">Categoria</Label>
+      {usandoNova ? (
+        <div className="flex gap-2">
+          <Input
+            id="categoria"
+            placeholder="Nova categoria (ex.: Pizzas, Bebidas)"
+            aria-invalid={Boolean(form.formState.errors.categoria)}
+            {...form.register('categoria')}
+          />
+          {categorias.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setModoNova(false);
+                form.setValue('categoria', '', { shouldValidate: false });
+              }}
+            >
+              Escolher existente
+            </Button>
+          )}
+        </div>
+      ) : (
+        <Select
+          value={categoriaAtual || ''}
+          onValueChange={(v) => {
+            if (v === SENTINEL_NOVA) {
+              setModoNova(true);
+              form.setValue('categoria', '', { shouldValidate: false });
+            } else {
+              form.setValue('categoria', v, { shouldValidate: true });
+            }
+          }}
+        >
+          <SelectTrigger id="categoria">
+            <SelectValue
+              placeholder={categorias.length === 0 ? 'Cadastre a primeira…' : 'Selecione…'}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {categorias.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+            <SelectItem value={SENTINEL_NOVA}>+ Nova categoria…</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+      {form.formState.errors.categoria && (
+        <p className="text-sm text-destructive">
+          {form.formState.errors.categoria.message as string}
+        </p>
+      )}
+    </div>
   );
 }

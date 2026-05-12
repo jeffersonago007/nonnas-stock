@@ -7,6 +7,7 @@ import com.nonnas.recipes.application.produto.DesativarProdutoVendavelUseCase;
 import com.nonnas.recipes.application.produto.ListarProdutosVendaveisUseCase;
 import com.nonnas.recipes.application.ports.ProdutoVendavelRepository;
 import com.nonnas.recipes.domain.ProdutoVendavelId;
+import com.nonnas.recipes.domain.TipoProdutoVendavel;
 import com.nonnas.recipes.interfaces.rest.dto.ProdutoVendavelDto;
 import com.nonnas.sharedkernel.NotFoundException;
 import jakarta.validation.Valid;
@@ -44,17 +45,19 @@ public class ProdutoVendavelController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProdutoVendavelDto.Response criar(@Valid @RequestBody ProdutoVendavelDto.Request req) {
-        var cmd = new CriarProdutoVendavelUseCase.Comando(req.codigo(), req.nome(), req.categoria());
+        var cmd = new CriarProdutoVendavelUseCase.Comando(
+                req.codigo(), req.nome(), req.categoria(), req.tipo(), req.insumoRevendaId());
         return ProdutoVendavelDto.Response.from(criar.execute(cmd));
     }
 
     @GetMapping
     public List<ProdutoVendavelDto.Response> list(@RequestParam(required = false) String categoria,
                                                   @RequestParam(required = false) Boolean ativo,
+                                                  @RequestParam(required = false) TipoProdutoVendavel tipo,
                                                   @RequestParam(required = false) String q,
                                                   @RequestParam(defaultValue = "0") int page,
                                                   @RequestParam(defaultValue = "50") int size) {
-        return listar.execute(categoria, ativo, q, page, size).stream()
+        return listar.execute(categoria, ativo, tipo, q, page, size).stream()
                 .map(ProdutoVendavelDto.Response::from).toList();
     }
 

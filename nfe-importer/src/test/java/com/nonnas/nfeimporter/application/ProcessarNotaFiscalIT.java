@@ -122,6 +122,61 @@ class ProcessarNotaFiscalIT extends AbstractNfeImporterIntegrationTest {
     }
 
     @Test
+    void notaComCodigoQueColideComInsumoGlobalDeOutroForncedorCriaNovoInsumoSemTocarOAntigo() {
+        UUID kgId = unidadePorCodigo("KG").id().value();
+        UUID filialId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
+        // CNPJs reais (válidos) de fornecedores diferentes; chaves de NF-e inéditas neste test.
+        String cnpjA = "60892858001101";
+        String cnpjB = "54910325000130";
+        String chaveA = "35260560892858001101550010000010081234567890";
+        String chaveB = "35260554910325000130550010000010091234567890";
+
+        // Cadastra um insumo com codigo "001" via uma 1ª nota do fornecedor A.
+        processar.execute(comandoBasico(filialId, usuarioId,
+                chaveA, kgId, cnpjA, "Fornecedor Mussarela SA", "001"));
+        Insumo mussarela = insumoRepo.findByCodigo("001").orElseThrow();
+        UUID mussarelaId = mussarela.id().value();
+
+        // Fornecedor DIFERENTE manda nota com cProd "001" mas xProd "Produto de Teste".
+        // Comportamento desejado: cria um insumo NOVO (código sufixado), NÃO toca na mussarela.
+        var cmd = new ProcessarNotaFiscalUseCase.Comando(
+                filialId, usuarioId,
+                ProcessarNotaFiscalUseCase.FornecedorEntrada.novo(cnpjB, "Outro Fornecedor LTDA"),
+                "2002", "1", chaveB,
+                Instant.parse("2026-05-12T10:00:00Z"),
+                new BigDecimal("50.00"), null,
+                List.of(new ProcessarNotaFiscalUseCase.ItemEntrada(
+                        ProcessarNotaFiscalUseCase.InsumoEntrada.novo(
+                                "001", "PRODUTO DE TESTE", kgId),
+                        "001",
+                        "PRODUTO DE TESTE",
+                        new BigDecimal("1.0000"),
+                        kgId,
+                        new BigDecimal("50.0000"),
+                        new BigDecimal("50.00"),
+                        null, null)));
+
+        processar.execute(cmd);
+
+        // Mussarela continua intacta — mesmo id, mesmo nome.
+        Insumo mussarelaApos = insumoRepo.findById(mussarela.id()).orElseThrow();
+        assertThat(mussarelaApos.nome()).isEqualTo(mussarela.nome());
+        assertThat(mussarelaApos.id().value()).isEqualTo(mussarelaId);
+
+        // Novo insumo foi criado com código sufixado pelo CNPJ do fornecedor, NÃO "001".
+        // Procura via de-para pra recuperar o insumoId associado.
+        UUID fornecedorOutroId = fornecedorRepo.findByCnpj(Cnpj.of(cnpjB))
+                .orElseThrow().id().value();
+        var depara = deParaRepo.findByFornecedorAndCodigo(fornecedorOutroId, "001").orElseThrow();
+        Insumo novoInsumo = insumoRepo.findById(
+                com.nonnas.catalog.domain.InsumoId.of(depara.insumoId())).orElseThrow();
+        assertThat(novoInsumo.id().value()).isNotEqualTo(mussarelaId);
+        assertThat(novoInsumo.codigo()).startsWith("001-");
+        assertThat(novoInsumo.nome()).isEqualTo("PRODUTO DE TESTE");
+    }
+
+    @Test
     void segundaNotaDoMesmoFornecedorComMesmoCodigoReusaInsumoExistente() {
         UUID kgId = unidadePorCodigo("KG").id().value();
         UUID filialId = UUID.randomUUID();

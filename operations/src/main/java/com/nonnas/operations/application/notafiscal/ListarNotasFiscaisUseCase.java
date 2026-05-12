@@ -5,10 +5,7 @@ import com.nonnas.operations.domain.NotaFiscal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ListarNotasFiscaisUseCase {
@@ -20,8 +17,7 @@ public class ListarNotasFiscaisUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<NotaFiscal> execute(UUID filialId, Instant emissaoDe,
-                                    Instant emissaoAte, int page, int size) {
-        return repository.findFiltered(filialId, emissaoDe, emissaoAte, page, size);
+    public List<NotaFiscal> execute(NotaFiscalRepository.Filtros filtros, int page, int size) {
+        return repository.findFiltered(filtros, page, size);
     }
 }

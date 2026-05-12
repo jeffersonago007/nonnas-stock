@@ -10,6 +10,7 @@ import com.nonnas.catalog.domain.FornecedorId;
 import com.nonnas.catalog.domain.Insumo;
 import com.nonnas.catalog.domain.InsumoId;
 import com.nonnas.operations.application.notafiscal.LancarNotaFiscalUseCase;
+import com.nonnas.operations.application.ports.FornecedorInsumoDeParaRepository;
 import com.nonnas.operations.domain.NotaFiscal;
 import com.nonnas.sharedkernel.NotFoundException;
 import com.nonnas.sharedkernel.ValidationException;
@@ -46,17 +47,20 @@ public class ProcessarNotaFiscalUseCase {
     private final CriarFornecedorUseCase criarFornecedor;
     private final InsumoRepository insumoRepo;
     private final CriarInsumoUseCase criarInsumo;
+    private final FornecedorInsumoDeParaRepository deParaRepo;
     private final LancarNotaFiscalUseCase lancar;
 
     public ProcessarNotaFiscalUseCase(FornecedorRepository fornecedorRepo,
                                       CriarFornecedorUseCase criarFornecedor,
                                       InsumoRepository insumoRepo,
                                       CriarInsumoUseCase criarInsumo,
+                                      FornecedorInsumoDeParaRepository deParaRepo,
                                       LancarNotaFiscalUseCase lancar) {
         this.fornecedorRepo = fornecedorRepo;
         this.criarFornecedor = criarFornecedor;
         this.insumoRepo = insumoRepo;
         this.criarInsumo = criarInsumo;
+        this.deParaRepo = deParaRepo;
         this.lancar = lancar;
     }
 
@@ -70,7 +74,7 @@ public class ProcessarNotaFiscalUseCase {
 
         List<LancarNotaFiscalUseCase.Item> itensResolvidos = new ArrayList<>(cmd.itens.size());
         for (ItemEntrada item : cmd.itens) {
-            Insumo insumo = resolverInsumoEntidade(item.insumo);
+            Insumo insumo = resolverInsumoEntidade(item.insumo, fornecedorId, item.codigoFornecedor);
             BigDecimal valorTotal = item.valorTotal != null
                     ? item.valorTotal
                     : item.valorUnitario.multiply(item.quantidade);
@@ -111,7 +115,18 @@ public class ProcessarNotaFiscalUseCase {
         return novo.id().value();
     }
 
-    private Insumo resolverInsumoEntidade(InsumoEntrada i) {
+    /**
+     * Resolve o insumo para o item da nota fiscal. Ordem de precedência:
+     * <ol>
+     *   <li>{@code i.id} explícito (operador vinculou manualmente);</li>
+     *   <li>de-para {@code (fornecedorId, cProd)} — aprendizado de cargas anteriores;</li>
+     *   <li>criação de insumo novo com código único (sufixa com CNPJ se cProd colide com insumo existente).</li>
+     * </ol>
+     * <p>Importante: <strong>nunca</strong> reusar insumo só porque o {@code i.codigo}
+     * (que é o cProd local do fornecedor) bate com o código global de outro insumo —
+     * fornecedores diferentes podem usar o mesmo cProd para produtos distintos.
+     */
+    private Insumo resolverInsumoEntidade(InsumoEntrada i, UUID fornecedorId, String cProd) {
         if (i == null) {
             throw new ValidationException("Insumo obrigatório no item");
         }
@@ -120,18 +135,42 @@ public class ProcessarNotaFiscalUseCase {
             return insumoRepo.findById(iid)
                     .orElseThrow(() -> new NotFoundException("Insumo", i.id));
         }
+        String chaveFornecedor = cProd != null && !cProd.isBlank() ? cProd
+                : (i.codigo != null && !i.codigo.isBlank() ? i.codigo : null);
+        if (chaveFornecedor != null) {
+            var depara = deParaRepo.findByFornecedorAndCodigo(fornecedorId, chaveFornecedor);
+            if (depara.isPresent()) {
+                UUID insumoId = depara.get().insumoId();
+                return insumoRepo.findById(InsumoId.of(insumoId))
+                        .orElseThrow(() -> new NotFoundException("Insumo (via de-para)", insumoId));
+            }
+        }
         if (i.codigo == null || i.codigo.isBlank() || i.nome == null || i.nome.isBlank()
                 || i.unidadeBaseId == null) {
             throw new ValidationException(
                     "Insumo: id ou (codigo + nome + unidadeBaseId) obrigatório");
         }
-        Optional<Insumo> existente = insumoRepo.findByCodigo(i.codigo);
-        if (existente.isPresent()) {
-            return existente.get();
-        }
-        return criarInsumo.execute(i.codigo, i.nome,
+        String codigoFinal = codigoUnicoParaInsumoNovo(i.codigo, fornecedorId);
+        return criarInsumo.execute(codigoFinal, i.nome,
                 CATEGORIA_A_CLASSIFICAR_ID, i.unidadeBaseId,
                 true, true);
+    }
+
+    private String codigoUnicoParaInsumoNovo(String cProdSugerido, UUID fornecedorId) {
+        if (insumoRepo.findByCodigo(cProdSugerido).isEmpty()) {
+            return cProdSugerido;
+        }
+        // Colisão: o cProd que o operador trouxe já é código global de outro insumo
+        // (provavelmente de um fornecedor diferente). Sufixa pra garantir unicidade
+        // sem perder a referência ao fornecedor original.
+        String cnpjShort = fornecedorRepo.findById(FornecedorId.of(fornecedorId))
+                .map(f -> f.cnpj().value().substring(0, 8))
+                .orElse("UNK");
+        String candidato = cProdSugerido + "-" + cnpjShort;
+        if (insumoRepo.findByCodigo(candidato).isPresent()) {
+            candidato = candidato + "-" + System.currentTimeMillis();
+        }
+        return candidato;
     }
 
     public record Comando(

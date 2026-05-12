@@ -20,7 +20,7 @@ import java.util.UUID;
 
 public final class NotaFiscalDto {
 
-    /** Resposta do endpoint /preview-xml — XML parseado, ainda não persistido. */
+    /** Resposta do endpoint /preview-xml — XML parseado + sugestão de match por item. */
     public record PreviewResponse(
             String chaveAcesso,
             String numero,
@@ -30,12 +30,13 @@ public final class NotaFiscalDto {
             EmitenteResumo emitente,
             List<ItemPreview> itens
     ) {
-        public static PreviewResponse from(NotaFiscalLida nf) {
+        public static PreviewResponse from(com.nonnas.nfeimporter.application.PreviewNotaFiscalUseCase.Preview preview) {
+            NotaFiscalLida nf = preview.nf();
             return new PreviewResponse(
                     nf.chaveAcesso(), nf.numero(), nf.serie(),
                     nf.dataEmissao().toInstant(), nf.valorTotal(),
                     EmitenteResumo.from(nf.emitente()),
-                    nf.itens().stream().map(ItemPreview::from).toList());
+                    preview.itens().stream().map(ItemPreview::from).toList());
         }
     }
 
@@ -46,13 +47,26 @@ public final class NotaFiscalDto {
         }
     }
 
+    /**
+     * Item da NF-e + sugestão de match contra o catálogo (campos {@code matchStatus},
+     * {@code insumoSugerido*}). Operador vê e decide vincular ou criar novo.
+     */
     public record ItemPreview(int numero, String codigoFornecedor, String descricao, String ncm,
                               String unidadeComercial, BigDecimal quantidade,
-                              BigDecimal valorUnitario, BigDecimal valorTotal) {
-        static ItemPreview from(ItemLido i) {
+                              BigDecimal valorUnitario, BigDecimal valorTotal,
+                              String matchStatus,
+                              java.util.UUID insumoSugeridoId,
+                              String insumoSugeridoCodigo,
+                              String insumoSugeridoNome) {
+        static ItemPreview from(com.nonnas.nfeimporter.application.PreviewNotaFiscalUseCase.ItemEnriquecido en) {
+            ItemLido i = en.item();
             return new ItemPreview(i.numero(), i.codigoFornecedor(), i.descricao(),
                     i.ncm(), i.unidadeComercial(), i.quantidade(),
-                    i.valorUnitario(), i.valorTotal());
+                    i.valorUnitario(), i.valorTotal(),
+                    en.matchStatus().name(),
+                    en.insumoSugeridoId(),
+                    en.insumoSugeridoCodigo(),
+                    en.insumoSugeridoNome());
         }
     }
 

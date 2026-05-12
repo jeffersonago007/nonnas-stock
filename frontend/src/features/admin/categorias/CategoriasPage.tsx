@@ -84,7 +84,12 @@ export function CategoriasPage() {
     },
     onError: (error) => toastError('Não foi possível ativar', error),
   });
-  const togglingId = desativarMutation.variables ?? ativarMutation.variables;
+  // Só desabilita enquanto a mutation está em curso; após success, libera.
+  const togglingId = desativarMutation.isPending
+    ? desativarMutation.variables
+    : ativarMutation.isPending
+      ? ativarMutation.variables
+      : undefined;
 
   const columns: ColumnDef<Categoria>[] = [
     { key: 'nome', header: 'Nome', cell: (c) => <span className="font-medium">{c.nome}</span> },

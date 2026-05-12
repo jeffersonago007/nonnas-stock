@@ -53,11 +53,27 @@ public class MovimentacoesPage {
     }
 
     public MovimentacoesPage preencherSaida(String insumo, String unidade, String qtdBase) {
+        return preencherSaida(insumo, unidade, qtdBase, null);
+    }
+
+    /**
+     * Variante que também preenche a observação (motivo livre). Útil pra registros
+     * de "erro operacional", "perda", etc. que precisam de rastro no histórico.
+     */
+    public MovimentacoesPage preencherSaida(String insumo, String unidade, String qtdBase,
+                                            String observacao) {
         page.locator("[role=combobox]:near(:text('Insumo'))").first().click();
         page.locator("[role=option]:has-text('" + insumo + "')").click();
         page.locator("[role=combobox]:near(:text('Unidade'))").first().click();
         page.locator("[role=option]:has-text('" + unidade + "')").click();
         page.locator("text=Quantidade base").locator("xpath=../input").fill(qtdBase);
+        if (observacao != null && !observacao.isBlank()) {
+            // Campo textarea com label "Observação" — preenche se o componente expor.
+            var obsField = page.locator("textarea[id*=observacao], textarea[name*=observacao]");
+            if (obsField.count() > 0) {
+                obsField.first().fill(observacao);
+            }
+        }
         return this;
     }
 

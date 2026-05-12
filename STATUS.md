@@ -53,6 +53,7 @@ Decisões arquiteturais e de sequenciamento ficam em `docs/adr/`. ADRs imutávei
 | 0012 | Estratégia de Backup, Restore e Disaster Recovery (T18) | Aceita |
 | 0013 | Estratégia de importação NF-e (entidade própria, categoria default, lote/validade default true, de-para fornecedor+cProd com aprendizado) | Aceita |
 | 0014 | Lote opcional via flag `controla_validade` (T-LOT-01..09) | Aceita |
+| 0015 | Produto vendável FABRICADO vs REVENDA (sem ficha técnica obrigatória) | Aceita |
 
 ## Ordem de execução decidida
 

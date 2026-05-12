@@ -4,9 +4,12 @@ import com.nonnas.inventory.domain.SelecionarLotesParaSaidaService;
 import com.nonnas.inventory.domain.SelecionarLotesPorFefoService;
 import com.nonnas.recipes.application.ports.FichaTecnicaRepository;
 import com.nonnas.recipes.application.ports.PreviewVendaQueries;
+import com.nonnas.recipes.application.ports.ProdutoVendavelRepository;
 import com.nonnas.recipes.domain.FichaTecnica;
 import com.nonnas.recipes.domain.ItemFichaTecnica;
+import com.nonnas.recipes.domain.ProdutoVendavel;
 import com.nonnas.recipes.domain.ProdutoVendavelId;
+import com.nonnas.recipes.domain.TipoProdutoVendavel;
 import com.nonnas.sharedkernel.NotFoundException;
 import com.nonnas.sharedkernel.ValidationException;
 import org.springframework.stereotype.Service;
@@ -22,24 +25,28 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Preview da baixa por trás de uma venda: resolve a ficha vigente, simula a
- * seleção de lotes (FEFO ou AGREGADOR conforme o regime de cada insumo) sem
- * persistir nada e enriquece com metadados de catalog (nome, unidade,
+ * Preview da baixa por trás de uma venda. Bifurca por tipo do produto:
+ * <ul>
+ *   <li>{@code FABRICADO}: expande a ficha técnica e simula FEFO/AGREGADOR
+ *       por insumo, sem persistir.</li>
+ *   <li>{@code REVENDA}: simula a baixa 1:1 do insumo vinculado.</li>
+ * </ul>
+ * Em ambos os casos, enriquece com metadados de catalog (nome, unidade,
  * controla_validade) e inventory (lote número/validade) via JDBC nativo.
- *
- * <p>T-LOT-06: a renderização no frontend é condicional ao {@code controlaValidade}
- * — RASTREADO mostra lote+validade, AGREGADOR mostra só saldo após a baixa.
  */
 @Service
 public class PreviewVendaSimuladaUseCase {
 
+    private final ProdutoVendavelRepository produtoRepo;
     private final FichaTecnicaRepository fichaRepo;
     private final SelecionarLotesParaSaidaService selecionar;
     private final PreviewVendaQueries queries;
 
-    public PreviewVendaSimuladaUseCase(FichaTecnicaRepository fichaRepo,
+    public PreviewVendaSimuladaUseCase(ProdutoVendavelRepository produtoRepo,
+                                       FichaTecnicaRepository fichaRepo,
                                        SelecionarLotesParaSaidaService selecionar,
                                        PreviewVendaQueries queries) {
+        this.produtoRepo = produtoRepo;
         this.fichaRepo = fichaRepo;
         this.selecionar = selecionar;
         this.queries = queries;
@@ -53,18 +60,20 @@ public class PreviewVendaSimuladaUseCase {
             throw new ValidationException("Informe uma quantidade vendida maior que zero");
         }
 
-        FichaTecnica vigente = fichaRepo.findVigentePorProduto(ProdutoVendavelId.of(cmd.produtoVendavelId))
-                .orElseThrow(() -> new NotFoundException(
-                        "Ficha técnica vigente para o produto " + cmd.produtoVendavelId + " não encontrada"));
+        ProdutoVendavel produto = produtoRepo.findById(ProdutoVendavelId.of(cmd.produtoVendavelId))
+                .orElseThrow(() -> new NotFoundException("Produto vendável", cmd.produtoVendavelId));
 
-        // 1) Simula a seleção FEFO/AGREGADOR para cada item da ficha, sem persistir.
+        List<InsumoNecessario> necessarios = produto.tipo() == TipoProdutoVendavel.REVENDA
+                ? necessariosRevenda(produto, cmd)
+                : necessariosFabricado(produto, cmd);
+
+        // 1) Simula a seleção FEFO/AGREGADOR para cada insumo, sem persistir.
         List<SelecaoPorItem> selecoes = new ArrayList<>();
         boolean algumNegativo = false;
-        for (ItemFichaTecnica item : vigente.itens()) {
-            BigDecimal qBase = item.quantidade().multiply(cmd.quantidadeVendida);
+        for (InsumoNecessario n : necessarios) {
             SelecionarLotesPorFefoService.Resultado res = selecionar.selecionar(
-                    item.insumoId(), cmd.filialId, qBase);
-            selecoes.add(new SelecaoPorItem(item.insumoId(), qBase, res));
+                    n.insumoId(), cmd.filialId, n.quantidadeBase());
+            selecoes.add(new SelecaoPorItem(n.insumoId(), n.quantidadeBase(), res));
             algumNegativo = algumNegativo || res.gerouNegativo();
         }
 
@@ -85,7 +94,7 @@ public class PreviewVendaSimuladaUseCase {
         for (SelecaoPorItem s : selecoes) {
             PreviewVendaQueries.InsumoMeta meta = insumoMeta.get(s.insumoId);
             if (meta == null) {
-                throw new NotFoundException("Insumo " + s.insumoId + " referenciado na ficha não está em catalog");
+                throw new NotFoundException("Insumo " + s.insumoId + " não está em catalog");
             }
             BigDecimal saldoRestante = meta.saldoAtual().subtract(s.quantidadeBase);
 
@@ -111,6 +120,25 @@ public class PreviewVendaSimuladaUseCase {
 
         return new Resposta(List.copyOf(itens), algumNegativo);
     }
+
+    private List<InsumoNecessario> necessariosFabricado(ProdutoVendavel produto, Comando cmd) {
+        FichaTecnica vigente = fichaRepo.findVigentePorProduto(produto.id())
+                .orElseThrow(() -> new NotFoundException(
+                        "Ficha técnica vigente para o produto " + produto.id().value() + " não encontrada"));
+        return vigente.itens().stream()
+                .map((ItemFichaTecnica i) -> new InsumoNecessario(
+                        i.insumoId(),
+                        i.quantidade().multiply(cmd.quantidadeVendida)))
+                .toList();
+    }
+
+    private List<InsumoNecessario> necessariosRevenda(ProdutoVendavel produto, Comando cmd) {
+        UUID insumoId = produto.insumoRevendaIdOpt().orElseThrow(() ->
+                new ValidationException("Produto de revenda sem insumo vinculado (estado inconsistente)"));
+        return List.of(new InsumoNecessario(insumoId, cmd.quantidadeVendida));
+    }
+
+    private record InsumoNecessario(UUID insumoId, BigDecimal quantidadeBase) {}
 
     private record SelecaoPorItem(UUID insumoId, BigDecimal quantidadeBase,
                                   SelecionarLotesPorFefoService.Resultado resultado) {}

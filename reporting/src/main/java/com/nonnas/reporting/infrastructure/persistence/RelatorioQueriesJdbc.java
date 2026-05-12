@@ -219,7 +219,7 @@ public class RelatorioQueriesJdbc implements RelatorioQueries {
         // ambos garantidos pela V009 (CREATE MATERIALIZED VIEW ... WITH DATA).
         try {
             jdbc.getJdbcTemplate().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY reporting.mv_curva_abc");
-            jdbc.getJdbcTemplate().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY reporting.mv_ruptura_iminente");
+            // mv_ruptura_iminente virou view comum em V023 — não precisa refresh.
         } catch (EmptyResultDataAccessException ignored) {
             // não-aplicável a DDL, mantido por simetria caso a query mude.
         }

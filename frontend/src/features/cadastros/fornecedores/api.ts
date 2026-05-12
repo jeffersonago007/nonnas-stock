@@ -64,3 +64,21 @@ export async function ativarFornecedor(id: string): Promise<Fornecedor> {
   const { data } = await api.patch<Fornecedor>(`/fornecedores/${id}/ativar`);
   return data;
 }
+
+export interface DeParaItem {
+  codigoFornecedor: string;
+  insumoId: string;
+  insumoCodigo: string | null;
+  insumoNome: string;
+  createdAt: string;
+  lastUsedAt: string;
+}
+
+export async function listarDeParas(fornecedorId: string): Promise<DeParaItem[]> {
+  const { data } = await api.get<DeParaItem[]>(`/fornecedores/${fornecedorId}/de-para`);
+  return data;
+}
+
+export async function apagarDePara(fornecedorId: string, codigoFornecedor: string): Promise<void> {
+  await api.delete(`/fornecedores/${fornecedorId}/de-para/${encodeURIComponent(codigoFornecedor)}`);
+}

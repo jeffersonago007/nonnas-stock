@@ -106,7 +106,11 @@ export function ProdutosPage() {
     },
     onError: (error) => toastError('Não foi possível ativar', error),
   });
-  const togglingId = desativarMutation.variables ?? ativarMutation.variables;
+  const togglingId = desativarMutation.isPending
+    ? desativarMutation.variables
+    : ativarMutation.isPending
+      ? ativarMutation.variables
+      : undefined;
 
   const columns: ColumnDef<Produto>[] = [
     { key: 'codigo', header: 'Código', cell: (p) => <code className="text-xs">{p.codigo}</code>, className: 'w-[120px]' },

@@ -1,11 +1,11 @@
 package com.nonnas.nfeimporter.interfaces.rest;
 
+import com.nonnas.nfeimporter.application.PreviewNotaFiscalUseCase;
 import com.nonnas.nfeimporter.application.ProcessarNotaFiscalUseCase;
-import com.nonnas.nfeimporter.domain.NotaFiscalLida;
 import com.nonnas.nfeimporter.interfaces.rest.dto.NotaFiscalDto;
-import com.nonnas.nfeimporter.parser.XmlNfeParser;
 import com.nonnas.operations.application.notafiscal.BuscarNotaFiscalUseCase;
 import com.nonnas.operations.application.notafiscal.ListarNotasFiscaisUseCase;
+import com.nonnas.operations.application.ports.NotaFiscalRepository;
 import com.nonnas.sharedkernel.ValidationException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -29,16 +29,16 @@ import java.util.UUID;
 @RequestMapping("/api/v1/notas-fiscais")
 public class NotaFiscalController {
 
-    private final XmlNfeParser parser;
+    private final PreviewNotaFiscalUseCase preview;
     private final ProcessarNotaFiscalUseCase processar;
     private final BuscarNotaFiscalUseCase buscar;
     private final ListarNotasFiscaisUseCase listar;
 
-    public NotaFiscalController(XmlNfeParser parser,
+    public NotaFiscalController(PreviewNotaFiscalUseCase preview,
                                 ProcessarNotaFiscalUseCase processar,
                                 BuscarNotaFiscalUseCase buscar,
                                 ListarNotasFiscaisUseCase listar) {
-        this.parser = parser;
+        this.preview = preview;
         this.processar = processar;
         this.buscar = buscar;
         this.listar = listar;
@@ -55,8 +55,7 @@ public class NotaFiscalController {
             throw new ValidationException("Arquivo XML da NF-e é obrigatório");
         }
         try {
-            NotaFiscalLida nf = parser.parse(file.getInputStream());
-            return NotaFiscalDto.PreviewResponse.from(nf);
+            return NotaFiscalDto.PreviewResponse.from(preview.execute(file.getInputStream()));
         } catch (IOException ex) {
             throw new ValidationException("Falha ao ler o arquivo: " + ex.getMessage());
         }
@@ -95,11 +94,19 @@ public class NotaFiscalController {
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'OPERADOR', 'CONSULTA')")
     public List<NotaFiscalDto.Response> list(
             @RequestParam(required = false) UUID filialId,
+            @RequestParam(required = false) UUID fornecedorId,
+            @RequestParam(required = false) String numero,
+            @RequestParam(required = false) String chaveNfe,
             @RequestParam(required = false) Instant emissaoDe,
             @RequestParam(required = false) Instant emissaoAte,
+            @RequestParam(required = false) Instant lancamentoDe,
+            @RequestParam(required = false) Instant lancamentoAte,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return listar.execute(filialId, emissaoDe, emissaoAte, page, size).stream()
+        var filtros = new NotaFiscalRepository.Filtros(
+                filialId, fornecedorId, numero, chaveNfe,
+                emissaoDe, emissaoAte, lancamentoDe, lancamentoAte);
+        return listar.execute(filtros, page, size).stream()
                 .map(NotaFiscalDto.Response::from).toList();
     }
 

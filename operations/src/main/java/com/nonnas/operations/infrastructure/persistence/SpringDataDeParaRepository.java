@@ -12,4 +12,6 @@ public interface SpringDataDeParaRepository extends JpaRepository<FornecedorInsu
             UUID fornecedorId, String codigoFornecedor);
 
     List<FornecedorInsumoDeParaEntity> findByFornecedorId(UUID fornecedorId);
+
+    void deleteByFornecedorIdAndCodigoFornecedor(UUID fornecedorId, String codigoFornecedor);
 }

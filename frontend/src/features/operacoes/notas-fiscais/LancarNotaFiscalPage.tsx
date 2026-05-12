@@ -25,9 +25,11 @@ import { useAuthStore } from '@/features/auth/store';
 import {
   type ItemRequest,
   type LancarRequest,
+  type MatchStatus,
   lancarNotaFiscal,
   previewXml,
 } from './api';
+import { siglaCanonica } from './nfeUnidadeAliases';
 
 interface ItemForm {
   codigoInsumo: string;
@@ -39,6 +41,12 @@ interface ItemForm {
   valorUnitario: string;
   lote: string;
   dataValidade: string;
+  // Sugestão de match vinda do backend (preview-xml).
+  matchStatus: MatchStatus;
+  insumoSugeridoId: string | null;
+  insumoSugeridoNome: string | null;
+  // Decisão do operador. '' = criar novo; UUID = vincular ao insumo existente.
+  vincularInsumoId: string;
 }
 
 function itemVazio(unidadeDefault?: string): ItemForm {
@@ -52,6 +60,10 @@ function itemVazio(unidadeDefault?: string): ItemForm {
     valorUnitario: '',
     lote: '',
     dataValidade: '',
+    matchStatus: 'LIVRE',
+    insumoSugeridoId: null,
+    insumoSugeridoNome: null,
+    vincularInsumoId: '',
   };
 }
 
@@ -75,14 +87,20 @@ export function LancarNotaFiscalPage() {
   const [itens, setItens] = useState<ItemForm[]>([itemVazio()]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Só unidades ativas — operador não deve poder lançar nota em unidade desativada.
+  const unidadesAtivas = useMemo(
+    () => (unidadesQuery.data ?? []).filter((u) => u.ativa),
+    [unidadesQuery.data],
+  );
+
   // Mapa rápido código→id de unidade pra resolver "uCom" do XML.
   const unidadePorCodigo = useMemo(() => {
     const map: Record<string, string> = {};
-    (unidadesQuery.data ?? []).forEach((u) => {
+    unidadesAtivas.forEach((u) => {
       map[u.codigo.toUpperCase()] = u.id;
     });
     return map;
-  }, [unidadesQuery.data]);
+  }, [unidadesAtivas]);
 
   // Default da filial = primeira disponível (operador troca depois).
   useEffect(() => {
@@ -102,17 +120,30 @@ export function LancarNotaFiscalPage() {
       setDataEmissao(preview.dataEmissao.slice(0, 16));
       setValorTotal(String(preview.valorTotal));
       setItens(
-        preview.itens.map((it) => ({
-          codigoInsumo: it.codigoFornecedor,
-          nomeInsumo: it.descricao,
-          unidadeMedidaId: unidadePorCodigo[it.unidadeComercial.toUpperCase()] ?? '',
-          codigoFornecedor: it.codigoFornecedor,
-          descricaoOrigem: it.descricao,
-          quantidade: String(it.quantidade),
-          valorUnitario: String(it.valorUnitario),
-          lote: '',
-          dataValidade: '',
-        })),
+        preview.itens.map((it) => {
+          const sigla =
+            siglaCanonica(it.unidadeComercial) ?? it.unidadeComercial.toUpperCase();
+          // DEPARA pré-seleciona vincular; COLISAO força operador escolher (vazio).
+          const vincularDefault =
+            it.matchStatus === 'MATCH_DEPARA' && it.insumoSugeridoId
+              ? it.insumoSugeridoId
+              : '';
+          return {
+            codigoInsumo: it.codigoFornecedor,
+            nomeInsumo: it.descricao,
+            unidadeMedidaId: unidadePorCodigo[sigla] ?? '',
+            codigoFornecedor: it.codigoFornecedor,
+            descricaoOrigem: it.descricao,
+            quantidade: String(it.quantidade),
+            valorUnitario: String(it.valorUnitario),
+            lote: '',
+            dataValidade: '',
+            matchStatus: it.matchStatus,
+            insumoSugeridoId: it.insumoSugeridoId,
+            insumoSugeridoNome: it.insumoSugeridoNome,
+            vincularInsumoId: vincularDefault,
+          };
+        }),
       );
       toast.success(`XML lido: ${preview.itens.length} item(ns)`);
     },
@@ -158,12 +189,16 @@ export function LancarNotaFiscalPage() {
       return;
     }
 
+    // COLISAO sem decisão (vincularInsumoId vazio) é caminho consciente "criar novo".
+    // Backend sufixa o código se necessário.
     const itensReq: ItemRequest[] = itens.map((it) => ({
-      insumo: {
-        codigo: it.codigoInsumo,
-        nome: it.nomeInsumo,
-        unidadeBaseId: it.unidadeMedidaId,
-      },
+      insumo: it.vincularInsumoId
+        ? { id: it.vincularInsumoId }
+        : {
+            codigo: it.codigoInsumo,
+            nome: it.nomeInsumo,
+            unidadeBaseId: it.unidadeMedidaId,
+          },
       codigoFornecedor: it.codigoFornecedor || null,
       descricaoOrigem: it.descricaoOrigem,
       quantidade: Number(it.quantidade),
@@ -358,12 +393,14 @@ export function LancarNotaFiscalPage() {
             </thead>
             <tbody>
               {itens.map((item, idx) => (
-                <tr key={idx} className="border-b last:border-0">
+                <>
+                <tr key={`${idx}-data`} className={item.matchStatus === 'COLISAO_CODIGO' ? '' : 'border-b last:border-0'}>
                   <td className="px-2 py-1.5">
                     <Input
                       value={item.codigoInsumo}
                       onChange={(e) => atualizarItem(idx, 'codigoInsumo', e.target.value)}
                       className="font-mono text-xs"
+                      disabled={!!item.vincularInsumoId}
                     />
                   </td>
                   <td className="px-2 py-1.5">
@@ -375,6 +412,7 @@ export function LancarNotaFiscalPage() {
                         atualizarItem(idx, 'descricaoOrigem', e.target.value);
                         atualizarItem(idx, 'nomeInsumo', e.target.value);
                       }}
+                      disabled={!!item.vincularInsumoId}
                     />
                   </td>
                   <td className="px-2 py-1.5">
@@ -395,7 +433,7 @@ export function LancarNotaFiscalPage() {
                         <SelectValue placeholder="Sel." />
                       </SelectTrigger>
                       <SelectContent>
-                        {unidadesQuery.data?.map((u) => (
+                        {unidadesAtivas.map((u) => (
                           <SelectItem key={u.id} value={u.id}>
                             {u.codigo}
                           </SelectItem>
@@ -438,6 +476,14 @@ export function LancarNotaFiscalPage() {
                     </Button>
                   </td>
                 </tr>
+                {item.insumoSugeridoId && (
+                  <tr key={`${idx}-match`} className="border-b last:border-0">
+                    <td colSpan={8} className="px-2 pb-2">
+                      <MatchInsumoBanner item={item} onChange={(v) => atualizarItem(idx, 'vincularInsumoId', v)} />
+                    </td>
+                  </tr>
+                )}
+                </>
               ))}
             </tbody>
           </table>
@@ -461,6 +507,57 @@ export function LancarNotaFiscalPage() {
         <Button onClick={lancar} disabled={lancarMutation.isPending}>
           {lancarMutation.isPending ? 'Lançando…' : 'Lançar nota'}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+interface MatchBannerProps {
+  item: ItemForm;
+  onChange: (vincularInsumoId: string) => void;
+}
+
+function MatchInsumoBanner({ item, onChange }: MatchBannerProps) {
+  if (!item.insumoSugeridoId) return null;
+
+  const sugerido = item.insumoSugeridoNome ?? '—';
+  const vinculando = item.vincularInsumoId === item.insumoSugeridoId;
+  const criarNovo = !item.vincularInsumoId;
+
+  const isDepara = item.matchStatus === 'MATCH_DEPARA';
+  const containerClasses = isDepara
+    ? 'rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs text-emerald-900'
+    : 'rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900';
+
+  return (
+    <div className={containerClasses}>
+      {isDepara ? (
+        <span>
+          Este fornecedor já enviou esse código antes — vinculado a <strong>{sugerido}</strong>.
+        </span>
+      ) : (
+        <span>
+          O código <strong>{item.codigoFornecedor}</strong> já existe no cadastro como{' '}
+          <strong>{sugerido}</strong>. Escolha:
+        </span>
+      )}
+      <div className="mt-2 flex gap-4">
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input
+            type="radio"
+            checked={vinculando}
+            onChange={() => onChange(item.insumoSugeridoId!)}
+          />
+          Vincular a "{sugerido}"
+        </label>
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input
+            type="radio"
+            checked={criarNovo}
+            onChange={() => onChange('')}
+          />
+          Criar novo insumo separado
+        </label>
       </div>
     </div>
   );

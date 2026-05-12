@@ -300,7 +300,7 @@ export function InsumoFormDialog({ open, onOpenChange, insumo }: Props) {
                     <SelectValue placeholder={unidadesQuery.isLoading ? 'Carregando…' : 'Selecione…'} />
                   </SelectTrigger>
                   <SelectContent>
-                    {unidadesQuery.data?.map((u) => (
+                    {unidadesQuery.data?.filter((u) => u.ativa).map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.codigo} — {u.nome}
                       </SelectItem>

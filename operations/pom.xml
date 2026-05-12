@@ -72,6 +72,13 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <!-- Apenas para encadear migrations de catalog (insumos, unidades_medida,
+         categorias) no classpath de teste. Não importamos classes Java. -->
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>catalog</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -108,6 +115,8 @@
             <exclude>com/nonnas/operations/domain/ItemNotaFiscal*.class</exclude>
             <exclude>com/nonnas/operations/domain/FornecedorInsumoDePara*.class</exclude>
             <exclude>com/nonnas/operations/application/notafiscal/**/*.class</exclude>
+            <!-- Apenas interfaces e records DTO de filtros; sem comportamento. -->
+            <exclude>com/nonnas/operations/application/ports/**/*.class</exclude>
           </excludes>
         </configuration>
         <executions>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Power, Search, X } from 'lucide-react';
+import { Link2, Pencil, Plus, Power, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import {
   listarFornecedores,
 } from './api';
 import { FornecedorFormDialog } from './FornecedorFormDialog';
+import { FornecedorDeParaDialog } from './FornecedorDeParaDialog';
 
 const ATIVO_TODOS = '__todos__';
 
@@ -32,6 +33,7 @@ export function FornecedoresPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Fornecedor | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deparaFornecedor, setDeparaFornecedor] = useState<Fornecedor | null>(null);
 
   // Inputs (não disparam query).
   const [buscaInput, setBuscaInput] = useState('');
@@ -82,7 +84,11 @@ export function FornecedoresPage() {
     },
     onError: (error) => toastError('Não foi possível ativar', error),
   });
-  const togglingId = desativarMutation.variables ?? ativarMutation.variables;
+  const togglingId = desativarMutation.isPending
+    ? desativarMutation.variables
+    : ativarMutation.isPending
+      ? ativarMutation.variables
+      : undefined;
 
   const columns: ColumnDef<Fornecedor>[] = [
     { key: 'razaoSocial', header: 'Razão social', cell: (f) => <span className="font-medium">{f.razaoSocial}</span> },
@@ -91,9 +97,12 @@ export function FornecedoresPage() {
     {
       key: 'actions',
       header: <span className="sr-only">Ações</span>,
-      className: 'text-right w-[200px]',
+      className: 'text-right w-[320px]',
       cell: (f) => (
         <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setDeparaFornecedor(f)}>
+            <Link2 className="h-4 w-4" /> Mapeamentos
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => { setEditing(f); setDialogOpen(true); }}>
             <Pencil className="h-4 w-4" /> Editar
           </Button>
@@ -184,6 +193,13 @@ export function FornecedoresPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         fornecedor={editing}
+      />
+
+      <FornecedorDeParaDialog
+        open={!!deparaFornecedor}
+        onOpenChange={(o) => { if (!o) setDeparaFornecedor(null); }}
+        fornecedorId={deparaFornecedor?.id ?? null}
+        fornecedorNome={deparaFornecedor?.razaoSocial ?? ''}
       />
     </div>
   );

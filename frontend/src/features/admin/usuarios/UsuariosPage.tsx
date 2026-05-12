@@ -104,7 +104,11 @@ export function UsuariosPage() {
     },
     onError: (error) => toastError('Não foi possível ativar', error),
   });
-  const togglingId = desativarMutation.variables ?? ativarMutation.variables;
+  const togglingId = desativarMutation.isPending
+    ? desativarMutation.variables
+    : ativarMutation.isPending
+      ? ativarMutation.variables
+      : undefined;
 
   const columns: ColumnDef<Usuario>[] = [
     {

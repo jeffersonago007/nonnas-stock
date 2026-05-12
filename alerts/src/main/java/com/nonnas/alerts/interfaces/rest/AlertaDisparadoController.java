@@ -3,14 +3,18 @@ package com.nonnas.alerts.interfaces.rest;
 import com.nonnas.alerts.application.disparado.ListarAlertasDisparadosUseCase;
 import com.nonnas.alerts.application.disparado.MarcarAlertaResolvidoUseCase;
 import com.nonnas.alerts.application.disparado.MarcarAlertaVisualizadoUseCase;
+import com.nonnas.alerts.domain.AvaliadorAlertasService;
 import com.nonnas.alerts.domain.StatusAlerta;
 import com.nonnas.alerts.domain.TipoAlerta;
 import com.nonnas.alerts.interfaces.rest.dto.AlertaDisparadoDto;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -20,13 +24,16 @@ public class AlertaDisparadoController {
     private final ListarAlertasDisparadosUseCase listar;
     private final MarcarAlertaResolvidoUseCase resolver;
     private final MarcarAlertaVisualizadoUseCase visualizar;
+    private final AvaliadorAlertasService avaliador;
 
     public AlertaDisparadoController(ListarAlertasDisparadosUseCase listar,
                                      MarcarAlertaResolvidoUseCase resolver,
-                                     MarcarAlertaVisualizadoUseCase visualizar) {
+                                     MarcarAlertaVisualizadoUseCase visualizar,
+                                     AvaliadorAlertasService avaliador) {
         this.listar = listar;
         this.resolver = resolver;
         this.visualizar = visualizar;
+        this.avaliador = avaliador;
     }
 
     @GetMapping
@@ -55,5 +62,12 @@ public class AlertaDisparadoController {
     public AlertaDisparadoDto.Response visualizar(@PathVariable UUID id,
                                                   @Valid @RequestBody AlertaDisparadoDto.AcaoUsuarioRequest req) {
         return AlertaDisparadoDto.Response.from(visualizar.execute(id, req.usuarioId()));
+    }
+
+    @PostMapping("/avaliar-vencimentos")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
+    @Transactional
+    public Map<String, Integer> avaliarVencimentos() {
+        return Map.of("disparados", avaliador.avaliarVencimentos());
     }
 }

@@ -101,13 +101,21 @@ public class AlertaDisparadoListener {
     }
 
     private static String montarMensagem(AlertaDisparadoEvent ev) {
+        String insumo = ev.insumoNome() != null ? ev.insumoNome() : "Insumo " + shortId(ev.insumoId());
+        String filial = ev.filialNome() != null ? ev.filialNome() : "filial " + shortId(ev.filialId());
         StringBuilder sb = new StringBuilder();
-        sb.append("Insumo ").append(shortId(ev.insumoId()))
-                .append(" na filial ").append(shortId(ev.filialId()));
+        sb.append(insumo).append(" — ").append(filial);
         if (ev.saldoNoDisparo() != null) {
-            sb.append(" — saldo no disparo: ").append(ev.saldoNoDisparo().toPlainString());
+            sb.append(" • saldo: ").append(formatarQuantidade(ev.saldoNoDisparo(), ev.unidadeCodigo()));
         }
         return sb.toString();
+    }
+
+    private static String formatarQuantidade(java.math.BigDecimal qtd, String unidadeCodigo) {
+        java.math.BigDecimal stripped = qtd.stripTrailingZeros();
+        if (stripped.scale() < 0) stripped = stripped.setScale(0);
+        String numero = stripped.toPlainString();
+        return unidadeCodigo != null ? numero + " " + unidadeCodigo : numero;
     }
 
     private static String shortId(java.util.UUID id) {

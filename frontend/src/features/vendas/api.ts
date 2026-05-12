@@ -62,3 +62,40 @@ export async function obterPreviewVenda(payload: PreviewVendaPayload): Promise<P
   const { data } = await api.post<PreviewVendaResposta>('/vendas-simuladas/preview', payload);
   return data;
 }
+
+export type OrigemItemCardapio = 'PRODUTO_FABRICADO' | 'PRODUTO_REVENDA' | 'INSUMO_ORFAO';
+
+export interface ItemCardapio {
+  origem: OrigemItemCardapio;
+  id: string;                       // produtoVendavelId OU insumoId conforme origem
+  codigo: string;
+  nome: string;
+  categoria: string | null;
+  unidadeBaseCodigo: string | null;
+  saldoNaFilial: number | null;
+  vendasUltimos30Dias: number;      // 0 = sem venda recente
+}
+
+export async function listarCardapio(filialId: string): Promise<ItemCardapio[]> {
+  const { data } = await api.get<{ itens: ItemCardapio[] }>('/cardapio', { params: { filialId } });
+  return data.itens;
+}
+
+export interface VenderInsumoPayload {
+  insumoId: string;
+  filialId: string;
+  usuarioId: string;
+  quantidadeVendida: number;
+  observacao?: string;
+}
+
+export interface VenderInsumoResposta {
+  produtoVendavelCriadoId: string;
+  movimentacaoId: string;
+  gerouNegativo: boolean;
+}
+
+export async function venderInsumoOrfao(payload: VenderInsumoPayload): Promise<VenderInsumoResposta> {
+  const { data } = await api.post<VenderInsumoResposta>('/cardapio/vender-insumo', payload);
+  return data;
+}

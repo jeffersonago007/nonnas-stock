@@ -4,6 +4,7 @@ import com.nonnas.catalog.application.ports.CategoriaInsumoRepository;
 import com.nonnas.catalog.domain.CategoriaInsumo;
 import com.nonnas.catalog.domain.CategoriaInsumoId;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -30,7 +31,8 @@ class CategoriaInsumoRepositoryImpl implements CategoriaInsumoRepository {
 
     @Override
     public List<CategoriaInsumo> findAll(int page, int size) {
-        return jpa.findAll(PageRequest.of(page, size)).map(CatalogMappers::toDomain).getContent();
+        return jpa.findAll(PageRequest.of(page, size, Sort.by(Sort.Order.asc("nome").ignoreCase())))
+                .map(CatalogMappers::toDomain).getContent();
     }
 
     @Override

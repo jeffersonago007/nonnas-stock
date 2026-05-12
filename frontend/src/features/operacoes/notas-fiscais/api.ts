@@ -7,6 +7,8 @@ export interface EmitenteResumo {
   inscricaoEstadual: string | null;
 }
 
+export type MatchStatus = 'MATCH_DEPARA' | 'COLISAO_CODIGO' | 'LIVRE';
+
 export interface ItemPreview {
   numero: number;
   codigoFornecedor: string;
@@ -16,6 +18,10 @@ export interface ItemPreview {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
+  matchStatus: MatchStatus;
+  insumoSugeridoId: string | null;
+  insumoSugeridoCodigo: string | null;
+  insumoSugeridoNome: string | null;
 }
 
 export interface PreviewResponse {
@@ -109,9 +115,22 @@ export async function lancarNotaFiscal(payload: LancarRequest): Promise<NotaFisc
   return data;
 }
 
-export async function listarNotasFiscais(filialId?: string): Promise<NotaFiscal[]> {
+export interface NotasFiscaisFiltro {
+  filialId?: string;
+  fornecedorId?: string;
+  numero?: string;
+  chaveNfe?: string;
+  emissaoDe?: string;     // ISO (datetime)
+  emissaoAte?: string;
+  lancamentoDe?: string;
+  lancamentoAte?: string;
+}
+
+export async function listarNotasFiscais(filtros: NotasFiscaisFiltro = {}): Promise<NotaFiscal[]> {
   const params: Record<string, string> = {};
-  if (filialId) params.filialId = filialId;
+  for (const [k, v] of Object.entries(filtros)) {
+    if (v) params[k] = v;
+  }
   const { data } = await api.get<NotaFiscal[]>('/notas-fiscais', { params });
   return data;
 }

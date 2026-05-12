@@ -13,6 +13,8 @@ public class ProdutoVendavelEntity {
     @Column(nullable = false, length = 50) private String codigo;
     @Column(nullable = false, length = 150) private String nome;
     @Column(nullable = false, length = 50) private String categoria;
+    @Column(nullable = false, length = 20) private String tipo;
+    @Column(name = "insumo_revenda_id") private UUID insumoRevendaId;
     @Column(nullable = false) private boolean ativo;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
@@ -23,6 +25,8 @@ public class ProdutoVendavelEntity {
     public String getCodigo() { return codigo; } public void setCodigo(String v) { this.codigo = v; }
     public String getNome() { return nome; } public void setNome(String v) { this.nome = v; }
     public String getCategoria() { return categoria; } public void setCategoria(String v) { this.categoria = v; }
+    public String getTipo() { return tipo; } public void setTipo(String v) { this.tipo = v; }
+    public UUID getInsumoRevendaId() { return insumoRevendaId; } public void setInsumoRevendaId(UUID v) { this.insumoRevendaId = v; }
     public boolean isAtivo() { return ativo; } public void setAtivo(boolean v) { this.ativo = v; }
     public Instant getCreatedAt() { return createdAt; } public void setCreatedAt(Instant v) { this.createdAt = v; }
     public Instant getUpdatedAt() { return updatedAt; } public void setUpdatedAt(Instant v) { this.updatedAt = v; }

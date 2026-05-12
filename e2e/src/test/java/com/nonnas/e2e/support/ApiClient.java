@@ -108,6 +108,83 @@ public class ApiClient {
         return m.group(1);
     }
 
+    /** Idempotente: se já existe fornecedor com o CNPJ, devolve o id existente. */
+    public String criarFornecedor(String token, String razaoSocial, String cnpj) {
+        String existing = idFornecedorPorCnpj(token, cnpj);
+        if (existing != null) return existing;
+        String body = "{\"razaoSocial\":\"" + razaoSocial + "\",\"cnpj\":\"" + cnpj + "\"}";
+        HttpResponse<String> resp = post("/api/v1/fornecedores", token, body);
+        return extractJsonString(resp.body(), "id");
+    }
+
+    public String idFornecedorPorCnpj(String token, String cnpj) {
+        HttpResponse<String> resp = get("/api/v1/fornecedores", token);
+        Pattern p = Pattern.compile(
+                "\\{\"id\":\"([^\"]+)\"[^}]*\"cnpj\":\"" + Pattern.quote(cnpj) + "\"",
+                Pattern.DOTALL);
+        Matcher m = p.matcher(resp.body());
+        return m.find() ? m.group(1) : null;
+    }
+
+    /** Idempotente: se já existe insumo com o código, devolve o id existente. */
+    public String criarInsumo(String token, String codigo, String nome,
+                              String categoriaId, String unidadeBaseId,
+                              boolean controlaLote, boolean controlaValidade) {
+        try {
+            return idInsumoPorCodigo(token, codigo);
+        } catch (IllegalStateException ignored) {
+            // Não existe — segue para criação.
+        }
+        String body = "{"
+                + "\"codigo\":\"" + codigo + "\","
+                + "\"nome\":\"" + nome + "\","
+                + "\"categoriaId\":\"" + categoriaId + "\","
+                + "\"unidadeBaseId\":\"" + unidadeBaseId + "\","
+                + "\"controlaLote\":" + controlaLote + ","
+                + "\"controlaValidade\":" + controlaValidade
+                + "}";
+        HttpResponse<String> resp = post("/api/v1/insumos", token, body);
+        return extractJsonString(resp.body(), "id");
+    }
+
+    public String idInsumoPorCodigo(String token, String codigo) {
+        HttpResponse<String> resp = get("/api/v1/insumos", token);
+        Pattern p = Pattern.compile(
+                "\\{\"id\":\"([^\"]+)\"[^}]*\"codigo\":\"" + Pattern.quote(codigo) + "\"",
+                Pattern.DOTALL);
+        Matcher m = p.matcher(resp.body());
+        if (!m.find()) {
+            throw new IllegalStateException("Insumo código " + codigo + " não encontrado");
+        }
+        return m.group(1);
+    }
+
+    public String criarAlertaConfigEstoqueMinimoAbsoluto(String token, String insumoId,
+                                                         String filialId, int threshold,
+                                                         int prioridade) {
+        String body = "{"
+                + "\"tipo\":\"ESTOQUE_MINIMO_ABSOLUTO\","
+                + "\"insumoId\":\"" + insumoId + "\","
+                + "\"filialId\":\"" + filialId + "\","
+                + "\"threshold\":" + threshold + ","
+                + "\"prioridade\":" + prioridade
+                + "}";
+        HttpResponse<String> resp = post("/api/v1/alertas-config", token, body);
+        return extractJsonString(resp.body(), "id");
+    }
+
+    /** Conta alertas disparados ATIVOS para o insumo/filial. Usado pra validação. */
+    public int contarAlertasDisparadosAtivos(String token, String insumoId, String filialId) {
+        String path = "/api/v1/alertas-disparados?status=ATIVO"
+                + "&insumoId=" + insumoId + "&filialId=" + filialId;
+        HttpResponse<String> resp = get(path, token);
+        // O endpoint retorna lista — conta ocorrências de "\"id\":".
+        Matcher m = Pattern.compile("\"id\"\\s*:").matcher(resp.body());
+        int c = 0;
+        while (m.find()) c++;
+        return c;
+    }
+
     private HttpResponse<String> post(String path, String token, String body) {
         HttpRequest.Builder req = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl + path))

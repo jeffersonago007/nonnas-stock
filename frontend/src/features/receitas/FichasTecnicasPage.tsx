@@ -55,8 +55,8 @@ export function FichasTecnicasPage() {
   const queryClient = useQueryClient();
 
   const produtosQuery = useQuery({
-    queryKey: ['produtos', { ativo: true }],
-    queryFn: () => listarProdutos({ ativo: true }),
+    queryKey: ['produtos', { ativo: true, tipo: 'FABRICADO' }],
+    queryFn: () => listarProdutos({ ativo: true, tipo: 'FABRICADO' }),
   });
 
   const fichaVigenteQuery = useQuery({
@@ -253,7 +253,7 @@ function FichaEditor({ produtoId, ficha, isLoading, onSaved }: EditorProps) {
                         <SelectValue placeholder="Unidade" />
                       </SelectTrigger>
                       <SelectContent>
-                        {unidadesQuery.data?.map((u) => (
+                        {unidadesQuery.data?.filter((u) => u.ativa).map((u) => (
                           <SelectItem key={u.id} value={u.id}>
                             {u.codigo}
                           </SelectItem>

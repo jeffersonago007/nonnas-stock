@@ -3,11 +3,15 @@ package com.nonnas.recipes.infrastructure.persistence;
 import com.nonnas.recipes.application.ports.ProdutoVendavelRepository;
 import com.nonnas.recipes.domain.ProdutoVendavel;
 import com.nonnas.recipes.domain.ProdutoVendavelId;
+import com.nonnas.recipes.domain.TipoProdutoVendavel;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @Repository
 class ProdutoVendavelRepositoryImpl implements ProdutoVendavelRepository {
@@ -44,11 +48,12 @@ class ProdutoVendavelRepositoryImpl implements ProdutoVendavelRepository {
     }
 
     @Override
-    public List<ProdutoVendavel> findFiltered(String categoria, Boolean ativo, String q, int page, int size) {
+    public List<ProdutoVendavel> findFiltered(String categoria, Boolean ativo, TipoProdutoVendavel tipo,
+                                              String q, int page, int size) {
         String normalizedCat = (categoria == null || categoria.isBlank()) ? null : categoria.trim();
-        // Pattern em Java — Postgres infere bytea pra :q dentro de funções/CONCAT.
         String pattern = (q == null || q.isBlank()) ? null : "%" + q.trim().toLowerCase() + "%";
-        return jpa.findFiltered(normalizedCat, ativo, pattern, PageRequest.of(page, size))
+        String tipoStr = tipo == null ? null : tipo.name();
+        return jpa.findFiltered(normalizedCat, ativo, tipoStr, pattern, PageRequest.of(page, size))
                 .map(RecipesMappers::toDomain)
                 .getContent();
     }
@@ -56,5 +61,17 @@ class ProdutoVendavelRepositoryImpl implements ProdutoVendavelRepository {
     @Override
     public List<String> listarCategoriasDistintas() {
         return jpa.findDistinctCategorias();
+    }
+
+    @Override
+    public Set<UUID> listarInsumosVinculadosARevenda() {
+        return new HashSet<>(jpa.findAllInsumoRevendaIds());
+    }
+
+    @Override
+    public Optional<ProdutoVendavel> findRevendaPorInsumo(UUID insumoId) {
+        return jpa.findRevendasByInsumoId(insumoId).stream()
+                .findFirst()
+                .map(RecipesMappers::toDomain);
     }
 }

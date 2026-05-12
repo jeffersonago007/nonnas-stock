@@ -356,7 +356,7 @@ function LinhaALinha({ onConfirmar, isConfirming }: LinhaALinhaProps) {
                     <SelectValue placeholder="Un" />
                   </SelectTrigger>
                   <SelectContent>
-                    {unidadesQuery.data?.map((u) => (
+                    {unidadesQuery.data?.filter((u) => u.ativa).map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.codigo}
                       </SelectItem>

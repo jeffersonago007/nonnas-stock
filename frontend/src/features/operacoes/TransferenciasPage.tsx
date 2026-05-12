@@ -499,7 +499,7 @@ function CriarTransferenciaDialog({ open, onOpenChange, defaultFilialOrigem }: C
                     <SelectValue placeholder="Unidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    {unidadesQuery.data?.map((u) => (
+                    {unidadesQuery.data?.filter((u) => u.ativa).map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.codigo}
                       </SelectItem>

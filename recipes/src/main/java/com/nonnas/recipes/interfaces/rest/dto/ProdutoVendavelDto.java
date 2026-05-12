@@ -1,6 +1,7 @@
 package com.nonnas.recipes.interfaces.rest.dto;
 
 import com.nonnas.recipes.domain.ProdutoVendavel;
+import com.nonnas.recipes.domain.TipoProdutoVendavel;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.Instant;
@@ -11,7 +12,10 @@ public final class ProdutoVendavelDto {
     public record Request(
             @NotBlank String codigo,
             @NotBlank String nome,
-            @NotBlank String categoria
+            @NotBlank String categoria,
+            // Default no domain é FABRICADO se omitido — mantém compat com clients antigos.
+            TipoProdutoVendavel tipo,
+            UUID insumoRevendaId
     ) {}
 
     public record UpdateRequest(
@@ -24,12 +28,15 @@ public final class ProdutoVendavelDto {
             String codigo,
             String nome,
             String categoria,
+            TipoProdutoVendavel tipo,
+            UUID insumoRevendaId,
             boolean ativo,
             Instant createdAt,
             Instant updatedAt
     ) {
         public static Response from(ProdutoVendavel p) {
             return new Response(p.id().value(), p.codigo(), p.nome(), p.categoria(),
+                    p.tipo(), p.insumoRevendaIdOpt().orElse(null),
                     p.ativo(), p.createdAt(), p.updatedAt());
         }
     }

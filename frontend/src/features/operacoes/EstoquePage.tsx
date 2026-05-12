@@ -60,10 +60,15 @@ export function EstoquePage() {
     queryFn: () => listarRuptura(filialId),
   });
 
+  // Carrega 90d pra cobrir todos os chips de filtro (7/30/90); a contagem
+  // exibida no card e na tabela respeita o chip ativo.
   const vencimentoQuery = useQuery({
-    queryKey: ['vencimento', filialId],
-    queryFn: () => listarVencimentos(filialId, 30),
+    queryKey: ['vencimento', filialId, 90],
+    queryFn: () => listarVencimentos(filialId, 90),
   });
+
+  // null = todos; número = janela máxima de dias até o vencimento.
+  const [janelaVencimento, setJanelaVencimento] = useState<number | null>(null);
 
   const categoriasQuery = useQuery({
     queryKey: ['categorias-insumo'],
@@ -108,10 +113,27 @@ export function EstoquePage() {
   const filtradas = useMemo(() => {
     const termo = filtros.q.trim().toLowerCase();
     return (posicaoQuery.data ?? []).filter((p) => {
-      if (!termo) return true;
-      return p.nome.toLowerCase().includes(termo) || p.codigo.toLowerCase().includes(termo);
+      if (termo) {
+        if (!p.nome.toLowerCase().includes(termo) && !p.codigo.toLowerCase().includes(termo)) {
+          return false;
+        }
+      }
+      if (janelaVencimento !== null) {
+        const dias = proximoVencimentoPorInsumo.get(`${p.filialId}|${p.insumoId}`);
+        if (dias === undefined || dias > janelaVencimento) return false;
+      }
+      return true;
     });
-  }, [posicaoQuery.data, filtros.q]);
+  }, [posicaoQuery.data, filtros.q, janelaVencimento, proximoVencimentoPorInsumo]);
+
+  // Contagem de insumos cujo lote mais próximo vence dentro de uma janela.
+  function countVencendoEm(diasMax: number): number {
+    let c = 0;
+    proximoVencimentoPorInsumo.forEach((dias) => {
+      if (dias <= diasMax) c++;
+    });
+    return c;
+  }
 
   function aplicarFiltros() {
     setFiltros({ q: buscaInput, categoriaId: categoriaInput });
@@ -121,6 +143,7 @@ export function EstoquePage() {
     setBuscaInput('');
     setCategoriaInput(CATEGORIA_TODAS);
     setFiltros({ q: '', categoriaId: CATEGORIA_TODAS });
+    setJanelaVencimento(null);
   }
 
   const totalValor = useMemo(
@@ -194,10 +217,34 @@ export function EstoquePage() {
           tone="danger"
         />
         <SummaryCard
-          label="Vencendo em 30d"
-          value={vencimentoQuery.data?.length ?? 0}
+          label={janelaVencimento === null ? 'Vencendo em 90d' : `Vencendo em ${janelaVencimento}d`}
+          value={countVencendoEm(janelaVencimento ?? 90)}
           description="Lotes próximos da data de validade"
           tone="warning"
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-md border bg-card p-3">
+        <span className="text-xs text-muted-foreground mr-1">Filtro rápido por vencimento:</span>
+        <ChipVencimento
+          label="Todos"
+          active={janelaVencimento === null}
+          onClick={() => setJanelaVencimento(null)}
+        />
+        <ChipVencimento
+          label={`Vence em 7d (${countVencendoEm(7)})`}
+          active={janelaVencimento === 7}
+          onClick={() => setJanelaVencimento(7)}
+        />
+        <ChipVencimento
+          label={`Vence em 30d (${countVencendoEm(30)})`}
+          active={janelaVencimento === 30}
+          onClick={() => setJanelaVencimento(30)}
+        />
+        <ChipVencimento
+          label={`Vence em 3 meses (${countVencendoEm(90)})`}
+          active={janelaVencimento === 90}
+          onClick={() => setJanelaVencimento(90)}
         />
       </div>
 
@@ -269,6 +316,24 @@ export function EstoquePage() {
         </p>
       )}
     </div>
+  );
+}
+
+interface ChipProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+function ChipVencimento({ label, active, onClick }: ChipProps) {
+  return (
+    <Button
+      type="button"
+      variant={active ? 'default' : 'outline'}
+      size="sm"
+      onClick={onClick}
+    >
+      {label}
+    </Button>
   );
 }
 

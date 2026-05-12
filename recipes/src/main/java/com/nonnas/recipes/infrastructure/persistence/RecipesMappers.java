@@ -5,6 +5,7 @@ import com.nonnas.recipes.domain.FichaTecnicaId;
 import com.nonnas.recipes.domain.ItemFichaTecnica;
 import com.nonnas.recipes.domain.ProdutoVendavel;
 import com.nonnas.recipes.domain.ProdutoVendavelId;
+import com.nonnas.recipes.domain.TipoProdutoVendavel;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ final class RecipesMappers {
         e.setCodigo(p.codigo());
         e.setNome(p.nome());
         e.setCategoria(p.categoria());
+        e.setTipo(p.tipo().name());
+        e.setInsumoRevendaId(p.insumoRevendaIdOpt().orElse(null));
         e.setAtivo(p.ativo());
         e.setCreatedAt(p.createdAt());
         e.setUpdatedAt(p.updatedAt());
@@ -31,6 +34,8 @@ final class RecipesMappers {
                 e.getCodigo(),
                 e.getNome(),
                 e.getCategoria(),
+                TipoProdutoVendavel.valueOf(e.getTipo()),
+                e.getInsumoRevendaId(),
                 e.isAtivo(),
                 e.getCreatedAt(),
                 e.getUpdatedAt()

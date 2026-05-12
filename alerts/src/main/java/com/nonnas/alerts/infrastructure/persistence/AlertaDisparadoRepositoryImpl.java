@@ -14,6 +14,9 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -26,14 +29,17 @@ class AlertaDisparadoRepositoryImpl implements AlertaDisparadoRepository {
 
     private final SpringDataAlertaDisparadoRepository jpa;
     private final ApplicationEventPublisher events;
+    private final NamedParameterJdbcTemplate jdbc;
 
     @PersistenceContext
     private EntityManager em;
 
     AlertaDisparadoRepositoryImpl(SpringDataAlertaDisparadoRepository jpa,
-                                  ApplicationEventPublisher events) {
+                                  ApplicationEventPublisher events,
+                                  NamedParameterJdbcTemplate jdbc) {
         this.jpa = jpa;
         this.events = events;
+        this.jdbc = jdbc;
     }
 
     @Override
@@ -44,6 +50,7 @@ class AlertaDisparadoRepositoryImpl implements AlertaDisparadoRepository {
     @Override
     public AlertaDisparado salvarNovo(AlertaDisparado a) {
         AlertaDisparado salvo = save(a);
+        NomesParaExibicao nomes = buscarNomesParaExibicao(salvo.insumoId(), salvo.filialId());
         events.publishEvent(new AlertaDisparadoEvent(
                 salvo.id().value(),
                 salvo.configId().value(),
@@ -55,8 +62,39 @@ class AlertaDisparadoRepositoryImpl implements AlertaDisparadoRepository {
                 // Prioridade não está em AlertaDisparado — pegamos da config
                 // depois (T17.1). Por enquanto deixamos no metadata do listener.
                 "AVISO",
-                salvo.dataDisparo()));
+                salvo.dataDisparo(),
+                nomes.insumoNome(),
+                nomes.filialNome(),
+                nomes.unidadeCodigo()));
         return salvo;
+    }
+
+    private record NomesParaExibicao(String insumoNome, String filialNome, String unidadeCodigo) {
+        static NomesParaExibicao vazio() { return new NomesParaExibicao(null, null, null); }
+    }
+
+    private NomesParaExibicao buscarNomesParaExibicao(UUID insumoId, UUID filialId) {
+        String sql = """
+                SELECT i.nome AS insumo_nome,
+                       u.codigo AS unidade_codigo,
+                       f.nome AS filial_nome
+                FROM insumos i
+                LEFT JOIN unidades_medida u ON u.id = i.unidade_base_id
+                LEFT JOIN filiais f ON f.id = :filialId
+                WHERE i.id = :insumoId
+                """;
+        try {
+            return jdbc.queryForObject(sql,
+                    new MapSqlParameterSource()
+                            .addValue("insumoId", insumoId)
+                            .addValue("filialId", filialId),
+                    (rs, rn) -> new NomesParaExibicao(
+                            rs.getString("insumo_nome"),
+                            rs.getString("filial_nome"),
+                            rs.getString("unidade_codigo")));
+        } catch (EmptyResultDataAccessException e) {
+            return NomesParaExibicao.vazio();
+        }
     }
 
     @Override

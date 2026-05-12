@@ -247,7 +247,7 @@ function EntradaForm({ filialId, insumoIdInicial }: EntradaFormProps) {
             value={form.watch('unidadeLancamentoId')}
             onChange={(v) => form.setValue('unidadeLancamentoId', v, { shouldValidate: true })}
             error={form.formState.errors.unidadeLancamentoId?.message}
-            options={unidadesQuery.data?.map((u) => ({ value: u.id, label: `${u.codigo} — ${u.nome}` })) ?? []}
+            options={unidadesQuery.data?.filter((u) => u.ativa).map((u) => ({ value: u.id, label: `${u.codigo} — ${u.nome}` })) ?? []}
             placeholder="Selecione…"
           />
           <NumField
@@ -406,7 +406,7 @@ function SaidaForm({ filialId }: FormProps) {
             value={form.watch('unidadeLancamentoId')}
             onChange={(v) => form.setValue('unidadeLancamentoId', v, { shouldValidate: true })}
             error={form.formState.errors.unidadeLancamentoId?.message}
-            options={unidadesQuery.data?.map((u) => ({ value: u.id, label: `${u.codigo} — ${u.nome}` })) ?? []}
+            options={unidadesQuery.data?.filter((u) => u.ativa).map((u) => ({ value: u.id, label: `${u.codigo} — ${u.nome}` })) ?? []}
             placeholder="Selecione…"
           />
           <NumField

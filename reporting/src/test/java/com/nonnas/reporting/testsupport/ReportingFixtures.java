@@ -197,7 +197,7 @@ public class ReportingFixtures {
 
     public void refreshViewsMaterializadas() {
         jdbc.getJdbcTemplate().execute("REFRESH MATERIALIZED VIEW reporting.mv_curva_abc");
-        jdbc.getJdbcTemplate().execute("REFRESH MATERIALIZED VIEW reporting.mv_ruptura_iminente");
+        // mv_ruptura_iminente virou view comum em V023 — não precisa refresh.
     }
 
     public void limparTudo() {

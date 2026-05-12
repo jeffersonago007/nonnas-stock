@@ -152,7 +152,11 @@ export function InsumosPage() {
     },
     onError: (error) => toastError('Não foi possível ativar', error),
   });
-  const togglingId = desativarMutation.variables ?? ativarMutation.variables;
+  const togglingId = desativarMutation.isPending
+    ? desativarMutation.variables
+    : ativarMutation.isPending
+      ? ativarMutation.variables
+      : undefined;
 
   const columns: ColumnDef<Insumo>[] = [
     { key: 'codigo', header: 'Código', cell: (i) => <code className="text-xs">{i.codigo}</code>, className: 'w-[120px]' },

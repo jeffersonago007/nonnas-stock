@@ -18,4 +18,8 @@ public interface FornecedorInsumoDeParaRepository {
 
     /** Todos os mapeamentos de um fornecedor (uso administrativo / debug). */
     List<FornecedorInsumoDePara> findByFornecedor(UUID fornecedorId);
+
+    /** Remove o mapeamento (fornecedor, código) — usado quando o operador identifica
+     *  um vínculo aprendido errado e quer destravar reuso indevido. */
+    void deleteByFornecedorAndCodigo(UUID fornecedorId, String codigoFornecedor);
 }

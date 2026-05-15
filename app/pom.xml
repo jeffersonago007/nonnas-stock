@@ -64,6 +64,10 @@
     </dependency>
     <dependency>
       <groupId>com.nonnas</groupId>
+      <artifactId>sales-channels-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
       <artifactId>nfe-importer</artifactId>
     </dependency>
 

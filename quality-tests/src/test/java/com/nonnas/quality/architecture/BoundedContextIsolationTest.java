@@ -25,6 +25,10 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *   <li>nfe-importer → shared-kernel, web-commons, catalog, inventory-core,
  *       operations (T20 — orquestrador de importação resolve fornecedor/
  *       insumo via catalog e delega persistência para operations)</li>
+ *   <li>sales-channels-api → shared-kernel, web-commons (T-CANAL-00..02 —
+ *       contrato canônico Open Delivery + persistência de pedidos/credenciais
+ *       de canal. Expansão para recipes+inventory-core virá em T-CANAL-04,
+ *       quando o use case ProcessarPedidoCanal for criado)</li>
  *   <li>app → todos (único agregador autorizado)</li>
  * </ul>
  *
@@ -135,6 +139,27 @@ class BoundedContextIsolationTest {
                     "com.nonnas.recipes..",
                     "com.nonnas.alerts..",
                     "com.nonnas.reporting..");
+
+    /**
+     * sales-channels-api (T-CANAL-00..02, ADR 0016) é módulo standalone na
+     * fase de fundação: só fala com shared-kernel + web-commons. A expansão
+     * para recipes/inventory-core acontece em T-CANAL-04 (use case
+     * {@code ProcessarPedidoCanal} que orquestra baixa de estoque). Quando
+     * isso ocorrer, esta regra muda para permitir só esses dois e a nota é
+     * removida.
+     */
+    @ArchTest
+    static final ArchRule salesChannels_isStandaloneAteTCANAL04 = noClasses()
+            .that().resideInAPackage("com.nonnas.saleschannels..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "com.nonnas.identity..",
+                    "com.nonnas.catalog..",
+                    "com.nonnas.inventory..",
+                    "com.nonnas.recipes..",
+                    "com.nonnas.operations..",
+                    "com.nonnas.alerts..",
+                    "com.nonnas.reporting..",
+                    "com.nonnas.nfeimporter..");
 
     /**
      * T-LOT-09 (adendo lote opcional): a criação do lote AGREGADOR só pode

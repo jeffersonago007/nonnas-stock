@@ -71,6 +71,11 @@
       <artifactId>reporting</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>sales-channels-api</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>com.tngtech.archunit</groupId>

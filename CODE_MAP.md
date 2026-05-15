@@ -1,7 +1,7 @@
 # Code Map — Nonnas Stock
 
 Índice navegável do codebase. **Antes de explorar com Grep/Glob, consulte aqui primeiro.**
-Estado: pós-T20 + T-LOT-09 (MVP 1.0 em produção interna).
+Estado: pós-T20 + T-LOT-09 (MVP 1.0 em produção interna) + T-CANAL-00..02 (fundação MVP 1.2 canais).
 
 - [Arquitetura em uma página](#arquitetura-em-uma-página)
 - [Bounded contexts (backend)](#bounded-contexts-backend)
@@ -9,6 +9,8 @@ Estado: pós-T20 + T-LOT-09 (MVP 1.0 em produção interna).
 - [Frontend](#frontend)
 - [Migrations Flyway](#migrations-flyway)
 - [Convenções: onde colocar X](#convenções-onde-colocar-x)
+- [Convenções de UX (frontend)](#convenções-de-ux-frontend)
+- [Scripts operacionais](#scripts-operacionais)
 - [Perguntas frequentes ("onde fica Y?")](#perguntas-frequentes)
 - [Referências cruzadas](#referências-cruzadas)
 
@@ -44,9 +46,11 @@ Cada módulo segue layout idêntico (memória `feedback_module_patterns.md`):
 | [operations/](operations/) | Transferência (state machine), Ajuste, Carga inicial, Nota fiscal | [TransferenciaController](operations/src/main/java/com/nonnas/operations/interfaces/rest/TransferenciaController.java), [AjusteEstoqueController](operations/src/main/java/com/nonnas/operations/interfaces/rest/AjusteEstoqueController.java), [CargaInicialController](operations/src/main/java/com/nonnas/operations/interfaces/rest/CargaInicialController.java) | `Transferencia` (5 transições), `NotaFiscal` (persistida aqui; parseamento em nfe-importer), `FornecedorInsumoDePara` |
 | [alerts/](alerts/) | Avaliador de alertas (estoque + vencimento) | [AlertaConfigController](alerts/src/main/java/com/nonnas/alerts/interfaces/rest/AlertaConfigController.java), [AlertaDisparadoController](alerts/src/main/java/com/nonnas/alerts/interfaces/rest/AlertaDisparadoController.java) | `AlertaConfig` (escopo flexível), `AlertaDisparado`, `AvaliadorAlertasService`, `VencimentoScheduledJob` (cron 06h BRT + endpoint manual `POST /alertas-disparados/avaliar-vencimentos`) |
 | [reporting/](reporting/) | 6 relatórios read-only via SQL nativo cross-schema | [RelatoriosController](reporting/src/main/java/com/nonnas/reporting/interfaces/rest/RelatoriosController.java) | `RelatorioQueriesJdbc` (ADR 0010). `mv_curva_abc` materializada (90d rolling, refresh cron 30min). `mv_ruptura_iminente` virou VIEW comum em V023 → tempo real. |
+| [sales-channels-api/](sales-channels-api/) | **MVP 1.2** — fundação canais de venda (iFood/99Food/Keeta) via padrão Open Delivery (ADR 0016). T-CANAL-00..02 entregou: persistência + domain + contrato canônico. Adapters concretos vêm em T-CANAL-03. | (em construção) | `CanalTipo`, `PedidoCanal` (state machine RECEBIDO→CONFIRMADO_ESTOQUE→CONCLUIDO), `CredencialCanal` (segredo AES-256-GCM), `EventoCanal` (idempotência por `event_id_externo`), `PedidoVendaCanonico` subset Open Delivery v1.0.1 em [application/opendelivery/](sales-channels-api/src/main/java/com/nonnas/saleschannels/application/opendelivery/), [`CanalAdapter`](sales-channels-api/src/main/java/com/nonnas/saleschannels/application/ports/CanalAdapter.java) port (polling + ack + state actions) |
 
 **Regras de isolamento** (validadas por ArchUnit em `quality-tests/`):
 - Nenhum bounded context importa classes Java de outro **exceto** as deps Maven declaradas em `pom.xml` (`recipes → inventory-core`, `operations → catalog + inventory-core`, `alerts → catalog + inventory-core`, `nfe-importer → catalog + operations`).
+- `sales-channels-api` é standalone até T-CANAL-04 (ArchUnit `salesChannels_isStandaloneAteTCANAL04` proíbe imports — quando o use case `ProcessarPedidoCanal` for criado, a regra abre para recipes+inventory-core).
 - Cross-context sem dep direta: SQL nativo via `NamedParameterJdbcTemplate` (padrão ADR 0010).
 
 ---
@@ -59,7 +63,7 @@ Cada módulo segue layout idêntico (memória `feedback_module_patterns.md`):
 | [web-commons/](web-commons/) | `GlobalExceptionHandler` único (RFC 7807). Substitui handlers locais. |
 | [app/](app/) | Agrega 7 bounded contexts + actuator + springdoc. `NonnasStockApplication`, `application*.yml` (defaults/dev/test/prod), `SecurityConfig`, `RateLimitFilter`, `MdcRequestFilter`, `SentryConfig`. **Único módulo executável** (`./mvnw -pl app spring-boot:run`). |
 | [nfe-importer/](nfe-importer/) | Parser NF-e modelo 55 (DOM/XPath, XXE-blocked). [NotaFiscalController](nfe-importer/src/main/java/com/nonnas/nfeimporter/interfaces/rest/NotaFiscalController.java) com `/preview-xml` (enriquecido com `matchStatus` por item: DEPARA/COLISAO/LIVRE — ver [PreviewNotaFiscalUseCase](nfe-importer/src/main/java/com/nonnas/nfeimporter/application/PreviewNotaFiscalUseCase.java)), `/lancar`. Resolve insumo via de-para `(fornecedor, cProd)` primeiro; nunca reusa por código global. |
-| [sales-channels-api/](sales-channels-api/) | Placeholder (sem código de produção ainda). |
+| ~~`sales-channels-api/` placeholder~~ | Promovido a bounded context na tabela acima (T-CANAL-00..02, 2026-05-15). |
 | [quality-tests/](quality-tests/) | 13 regras ArchUnit + JaCoCo aggregate + perfil `nightly` com PIT mutation testing. |
 | [e2e/](e2e/) | Playwright Java + Page Objects + `SmokeE2ETest` com 8+ cenários encadeados. Profile `e2e` (fora do `mvn verify` default). |
 
@@ -117,6 +121,10 @@ Vite 5 + React 18 + TS 5.6 + Tailwind 3.4 + shadcn/ui + Zustand + TanStack Query
 | V021 | inventory-core | `lotes.tipo` AGREGADOR/RASTREADO + unique partial (T-LOT-01..09, ADR 0014) |
 | V022 | recipes | `produtos_vendaveis.tipo` FABRICADO/REVENDA + `insumo_revenda_id` (ADR 0015) |
 | V023 | reporting | `mv_ruptura_iminente` virou VIEW comum (real-time, eliminando atraso de 30min no dashboard) |
+| V024 | identity | T-RBAC-01 — `usuarios.filial_id` obrigatória pra não-ADMIN |
+| V025 | sales-channels-api | T-CANAL-01 — `canais_credenciais` (partial unique `(canal, filial) WHERE ativa`) |
+| V026 | sales-channels-api | T-CANAL-01 — `pedidos_canais` + `itens_pedido_canal` (UNIQUE `(canal, pedido_externo_id)` para idempotência; JSONB de payload canônico + bruto) |
+| V027 | sales-channels-api | T-CANAL-01 — `eventos_canais` (UNIQUE `(canal, event_id_externo)` para idempotência de polling) |
 
 ---
 
@@ -129,6 +137,35 @@ Vite 5 + React 18 + TS 5.6 + Tailwind 3.4 + shadcn/ui + Zustand + TanStack Query
 - **Nova ADR** → `docs/adr/00XX-titulo.md`, atualizar tabela em [STATUS.md](STATUS.md).
 - **Nova feature frontend** → `frontend/src/features/<area>/` com `api.ts` + `<X>Page.tsx` (+ `<X>FormDialog.tsx` se CRUD).
 - **Novo runbook** → `docs/runbooks/<problema>.md`. PR template tem checklist de operação.
+
+---
+
+## Convenções de UX (frontend)
+
+Regras transversais aplicadas em todas as telas (especialmente CRUDs):
+
+| Convenção | Onde aplicar | Como implementar |
+|---|---|---|
+| **Inativos sempre ao fim das listagens** | Toda tabela com flag `ativo`/`ativa` (Usuários, Unidades, Categorias, Insumos/Produtos, Fornecedores, Cardápio, Filiais, Empresas) | `.sort((a,b) => a.ativo !== b.ativo ? (a.ativo ? -1 : 1) : <critério secundário>)` no `useMemo` que monta o array para `DataTable`. Critério secundário: `localeCompare(x, 'pt-BR', { sensitivity: 'base' })` para texto. Em Usuários, antes do nome vem o perfil (ADMIN → GERENTE → OPERADOR → CONSULTA). |
+| **`step=1` em campos numéricos de quantidade** | Inputs de quantidade, ajuste, transferência | `<Input type="number" step="1" ...>` — operador da pizzaria não trabalha com fração de unidade. Exceção: campos de receita (ficha técnica) onde `step="0.001"`. |
+| **Mensagens de erro com label visível** | Validação de form | Mensagem cita o label do campo ("Quantidade deve ser positiva"), não o nome interno (`quantidade`). |
+| **Toast com consequência mensurável** | Pós-ação | "Saída registrada: -3 kg de Mussarela" > "Saída registrada". Operador precisa saber o impacto. |
+| **"Produto" como termo único na UI** | Tela operacional | O domínio separa `Insumo` (matéria-prima) de `ProdutoVendavel` (item do cardápio), mas para o operador é tudo "produto". Reservar "insumo" pra docs técnicas. |
+
+Detalhe e histórico de cada regra está nas memórias `feedback_inativos_no_final` e `feedback_ux_jefferson` (vivem em `~/.claude/projects/.../memory/`, fora do repo).
+
+---
+
+## Scripts operacionais
+
+`scripts/db/` — scripts SQL ad-hoc (não-Flyway) para administração do banco em dev/homologação. Cada operação é envolvida em `BEGIN/COMMIT` e deve rodar com `psql -v ON_ERROR_STOP=1`.
+
+| Script | Função |
+|---|---|
+| [scripts/db/reset_para_base_limpa.sql](scripts/db/reset_para_base_limpa.sql) | Zera transações e cadastros preservando empresa principal, 2 filiais, admin, categoria seed "A classificar" e as 7 unidades-base seed. |
+| [scripts/db/seed_categorias_restaurante.sql](scripts/db/seed_categorias_restaurante.sql) | Insere 21 categorias padrão de restaurante (alimentos, bebidas, operacional). |
+
+Ver [scripts/db/README.md](scripts/db/README.md) para regras de uso e diferença vs. Flyway.
 
 ---
 
@@ -148,6 +185,10 @@ Vite 5 + React 18 + TS 5.6 + Tailwind 3.4 + shadcn/ui + Zustand + TanStack Query
 | **Onde está a categoria default "A classificar"?** | UUID fixo `00000000-0000-0000-0000-000000000001`, seed [V015](catalog/src/main/resources/db/migration/V015__seed_categoria_a_classificar.sql). |
 | **Onde estão os hooks/cron?** | `@Scheduled`: [VencimentoScheduledJob](alerts/src/main/java/com/nonnas/alerts/infrastructure/schedule/VencimentoScheduledJob.java) (06h), [RefreshViewsUseCase](reporting/src/main/java/com/nonnas/reporting/application/RefreshViewsUseCase.java) (30min). Schedule habilitado em `NonnasStockApplication` via `@EnableScheduling`. |
 | **CI/CD?** | `.github/workflows/`: `pr.yml` (verify + Trivy + SBOM), `main.yml` (verify + Docker + release), `e2e.yml`, `nightly.yml`, `backup-restore-test.yml`, `security-deep.yml`. |
+| **Como zerar o banco para testar do zero?** | `psql -v ON_ERROR_STOP=1 -f scripts/db/reset_para_base_limpa.sql`. Mantém empresa principal + 2 filiais + admin + categoria seed + 7 unidades seed. Ver [scripts/db/README.md](scripts/db/README.md). |
+| **Em que ordem as listagens devem aparecer?** | Convenção global: ativos primeiro, inativos no fim. Sort secundário alfabético (pt-BR) ou específico da tela (ex.: Usuários ordena por perfil dentro do grupo ativos). Ver seção [Convenções de UX](#convenções-de-ux-frontend). |
+| **Onde estão as categorias padrão de restaurante?** | Inseridas via [scripts/db/seed_categorias_restaurante.sql](scripts/db/seed_categorias_restaurante.sql) — 21 categorias baseadas em ERPs de mercado (Linx Food, Consinco, Sankhya). Não confundir com a categoria seed "A classificar" do Flyway V015 (usada pelo NF-e importer). |
+| **Como funciona a integração com iFood/99Food/Keeta?** | Os 3 canais convergiram para o padrão Open Delivery (Abrasel) em 2025. Usamos um contrato canônico interno (`PedidoVendaCanonico`, subset Open Delivery v1.0.1) — cada canal implementa o port [`CanalAdapter`](sales-channels-api/src/main/java/com/nonnas/saleschannels/application/ports/CanalAdapter.java) traduzindo seu payload nativo pro canônico. T-CANAL-00..02 entregou a fundação (persistência + domain + contrato + tests); adapter concreto iFood + use case que baixa estoque vêm em T-CANAL-03/04. POC inicial roda contra mock Prism servindo a [spec YAML pública Open Delivery](https://abrasel-nacional.github.io/docs/versions/1.0.1/) — sem precisar de credencial real. Ver [ADR 0016](docs/adr/0016-open-delivery-como-contrato-canonico.md). |
 
 ---
 

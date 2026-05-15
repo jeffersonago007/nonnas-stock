@@ -5,7 +5,9 @@ import com.nonnas.operations.application.carga.ProcessarCargaInicialUseCase;
 import com.nonnas.operations.infrastructure.importer.PlanilhaImporterService;
 import com.nonnas.operations.interfaces.rest.dto.CargaInicialDto;
 import com.nonnas.sharedkernel.ValidationException;
+import com.nonnas.web.security.SecurityScope;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,10 +29,12 @@ public class CargaInicialController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     public CargaInicialDto.Response upload(
             @RequestParam("filialId") UUID filialId,
             @RequestParam("solicitadoPor") UUID solicitadoPor,
             @RequestParam("file") MultipartFile file) {
+        SecurityScope.assertCanAccess(filialId);
         PlanilhaCargaInicial plan = parseOrThrow(file);
 
         var itens = plan.linhas().stream()
@@ -50,6 +54,7 @@ public class CargaInicialController {
      * (master doc T13 — "preview antes de confirmar").
      */
     @PostMapping("/preview")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     public CargaInicialDto.PreviewResponse preview(@RequestParam("file") MultipartFile file) {
         return CargaInicialDto.PreviewResponse.from(parseOrThrow(file));
     }

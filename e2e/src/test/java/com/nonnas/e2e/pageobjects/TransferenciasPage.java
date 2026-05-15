@@ -27,17 +27,19 @@ public class TransferenciasPage {
 
     public TransferenciasPage preencherRota(String origemNome, String destinoNome) {
         page.locator("[role=combobox]:near(:text('Filial origem'))").first().click();
-        page.locator("[role=option]:has-text('" + origemNome + "')").click();
+        page.locator("[role=option]:has-text('" + origemNome + "')").first().click();
         page.locator("[role=combobox]:near(:text('Filial destino'))").first().click();
-        page.locator("[role=option]:has-text('" + destinoNome + "')").click();
+        page.locator("[role=option]:has-text('" + destinoNome + "')").first().click();
         return this;
     }
 
     public TransferenciasPage preencherPrimeiroItem(String insumoNome, String unidade, String quantidade) {
+        // Em ambientes com banco poluído (re-runs sem cleanup), pode haver mais de
+        // um insumo com mesmo nome — `.first()` escolhe o de cima da lista.
         page.locator("[role=combobox]:has-text('Insumo')").first().click();
-        page.locator("[role=option]:has-text('" + insumoNome + "')").click();
+        page.locator("[role=option]:has-text('" + insumoNome + "')").first().click();
         page.locator("[role=combobox]:has-text('Unidade')").first().click();
-        page.locator("[role=option]:has-text('" + unidade + "')").click();
+        page.locator("[role=option]:has-text('" + unidade + "')").first().click();
         page.locator("input[placeholder=Qtde]").fill(quantidade);
         return this;
     }

@@ -37,7 +37,9 @@ public class ProdutosPage {
         }
         page.locator("input#categoria").fill(categoria);
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Criar")).click();
-        page.waitForSelector("text=Item do cardápio criado");
+        // Toast atual é "Produto criado"; tolera o antigo "Item do cardápio criado"
+        // caso seja revertido em futuro UX-tweak.
+        page.waitForSelector("text=/Produto criado|Item do cardápio criado/");
         return this;
     }
 

@@ -39,13 +39,25 @@ const senhaPolicy = z
   .regex(/\d/, 'Precisa ao menos 1 número')
   .regex(/[^A-Za-z0-9]/, 'Precisa ao menos 1 caractere especial');
 
-const createSchema = z.object({
-  nome: z.string().min(1, 'Nome é obrigatório').max(255),
-  email: z.string().email('Informe um e-mail válido'),
-  senha: senhaPolicy,
-  perfil: perfilEnum,
-  filialId: z.string().optional(),
-});
+const createSchema = z
+  .object({
+    nome: z.string().min(1, 'Nome é obrigatório').max(255),
+    email: z.string().email('Informe um e-mail válido'),
+    senha: senhaPolicy,
+    perfil: perfilEnum,
+    filialId: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Apenas ADMIN pode ficar sem filial. Demais perfis exigem vínculo —
+    // a escopagem de dados é amarrada nesse campo (T-RBAC-01).
+    if (data.perfil !== 'ADMIN' && (!data.filialId || data.filialId === SEM_FILIAL)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filialId'],
+        message: 'Filial é obrigatória para perfis diferentes de Administrador',
+      });
+    }
+  });
 const updateSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255),
 });
@@ -239,18 +251,27 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: Props) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="filialId">Filial</Label>
+                <Label htmlFor="filialId">
+                  Filial{createForm.watch('perfil') !== 'ADMIN' && ' *'}
+                </Label>
                 <Select
                   value={createForm.watch('filialId') ?? SEM_FILIAL}
-                  onValueChange={(v) => createForm.setValue('filialId', v)}
+                  onValueChange={(v) =>
+                    createForm.setValue('filialId', v, { shouldValidate: true })
+                  }
                 >
-                  <SelectTrigger id="filialId">
+                  <SelectTrigger
+                    id="filialId"
+                    aria-invalid={Boolean(createForm.formState.errors.filialId)}
+                  >
                     <SelectValue
-                      placeholder={filiaisQuery.isLoading ? 'Carregando…' : 'Sem filial'}
+                      placeholder={filiaisQuery.isLoading ? 'Carregando…' : 'Selecione…'}
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={SEM_FILIAL}>Sem filial (acesso global)</SelectItem>
+                    {createForm.watch('perfil') === 'ADMIN' && (
+                      <SelectItem value={SEM_FILIAL}>Sem filial (acesso global)</SelectItem>
+                    )}
                     {filiaisQuery.data?.map((f) => (
                       <SelectItem key={f.id} value={f.id}>
                         {f.nome}
@@ -258,6 +279,11 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+                {createForm.formState.errors.filialId && (
+                  <p className="text-sm text-destructive">
+                    {createForm.formState.errors.filialId.message}
+                  </p>
+                )}
               </div>
             </div>
             <DialogFooter className="gap-2">

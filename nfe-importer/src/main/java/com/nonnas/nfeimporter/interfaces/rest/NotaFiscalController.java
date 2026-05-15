@@ -7,6 +7,7 @@ import com.nonnas.operations.application.notafiscal.BuscarNotaFiscalUseCase;
 import com.nonnas.operations.application.notafiscal.ListarNotasFiscaisUseCase;
 import com.nonnas.operations.application.ports.NotaFiscalRepository;
 import com.nonnas.sharedkernel.ValidationException;
+import com.nonnas.web.security.SecurityScope;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -82,6 +83,7 @@ public class NotaFiscalController {
                     item.lote(), item.dataValidade());
         }).toList();
 
+        SecurityScope.assertCanAccess(req.filialId());
         var cmd = new ProcessarNotaFiscalUseCase.Comando(
                 req.filialId(), req.usuarioId(), fornecedorEntrada,
                 req.numero(), req.serie(), req.chaveNfe(), req.dataEmissao(),
@@ -103,8 +105,9 @@ public class NotaFiscalController {
             @RequestParam(required = false) Instant lancamentoAte,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
         var filtros = new NotaFiscalRepository.Filtros(
-                filialId, fornecedorId, numero, chaveNfe,
+                escopo, fornecedorId, numero, chaveNfe,
                 emissaoDe, emissaoAte, lancamentoDe, lancamentoAte);
         return listar.execute(filtros, page, size).stream()
                 .map(NotaFiscalDto.Response::from).toList();
@@ -113,6 +116,8 @@ public class NotaFiscalController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'OPERADOR', 'CONSULTA')")
     public NotaFiscalDto.Response getById(@PathVariable UUID id) {
-        return NotaFiscalDto.Response.from(buscar.execute(id));
+        NotaFiscalDto.Response resp = NotaFiscalDto.Response.from(buscar.execute(id));
+        SecurityScope.assertCanAccess(resp.filialId());
+        return resp;
     }
 }

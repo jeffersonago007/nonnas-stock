@@ -44,11 +44,12 @@ public final class Usuario {
                    int tentativasFalhas, Instant bloqueadoAte, boolean travada,
                    Instant createdAt, Instant updatedAt) {
         this.id = Objects.requireNonNull(id, "id");
-        this.filialId = filialId;
         this.nome = validarNome(nome);
         this.email = Objects.requireNonNull(email, "email");
         this.senhaHash = Objects.requireNonNull(senhaHash, "senhaHash");
         this.perfil = Objects.requireNonNull(perfil, "perfil");
+        validarFilialParaPerfil(perfil, filialId);
+        this.filialId = filialId;
         this.ativo = ativo;
         if (tentativasFalhas < 0) {
             throw new ValidationException("tentativasFalhas não pode ser negativa");
@@ -113,7 +114,9 @@ public final class Usuario {
     }
 
     public void alterarPerfil(Perfil novoPerfil, Instant agora) {
-        this.perfil = Objects.requireNonNull(novoPerfil);
+        Objects.requireNonNull(novoPerfil);
+        validarFilialParaPerfil(novoPerfil, this.filialId);
+        this.perfil = novoPerfil;
         this.updatedAt = agora;
     }
 
@@ -133,12 +136,20 @@ public final class Usuario {
     }
 
     public void moverPara(FilialId novaFilialId, Instant agora) {
+        validarFilialParaPerfil(this.perfil, novaFilialId);
         this.filialId = novaFilialId;
         this.updatedAt = agora;
     }
 
     public void desativar(Instant agora) { this.ativo = false; this.updatedAt = agora; }
     public void ativar(Instant agora) { this.ativo = true; this.updatedAt = agora; }
+
+    private static void validarFilialParaPerfil(Perfil perfil, FilialId filialId) {
+        if (perfil != Perfil.ADMIN && filialId == null) {
+            throw new ValidationException(
+                    "Usuários não-ADMIN devem estar vinculados a uma filial");
+        }
+    }
 
     private static String validarNome(String nome) {
         if (nome == null || nome.isBlank()) {

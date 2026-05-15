@@ -40,7 +40,16 @@ public class FiliaisPage {
     }
 
     public boolean linhaComNomeExiste(String nome) {
-        return page.locator("td:has-text('" + nome + "')").count() > 0;
+        // Após criar, react-query invalida e refaz a query — pode haver uma janela
+        // entre o toast "Filial criada" e a linha aparecer na tabela. Wait generoso
+        // (10s) acomoda refetch lento sem mascarar falhas reais.
+        try {
+            page.waitForSelector("td:has-text('" + nome + "')",
+                    new Page.WaitForSelectorOptions().setTimeout(10_000));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public CargaInicialPage abrirCargaInicialDe(String nomeFilial) {

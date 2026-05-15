@@ -34,9 +34,9 @@ public class MovimentacoesPage {
     public MovimentacoesPage preencherEntrada(String insumo, String unidade, String qtdLancada,
                                                String qtdBase, String valorUnitario) {
         page.locator("[role=combobox]:near(:text('Insumo'))").first().click();
-        page.locator("[role=option]:has-text('" + insumo + "')").click();
+        page.locator("[role=option]:has-text('" + insumo + "')").first().click();
         page.locator("[role=combobox]:near(:text('Unidade lançada'))").first().click();
-        page.locator("[role=option]:has-text('" + unidade + "')").click();
+        page.locator("[role=option]:has-text('" + unidade + "')").first().click();
         page.locator("text=Quantidade lançada").locator("xpath=../input").fill(qtdLancada);
         page.locator("text=Quantidade base").locator("xpath=../input").fill(qtdBase);
         page.locator("text=Valor unitário").locator("xpath=../input").fill(valorUnitario);
@@ -63,9 +63,9 @@ public class MovimentacoesPage {
     public MovimentacoesPage preencherSaida(String insumo, String unidade, String qtdBase,
                                             String observacao) {
         page.locator("[role=combobox]:near(:text('Insumo'))").first().click();
-        page.locator("[role=option]:has-text('" + insumo + "')").click();
+        page.locator("[role=option]:has-text('" + insumo + "')").first().click();
         page.locator("[role=combobox]:near(:text('Unidade'))").first().click();
-        page.locator("[role=option]:has-text('" + unidade + "')").click();
+        page.locator("[role=option]:has-text('" + unidade + "')").first().click();
         page.locator("text=Quantidade base").locator("xpath=../input").fill(qtdBase);
         if (observacao != null && !observacao.isBlank()) {
             // Campo textarea com label "Observação" — preenche se o componente expor.

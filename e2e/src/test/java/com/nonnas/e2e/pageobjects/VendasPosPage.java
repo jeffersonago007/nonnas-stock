@@ -23,7 +23,9 @@ public class VendasPosPage {
 
     public VendasPosPage abrir() {
         page.navigate(baseUrl + "/vendas");
-        page.waitForSelector("h1:has-text('Vendas')");
+        // Header da página foi renomeado de "Vendas" para "Saídas" (UX 2026-05-10);
+        // selector tolera ambos enquanto o codebase tem chamadas legadas.
+        page.waitForSelector("h1:has-text('Saídas'), h1:has-text('Vendas')");
         return this;
     }
 

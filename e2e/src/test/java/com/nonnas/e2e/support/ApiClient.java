@@ -97,15 +97,21 @@ public class ApiClient {
     }
 
     public String idFilialPorCnpj(String token, String cnpj) {
+        String found = idFilialPorCnpjOuNull(token, cnpj);
+        if (found == null) {
+            throw new IllegalStateException("Filial CNPJ " + cnpj + " não encontrada");
+        }
+        return found;
+    }
+
+    /** Variante não-lançante para setup idempotente (devolve {@code null} se não houver). */
+    public String idFilialPorCnpjOuNull(String token, String cnpj) {
         HttpResponse<String> resp = get("/api/v1/filiais", token);
         Pattern p = Pattern.compile(
                 "\\{\"id\":\"([^\"]+)\"[^}]*\"cnpj\":\"" + Pattern.quote(cnpj) + "\"",
                 Pattern.DOTALL);
         Matcher m = p.matcher(resp.body());
-        if (!m.find()) {
-            throw new IllegalStateException("Filial CNPJ " + cnpj + " não encontrada");
-        }
-        return m.group(1);
+        return m.find() ? m.group(1) : null;
     }
 
     /** Idempotente: se já existe fornecedor com o CNPJ, devolve o id existente. */
@@ -174,6 +180,49 @@ public class ApiClient {
     }
 
     /** Conta alertas disparados ATIVOS para o insumo/filial. Usado pra validação. */
+    /**
+     * Idempotente: se já existe usuário com o e-mail, devolve o id existente
+     * (e ignora possível diferença de perfil/filial — útil pra re-execução de E2E
+     * sem precisar limpar o banco).
+     */
+    public String criarUsuario(String token, String nome, String email, String senha,
+                               String perfil, String filialId) {
+        String existing = idUsuarioPorEmail(token, email);
+        if (existing != null) return existing;
+        StringBuilder body = new StringBuilder("{")
+                .append("\"nome\":\"").append(nome).append("\",")
+                .append("\"email\":\"").append(email).append("\",")
+                .append("\"senha\":\"").append(senha).append("\",")
+                .append("\"perfil\":\"").append(perfil).append("\"");
+        if (filialId != null) {
+            body.append(",\"filialId\":\"").append(filialId).append("\"");
+        }
+        body.append("}");
+        HttpResponse<String> resp = post("/api/v1/usuarios", token, body.toString());
+        return extractJsonString(resp.body(), "id");
+    }
+
+    public String idUsuarioPorEmail(String token, String email) {
+        HttpResponse<String> resp = get("/api/v1/usuarios?size=200", token);
+        Pattern p = Pattern.compile(
+                "\\{\"id\":\"([^\"]+)\"[^}]*\"email\":\"" + Pattern.quote(email) + "\"",
+                Pattern.DOTALL);
+        Matcher m = p.matcher(resp.body());
+        return m.find() ? m.group(1) : null;
+    }
+
+    /** Devolve o saldo agregado em base do insumo/filial (BigDecimal-like string). */
+    public String consultarSaldo(String token, String insumoId, String filialId) {
+        HttpResponse<String> resp = get(
+                "/api/v1/saldos?insumoId=" + insumoId + "&filialId=" + filialId, token);
+        Pattern p = Pattern.compile("\"quantidadeBase\"\\s*:\\s*(-?[0-9.]+)");
+        Matcher m = p.matcher(resp.body());
+        if (!m.find()) {
+            throw new IllegalStateException("quantidadeBase não achada em: " + resp.body());
+        }
+        return m.group(1);
+    }
+
     public int contarAlertasDisparadosAtivos(String token, String insumoId, String filialId) {
         String path = "/api/v1/alertas-disparados?status=ATIVO"
                 + "&insumoId=" + insumoId + "&filialId=" + filialId;

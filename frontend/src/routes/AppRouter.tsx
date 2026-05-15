@@ -25,6 +25,18 @@ import { EmpresasPage } from '@/features/admin/empresas/EmpresasPage';
 import { UsuariosPage } from '@/features/admin/usuarios/UsuariosPage';
 import { VendasPage } from '@/features/vendas/VendasPage';
 
+// Visibilidade espelhando o Sidebar (T-RBAC-01):
+//   ADMIN     → tudo
+//   GERENTE   → Operacional + Cadastros
+//   OPERADOR  → só Operacional (sem Cadastros, sem Administração)
+//   CONSULTA  → só Dashboard + Relatórios
+const OPERACIONAL = ['ADMIN', 'GERENTE', 'OPERADOR'];
+const CADASTROS = ['ADMIN', 'GERENTE'];
+
+function guard(allow: string[], element: React.ReactNode) {
+  return <RoleGuard allow={allow}>{element}</RoleGuard>;
+}
+
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   {
@@ -36,54 +48,30 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
+      // Operacional — visíveis para CONSULTA apenas: Dashboard + Relatórios
       { path: 'dashboard', element: <DashboardPage /> },
-      { path: 'filiais', element: <FiliaisPage /> },
-      { path: 'filiais/:id/carga-inicial', element: <CargaInicialPage /> },
-      { path: 'insumos', element: <InsumosPage /> },
-      { path: 'fornecedores', element: <FornecedoresPage /> },
-      { path: 'produtos', element: <ProdutosPage /> },
-      { path: 'fichas-tecnicas', element: <FichasTecnicasPage /> },
-      { path: 'estoque', element: <EstoquePage /> },
-      { path: 'vendas', element: <VendasPage /> },
-      { path: 'movimentacoes', element: <MovimentacoesPage /> },
-      { path: 'notas-fiscais', element: <NotasFiscaisPage /> },
-      { path: 'notas-fiscais/lancar', element: <LancarNotaFiscalPage /> },
-      { path: 'transferencias', element: <TransferenciasPage /> },
-      { path: 'alertas', element: <AlertasPage /> },
       { path: 'relatorios', element: <RelatoriosPage /> },
+      { path: 'notas-fiscais', element: guard(OPERACIONAL, <NotasFiscaisPage />) },
+      { path: 'notas-fiscais/lancar', element: guard(OPERACIONAL, <LancarNotaFiscalPage />) },
+      { path: 'estoque', element: guard(OPERACIONAL, <EstoquePage />) },
+      { path: 'vendas', element: guard(OPERACIONAL, <VendasPage />) },
+      { path: 'alertas', element: guard(OPERACIONAL, <AlertasPage />) },
+      // Cadastros — bloqueado para OPERADOR e CONSULTA
+      { path: 'insumos', element: guard(CADASTROS, <InsumosPage />) },
+      { path: 'fichas-tecnicas', element: guard(CADASTROS, <FichasTecnicasPage />) },
+      { path: 'produtos', element: guard(CADASTROS, <ProdutosPage />) },
+      { path: 'transferencias', element: guard(CADASTROS, <TransferenciasPage />) },
+      { path: 'movimentacoes', element: guard(CADASTROS, <MovimentacoesPage />) },
+      // Administração — só ADMIN (com algumas exceções p/ GERENTE)
+      { path: 'filiais', element: guard(['ADMIN'], <FiliaisPage />) },
+      { path: 'filiais/:id/carga-inicial', element: guard(['ADMIN'], <CargaInicialPage />) },
+      { path: 'fornecedores', element: guard(CADASTROS, <FornecedoresPage />) },
+      { path: 'admin/categorias', element: guard(CADASTROS, <CategoriasPage />) },
+      { path: 'admin/unidades', element: guard(CADASTROS, <UnidadesPage />) },
+      { path: 'admin/empresas', element: guard(['ADMIN'], <EmpresasPage />) },
+      { path: 'admin/usuarios', element: guard(CADASTROS, <UsuariosPage />) },
+      // Notificações: acessível a todos autenticados (sem gating)
       { path: 'notificacoes', element: <NotificacoesPage /> },
-      {
-        path: 'admin/categorias',
-        element: (
-          <RoleGuard allow={['ADMIN', 'GERENTE']}>
-            <CategoriasPage />
-          </RoleGuard>
-        ),
-      },
-      {
-        path: 'admin/unidades',
-        element: (
-          <RoleGuard allow={['ADMIN', 'GERENTE']}>
-            <UnidadesPage />
-          </RoleGuard>
-        ),
-      },
-      {
-        path: 'admin/empresas',
-        element: (
-          <RoleGuard allow={['ADMIN']}>
-            <EmpresasPage />
-          </RoleGuard>
-        ),
-      },
-      {
-        path: 'admin/usuarios',
-        element: (
-          <RoleGuard allow={['ADMIN', 'GERENTE']}>
-            <UsuariosPage />
-          </RoleGuard>
-        ),
-      },
     ],
   },
   { path: '*', element: <Navigate to="/dashboard" replace /> },

@@ -12,5 +12,11 @@ public final class Cnpjs {
     public static final String FILIAL_E2E_SECUNDARIA = "84411474000116";
     public static final String FORNECEDOR_E2E = "76024099000123";
 
+    // RBAC E2E — fixtures isoladas para evitar colisão com SmokeE2ETest que
+    // ocupa EMPRESA_E2E/FILIAL_E2E_PRINCIPAL com nomes próprios.
+    // DVs validados à mão para passar pela validação domínio do Cnpj.
+    public static final String EMPRESA_RBAC_E2E = "11222333000181";
+    public static final String FILIAL_RBAC_E2E = "99888777000100";
+
     private Cnpjs() {}
 }

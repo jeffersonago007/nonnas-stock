@@ -7,6 +7,7 @@ import com.nonnas.identity.application.filial.CriarFilialUseCase;
 import com.nonnas.identity.application.filial.DesativarFilialUseCase;
 import com.nonnas.identity.application.filial.ListarFiliaisUseCase;
 import com.nonnas.identity.interfaces.rest.dto.FilialDto;
+import com.nonnas.web.security.SecurityScope;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -57,14 +58,22 @@ public class FilialController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public List<FilialDto.Response> list(@RequestParam(required = false) UUID empresaId,
                                          @RequestParam(defaultValue = "0") int page,
-                                         @RequestParam(defaultValue = "20") int size) {
-        return listar.execute(empresaId, page, size).stream().map(FilialDto.Response::from).toList();
+                                         @RequestParam(defaultValue = "100") int size) {
+        var todas = listar.execute(empresaId, page, size).stream();
+        if (!SecurityScope.isAdmin()) {
+            UUID minha = SecurityScope.currentFilialId().orElseThrow();
+            todas = todas.filter(f -> f.id().value().equals(minha));
+        }
+        return todas.map(FilialDto.Response::from).toList();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public FilialDto.Response getById(@PathVariable UUID id) {
+        SecurityScope.assertCanAccess(id);
         return FilialDto.Response.from(buscar.execute(id));
     }
 

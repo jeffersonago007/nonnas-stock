@@ -1,10 +1,13 @@
 package com.nonnas.identity.domain;
 
+import com.nonnas.sharedkernel.ValidationException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UsuarioTest {
 
@@ -84,5 +87,60 @@ class UsuarioTest {
         u.registrarLoginFalho(T0);
         Instant futuro = T0.plusSeconds(16 * 60);
         assertThat(u.estaBloqueado(futuro)).isFalse();
+    }
+
+    @Test
+    void rejeitaCriarOperadorSemFilial() {
+        assertThatThrownBy(() ->
+                Usuario.novo(null, "Op", EMAIL, SENHA, Perfil.OPERADOR, T0))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("não-ADMIN");
+    }
+
+    @Test
+    void rejeitaCriarGerenteSemFilial() {
+        assertThatThrownBy(() ->
+                Usuario.novo(null, "Ge", EMAIL, SENHA, Perfil.GERENTE, T0))
+                .isInstanceOf(ValidationException.class);
+    }
+
+    @Test
+    void rejeitaCriarConsultaSemFilial() {
+        assertThatThrownBy(() ->
+                Usuario.novo(null, "Co", EMAIL, SENHA, Perfil.CONSULTA, T0))
+                .isInstanceOf(ValidationException.class);
+    }
+
+    @Test
+    void aceitaOperadorComFilial() {
+        FilialId f = FilialId.of(UUID.randomUUID());
+        Usuario u = Usuario.novo(f, "Op", EMAIL, SENHA, Perfil.OPERADOR, T0);
+        assertThat(u.filialId()).contains(f);
+        assertThat(u.perfil()).isEqualTo(Perfil.OPERADOR);
+    }
+
+    @Test
+    void alterarPerfilParaNaoAdminSemFilialFalha() {
+        Usuario admin = novoUsuario(); // ADMIN sem filial
+        assertThatThrownBy(() -> admin.alterarPerfil(Perfil.OPERADOR, T0))
+                .isInstanceOf(ValidationException.class);
+        assertThat(admin.perfil()).isEqualTo(Perfil.ADMIN); // não muta em falha
+    }
+
+    @Test
+    void moverParaNullEmNaoAdminFalha() {
+        FilialId f = FilialId.of(UUID.randomUUID());
+        Usuario op = Usuario.novo(f, "Op", EMAIL, SENHA, Perfil.OPERADOR, T0);
+        assertThatThrownBy(() -> op.moverPara(null, T0))
+                .isInstanceOf(ValidationException.class);
+        assertThat(op.filialId()).contains(f);
+    }
+
+    @Test
+    void adminPodeFicarSemFilial() {
+        Usuario admin = novoUsuario();
+        assertThat(admin.filialId()).isEmpty();
+        admin.moverPara(null, T0); // no-op válido
+        assertThat(admin.filialId()).isEmpty();
     }
 }

@@ -3,8 +3,10 @@ package com.nonnas.inventory.interfaces.rest;
 import com.nonnas.inventory.application.movimentacao.RegistrarEntradaManualUseCase;
 import com.nonnas.inventory.application.movimentacao.RegistrarSaidaManualUseCase;
 import com.nonnas.inventory.interfaces.rest.dto.MovimentacaoDto;
+import com.nonnas.web.security.SecurityScope;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +27,9 @@ public class MovimentacaoController {
 
     @PostMapping("/entrada-manual")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'OPERADOR')")
     public MovimentacaoDto.Response entrada(@Valid @RequestBody MovimentacaoDto.EntradaManualRequest req) {
+        SecurityScope.assertCanAccess(req.filialId());
         var cmd = new RegistrarEntradaManualUseCase.Comando(
                 req.filialId(), req.usuarioId(), req.insumoId(), req.fornecedorId(), req.notaFiscalId(),
                 req.numeroLote(), req.dataFabricacao(), req.dataValidade(), req.valorUnitario(),
@@ -36,7 +40,9 @@ public class MovimentacaoController {
 
     @PostMapping("/saida-manual")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'OPERADOR')")
     public MovimentacaoDto.Response saida(@Valid @RequestBody MovimentacaoDto.SaidaManualRequest req) {
+        SecurityScope.assertCanAccess(req.filialId());
         var cmd = new RegistrarSaidaManualUseCase.Comando(
                 req.filialId(), req.usuarioId(), req.insumoId(), req.unidadeLancamentoId(),
                 req.quantidadeBase(), req.tipo(), null, null, req.observacao());

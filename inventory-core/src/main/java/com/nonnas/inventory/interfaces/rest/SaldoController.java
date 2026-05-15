@@ -2,6 +2,8 @@ package com.nonnas.inventory.interfaces.rest;
 
 import com.nonnas.inventory.application.saldo.ConsultarSaldoUseCase;
 import com.nonnas.inventory.interfaces.rest.dto.MovimentacaoDto;
+import com.nonnas.web.security.SecurityScope;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,7 +20,9 @@ public class SaldoController {
     public SaldoController(ConsultarSaldoUseCase saldo) { this.saldo = saldo; }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public MovimentacaoDto.SaldoResponse saldo(@RequestParam UUID insumoId, @RequestParam UUID filialId) {
+        SecurityScope.assertCanAccess(filialId);
         return new MovimentacaoDto.SaldoResponse(insumoId, filialId,
                 saldo.saldoPorInsumoEFilial(insumoId, filialId));
     }

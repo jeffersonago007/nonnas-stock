@@ -36,3 +36,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token: null, user: null });
   },
 }));
+
+// Hooks utilitários para gating por perfil/filial (T-RBAC-01).
+export const useIsAdmin = (): boolean =>
+  useAuthStore((s) => s.user?.perfil === 'ADMIN');
+
+export const useCurrentFilialId = (): string | null =>
+  useAuthStore((s) => s.user?.filialId ?? null);

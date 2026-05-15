@@ -6,7 +6,9 @@ import com.nonnas.identity.application.usuario.BuscarUsuarioUseCase;
 import com.nonnas.identity.application.usuario.CriarUsuarioUseCase;
 import com.nonnas.identity.application.usuario.DesativarUsuarioUseCase;
 import com.nonnas.identity.application.usuario.ListarUsuariosUseCase;
+import com.nonnas.identity.domain.FilialId;
 import com.nonnas.identity.interfaces.rest.dto.UsuarioDto;
+import com.nonnas.web.security.SecurityScope;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -61,13 +63,20 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     public List<UsuarioDto.Response> list(@RequestParam(defaultValue = "0") int page,
                                           @RequestParam(defaultValue = "20") int size) {
-        return listar.execute(page, size).stream().map(UsuarioDto.Response::from).toList();
+        var todos = listar.execute(page, size).stream();
+        if (!SecurityScope.isAdmin()) {
+            FilialId minha = FilialId.of(SecurityScope.currentFilialId().orElseThrow());
+            todos = todos.filter(u -> u.filialId().map(minha::equals).orElse(false));
+        }
+        return todos.map(UsuarioDto.Response::from).toList();
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     public UsuarioDto.Response getById(@PathVariable UUID id) {
-        return UsuarioDto.Response.from(buscar.execute(id));
+        var usuario = buscar.execute(id);
+        usuario.filialId().ifPresent(f -> SecurityScope.assertCanAccess(f.value()));
+        return UsuarioDto.Response.from(usuario);
     }
 
     @PutMapping("/{id}")

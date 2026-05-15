@@ -143,8 +143,8 @@ export function VendasPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Vendas"
-        description="Venda itens do cardápio ou insumos do estoque. Insumos vendidos pela primeira vez são cadastrados automaticamente no cardápio."
+        title="Saídas"
+        description="Movimentação de itens do cardápio ou insumos do estoque. Insumos vendidos pela primeira vez são cadastrados automaticamente no cardápio."
       />
 
       <form

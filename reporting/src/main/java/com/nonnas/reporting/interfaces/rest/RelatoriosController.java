@@ -9,7 +9,9 @@ import com.nonnas.reporting.application.RupturaIminenteUseCase;
 import com.nonnas.reporting.application.VencimentoProximoUseCase;
 import com.nonnas.reporting.domain.PeriodoFiltro;
 import com.nonnas.reporting.interfaces.rest.dto.RelatorioDto;
+import com.nonnas.web.security.SecurityScope;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,45 +52,54 @@ public class RelatoriosController {
     }
 
     @GetMapping("/posicao")
+    @PreAuthorize("isAuthenticated()")
     public List<RelatorioDto.PosicaoResponse> posicao(
             @RequestParam(required = false) UUID filialId,
             @RequestParam(required = false) UUID categoriaId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
-        var filtros = new PosicaoEstoquePorFilialUseCase.Filtros(filialId, categoriaId);
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        var filtros = new PosicaoEstoquePorFilialUseCase.Filtros(escopo, categoriaId);
         return posicao.execute(filtros, page, size).stream()
                 .map(RelatorioDto.PosicaoResponse::from).toList();
     }
 
     @GetMapping("/curva-abc")
+    @PreAuthorize("isAuthenticated()")
     public List<RelatorioDto.CurvaABCResponse> curvaAbc(
             @RequestParam(required = false) UUID filialId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
-        return curvaAbc.execute(filialId, page, size).stream()
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        return curvaAbc.execute(escopo, page, size).stream()
                 .map(RelatorioDto.CurvaABCResponse::from).toList();
     }
 
     @GetMapping("/ruptura")
+    @PreAuthorize("isAuthenticated()")
     public List<RelatorioDto.RupturaResponse> ruptura(
             @RequestParam(required = false) UUID filialId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
-        return ruptura.execute(filialId, page, size).stream()
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        return ruptura.execute(escopo, page, size).stream()
                 .map(RelatorioDto.RupturaResponse::from).toList();
     }
 
     @GetMapping("/vencimento")
+    @PreAuthorize("isAuthenticated()")
     public List<RelatorioDto.VencimentoResponse> vencimento(
             @RequestParam(required = false) UUID filialId,
             @RequestParam(required = false) Integer diasJanela,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
-        return vencimento.execute(filialId, diasJanela, page, size).stream()
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        return vencimento.execute(escopo, diasJanela, page, size).stream()
                 .map(RelatorioDto.VencimentoResponse::from).toList();
     }
 
     @GetMapping("/movimentacoes")
+    @PreAuthorize("isAuthenticated()")
     public List<RelatorioDto.MovimentacaoResponse> movimentacoes(
             @RequestParam(required = false) UUID filialId,
             @RequestParam Instant inicio,
@@ -96,25 +107,29 @@ public class RelatoriosController {
             @RequestParam(required = false) String tipo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
         var filtros = new MovimentacaoPorPeriodoUseCase.Filtros(
-                filialId, new PeriodoFiltro(inicio, fim), tipo);
+                escopo, new PeriodoFiltro(inicio, fim), tipo);
         return movimentacao.execute(filtros, page, size).stream()
                 .map(RelatorioDto.MovimentacaoResponse::from).toList();
     }
 
     @GetMapping("/divergencia")
+    @PreAuthorize("isAuthenticated()")
     public List<RelatorioDto.DivergenciaResponse> divergencia(
             @RequestParam(required = false) UUID filialId,
             @RequestParam Instant inicio,
             @RequestParam Instant fim,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
-        return divergencia.execute(filialId, new PeriodoFiltro(inicio, fim), page, size).stream()
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        return divergencia.execute(escopo, new PeriodoFiltro(inicio, fim), page, size).stream()
                 .map(RelatorioDto.DivergenciaResponse::from).toList();
     }
 
     @PostMapping("/refresh")
     @ResponseStatus(HttpStatus.ACCEPTED)
+    @PreAuthorize("hasRole('ADMIN')")
     public void refresh() {
         refresh.execute();
     }

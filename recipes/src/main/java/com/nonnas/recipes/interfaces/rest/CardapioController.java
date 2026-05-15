@@ -3,6 +3,7 @@ package com.nonnas.recipes.interfaces.rest;
 import com.nonnas.recipes.application.cardapio.ListarCardapioUseCase;
 import com.nonnas.recipes.application.cardapio.VenderInsumoOrfaoUseCase;
 import com.nonnas.recipes.interfaces.rest.dto.CardapioDto;
+import com.nonnas.web.security.SecurityScope;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,14 +23,17 @@ public class CardapioController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public CardapioDto.Resposta listar(@RequestParam UUID filialId) {
-        return CardapioDto.Resposta.from(listar.execute(filialId));
+        UUID escopo = SecurityScope.requireFilialId(filialId);
+        return CardapioDto.Resposta.from(listar.execute(escopo));
     }
 
     @PostMapping("/vender-insumo")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'OPERADOR')")
     public CardapioDto.VendaInsumoResposta venderInsumo(
             @Valid @RequestBody CardapioDto.VenderInsumoRequest req) {
+        SecurityScope.assertCanAccess(req.filialId());
         var resp = venderInsumo.execute(new VenderInsumoOrfaoUseCase.Comando(
                 req.insumoId(), req.filialId(), req.usuarioId(),
                 req.quantidadeVendida(), req.observacao()));

@@ -7,6 +7,7 @@ import com.nonnas.alerts.domain.AvaliadorAlertasService;
 import com.nonnas.alerts.domain.StatusAlerta;
 import com.nonnas.alerts.domain.TipoAlerta;
 import com.nonnas.alerts.interfaces.rest.dto.AlertaDisparadoDto;
+import com.nonnas.web.security.SecurityScope;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class AlertaDisparadoController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public List<AlertaDisparadoDto.Response> listar(
             @RequestParam(required = false) StatusAlerta status,
             @RequestParam(required = false) UUID filialId,
@@ -46,22 +48,29 @@ public class AlertaDisparadoController {
             @RequestParam(required = false) Instant dataDisparoAte,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
         var filtros = new ListarAlertasDisparadosUseCase.Filtros(
-                status, filialId, insumoId, tipo, dataDisparoDe, dataDisparoAte);
+                status, escopo, insumoId, tipo, dataDisparoDe, dataDisparoAte);
         return listar.execute(filtros, page, size).stream()
                 .map(AlertaDisparadoDto.Response::from).toList();
     }
 
     @PostMapping("/{id}/resolver")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'OPERADOR')")
     public AlertaDisparadoDto.Response resolver(@PathVariable UUID id,
                                                 @Valid @RequestBody AlertaDisparadoDto.AcaoUsuarioRequest req) {
-        return AlertaDisparadoDto.Response.from(resolver.execute(id, req.usuarioId()));
+        var resp = AlertaDisparadoDto.Response.from(resolver.execute(id, req.usuarioId()));
+        SecurityScope.assertCanAccess(resp.filialId());
+        return resp;
     }
 
     @PostMapping("/{id}/visualizar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'OPERADOR')")
     public AlertaDisparadoDto.Response visualizar(@PathVariable UUID id,
                                                   @Valid @RequestBody AlertaDisparadoDto.AcaoUsuarioRequest req) {
-        return AlertaDisparadoDto.Response.from(visualizar.execute(id, req.usuarioId()));
+        var resp = AlertaDisparadoDto.Response.from(visualizar.execute(id, req.usuarioId()));
+        SecurityScope.assertCanAccess(resp.filialId());
+        return resp;
     }
 
     @PostMapping("/avaliar-vencimentos")

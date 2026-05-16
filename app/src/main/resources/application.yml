@@ -89,13 +89,21 @@ nonnas:
   operations:
     ajuste:
       threshold-aprovacao: 50
-  # MVP 1.2 — canais de venda. Polling default desligado em prod: ligue via
-  # NONNAS_CANAIS_POLLING_ENABLED=true ou pelo perfil dev. Endpoint manual
-  # POST /api/v1/canais/{tipo}/poll-now (ADMIN) sempre disponível.
+  # MVP 1.2 — canais de venda. Polling (consumir eventos do canal) e
+  # processar (baixar estoque + confirmar no canal) são independentes,
+  # default desligados em prod. Ative via NONNAS_CANAIS_POLLING_ENABLED=true
+  # e NONNAS_CANAIS_PROCESSAR_ENABLED=true (ou pelo perfil dev). Os endpoints
+  # manuais (POST /api/v1/canais/{tipo}/poll-now ADMIN e
+  # POST /api/v1/canais/processar-pendentes ADMIN/GERENTE) seguem disponíveis
+  # como retry pela UI mesmo com schedulers desligados.
   canais:
     polling:
       enabled: ${NONNAS_CANAIS_POLLING_ENABLED:false}
       interval: PT30S
+      batch-size: 50
+    processar:
+      enabled: ${NONNAS_CANAIS_PROCESSAR_ENABLED:false}
+      interval: PT1M
       batch-size: 50
     http:
       connect-timeout: PT5S

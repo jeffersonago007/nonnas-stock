@@ -24,6 +24,9 @@ import { UnidadesPage } from '@/features/admin/unidades/UnidadesPage';
 import { EmpresasPage } from '@/features/admin/empresas/EmpresasPage';
 import { UsuariosPage } from '@/features/admin/usuarios/UsuariosPage';
 import { VendasPage } from '@/features/vendas/VendasPage';
+import { CredenciaisPage } from '@/features/canais/CredenciaisPage';
+import { DeparaPage } from '@/features/canais/DeparaPage';
+import { PedidosCanaisPage } from '@/features/canais/PedidosCanaisPage';
 
 // Visibilidade espelhando o Sidebar (T-RBAC-01):
 //   ADMIN     → tudo
@@ -55,6 +58,7 @@ export const router = createBrowserRouter([
       { path: 'notas-fiscais/lancar', element: guard(OPERACIONAL, <LancarNotaFiscalPage />) },
       { path: 'estoque', element: guard(OPERACIONAL, <EstoquePage />) },
       { path: 'vendas', element: guard(OPERACIONAL, <VendasPage />) },
+      { path: 'canais/pedidos', element: guard(OPERACIONAL, <PedidosCanaisPage />) },
       { path: 'alertas', element: guard(OPERACIONAL, <AlertasPage />) },
       // Cadastros — bloqueado para OPERADOR e CONSULTA
       { path: 'insumos', element: guard(CADASTROS, <InsumosPage />) },
@@ -70,6 +74,8 @@ export const router = createBrowserRouter([
       { path: 'admin/unidades', element: guard(CADASTROS, <UnidadesPage />) },
       { path: 'admin/empresas', element: guard(['ADMIN'], <EmpresasPage />) },
       { path: 'admin/usuarios', element: guard(CADASTROS, <UsuariosPage />) },
+      { path: 'admin/canais/credenciais', element: guard(['ADMIN'], <CredenciaisPage />) },
+      { path: 'admin/canais/depara', element: guard(['ADMIN'], <DeparaPage />) },
       // Notificações: acessível a todos autenticados (sem gating)
       { path: 'notificacoes', element: <NotificacoesPage /> },
     ],

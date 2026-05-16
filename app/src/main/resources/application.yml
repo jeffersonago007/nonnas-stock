@@ -89,6 +89,17 @@ nonnas:
   operations:
     ajuste:
       threshold-aprovacao: 50
+  # MVP 1.2 — canais de venda. Polling default desligado em prod: ligue via
+  # NONNAS_CANAIS_POLLING_ENABLED=true ou pelo perfil dev. Endpoint manual
+  # POST /api/v1/canais/{tipo}/poll-now (ADMIN) sempre disponível.
+  canais:
+    polling:
+      enabled: ${NONNAS_CANAIS_POLLING_ENABLED:false}
+      interval: PT30S
+      batch-size: 50
+    http:
+      connect-timeout: PT5S
+      read-timeout: PT15S
   cors:
     allowed-origins: ${NONNAS_CORS_ORIGINS:}
   rate-limit:

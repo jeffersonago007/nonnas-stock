@@ -6,10 +6,9 @@ import com.nonnas.saleschannels.domain.CanalTipo;
 import com.nonnas.saleschannels.domain.EventoCanal;
 import com.nonnas.saleschannels.infrastructure.schedule.CanalPollingScheduler;
 import com.nonnas.sharedkernel.NotFoundException;
+import com.nonnas.web.security.SecurityScope;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -66,9 +65,9 @@ class CanalPollingController {
      */
     @PostMapping("/processar-pendentes")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
-    ResponseEntity<Map<String, Object>> processarPendentes(@AuthenticationPrincipal UserDetails user) {
+    ResponseEntity<Map<String, Object>> processarPendentes() {
         List<EventoCanal> pendentes = eventos.listarNaoProcessados(50);
-        UUID usuarioSistemaId = UUID.nameUUIDFromBytes(user.getUsername().getBytes());
+        UUID usuarioSistemaId = SecurityScope.current().userId();
 
         int sucesso = 0;
         int falha = 0;

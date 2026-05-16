@@ -6,9 +6,8 @@ import com.nonnas.saleschannels.domain.PedidoCanalId;
 import com.nonnas.saleschannels.domain.StatusPedidoCanal;
 import com.nonnas.saleschannels.interfaces.rest.dto.PedidoCanalDto;
 import com.nonnas.sharedkernel.NotFoundException;
+import com.nonnas.web.security.SecurityScope;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,10 +49,7 @@ class PedidoCanalController {
      */
     @PostMapping("/{id}/reprocessar")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
-    PedidoCanalDto.Response reprocessar(@PathVariable UUID id,
-                                         @AuthenticationPrincipal UserDetails user) {
-        // usuarioSistemaId real virá de feature-flag/config; por ora derivamos do user logado.
-        UUID usuarioId = UUID.nameUUIDFromBytes(user.getUsername().getBytes());
-        return PedidoCanalDto.Response.from(processarUseCase.processarPedido(PedidoCanalId.of(id), usuarioId));
+    PedidoCanalDto.Response reprocessar(@PathVariable UUID id) {
+        return PedidoCanalDto.Response.from(processarUseCase.processarPedido(PedidoCanalId.of(id), SecurityScope.current().userId()));
     }
 }

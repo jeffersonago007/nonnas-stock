@@ -25,10 +25,10 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *   <li>nfe-importer → shared-kernel, web-commons, catalog, inventory-core,
  *       operations (T20 — orquestrador de importação resolve fornecedor/
  *       insumo via catalog e delega persistência para operations)</li>
- *   <li>sales-channels-api → shared-kernel, web-commons (T-CANAL-00..02 —
- *       contrato canônico Open Delivery + persistência de pedidos/credenciais
- *       de canal. Expansão para recipes+inventory-core virá em T-CANAL-04,
- *       quando o use case ProcessarPedidoCanal for criado)</li>
+ *   <li>sales-channels-api → shared-kernel, web-commons, recipes,
+ *       inventory-core (T-CANAL-04 — {@code ProcessarPedidoCanalUseCase}
+ *       orquestra baixa de estoque via recipes' {@code RegistrarVendaSimuladaUseCase}
+ *       que delega ao inventory-core)</li>
  *   <li>app → todos (único agregador autorizado)</li>
  * </ul>
  *
@@ -141,21 +141,18 @@ class BoundedContextIsolationTest {
                     "com.nonnas.reporting..");
 
     /**
-     * sales-channels-api (T-CANAL-00..02, ADR 0016) é módulo standalone na
-     * fase de fundação: só fala com shared-kernel + web-commons. A expansão
-     * para recipes/inventory-core acontece em T-CANAL-04 (use case
-     * {@code ProcessarPedidoCanal} que orquestra baixa de estoque). Quando
-     * isso ocorrer, esta regra muda para permitir só esses dois e a nota é
-     * removida.
+     * sales-channels-api (T-CANAL-04, ADR 0016) orquestra baixa de estoque
+     * via recipes + inventory-core. NÃO pode acessar
+     * identity/catalog/operations/alerts/reporting/nfeimporter — esses
+     * canais ficam fechados para preservar isolamento. Catalog é acessado
+     * indiretamente via recipes (já depende dele).
      */
     @ArchTest
-    static final ArchRule salesChannels_isStandaloneAteTCANAL04 = noClasses()
+    static final ArchRule salesChannels_soDependeDeRecipesEInventoryCore = noClasses()
             .that().resideInAPackage("com.nonnas.saleschannels..")
             .should().dependOnClassesThat().resideInAnyPackage(
                     "com.nonnas.identity..",
                     "com.nonnas.catalog..",
-                    "com.nonnas.inventory..",
-                    "com.nonnas.recipes..",
                     "com.nonnas.operations..",
                     "com.nonnas.alerts..",
                     "com.nonnas.reporting..",

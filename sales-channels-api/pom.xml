@@ -33,6 +33,14 @@
       <groupId>com.nonnas</groupId>
       <artifactId>web-commons</artifactId>
     </dependency>
+    <!-- T-CANAL-04 — orquestra baixa de estoque via RegistrarVendaSimuladaUseCase.
+         Recipes já depende de inventory-core (ADR 0008), então essa dep traz
+         a cadeia completa. ArchUnit `salesChannels_isStandaloneAteTCANAL04`
+         foi atualizada para permitir esse acesso. -->
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>recipes</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -80,6 +88,18 @@
       <groupId>org.wiremock</groupId>
       <artifactId>wiremock-standalone</artifactId>
       <version>3.10.0</version>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      catalog em test-scope: encadeia migrations Flyway de catalog (insumos,
+      unidades, categorias) no classpath de teste — exigidas pela cadeia
+      recipes→catalog do ProcessarPedidoCanalUseCaseIT. Mesma justificativa
+      ADR 0010 do recipes/pom.xml: SEM importar classes (validado por
+      ArchUnit salesChannels_soDependeDeRecipesEInventoryCore).
+    -->
+    <dependency>
+      <groupId>com.nonnas</groupId>
+      <artifactId>catalog</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

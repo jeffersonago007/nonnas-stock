@@ -215,3 +215,28 @@ export async function pollNow(canal: CanalTipo): Promise<PollNowResponse> {
   const { data } = await api.post<PollNowResponse>(`/canais/${canal}/poll-now`);
   return data;
 }
+
+// Dev simulator (backend só responde com perfil dev ativo) -----------------
+
+export interface SimularItem {
+  externalCode: string;
+  nome: string;
+  quantidade: number;
+  unidade: string;
+  precoUnitario: number;
+  observacao?: string | null;
+}
+
+export interface SimularPedidoRequest {
+  canal: CanalTipo;
+  filialId: string;
+  displayId?: string | null;
+  clienteNome?: string | null;
+  clienteTelefone?: string | null;
+  itens: SimularItem[];
+}
+
+export async function simularPedidoDev(req: SimularPedidoRequest): Promise<PedidoCanal> {
+  const { data } = await api.post<PedidoCanal>('/canais/dev/simular-pedido', req);
+  return data;
+}

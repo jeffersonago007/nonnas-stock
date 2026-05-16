@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Eye, PlayCircle, RefreshCw, RotateCw } from 'lucide-react';
+import { Eye, PlayCircle, RefreshCw, RotateCw, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ import {
   reprocessarPedido,
 } from './api';
 import { DetalhesPedidoDialog } from './DetalhesPedidoDialog';
+import { SimularPedidoDevDialog } from './SimularPedidoDevDialog';
 
 const STATUS_TODOS = '__todos__';
 
@@ -85,6 +86,7 @@ export function PedidosCanaisPage() {
   const [statusFiltro, setStatusFiltro] = useState<string>(STATUS_TODOS);
   const [canalPoll, setCanalPoll] = useState<CanalTipo>('IFOOD');
   const [verPedido, setVerPedido] = useState<PedidoCanal | null>(null);
+  const [simularOpen, setSimularOpen] = useState(false);
 
   const pedidosQuery = useQuery({
     queryKey: ['canais-pedidos', filialId, statusFiltro],
@@ -237,6 +239,11 @@ export function PedidosCanaisPage() {
         description={`Pedidos recebidos via iFood, 99Food, Keeta e outros canais. ${pendentesCount > 0 ? `${pendentesCount} pendentes de processamento.` : ''}`}
         actions={
           <div className="flex gap-2">
+            {isAdmin && (
+              <Button variant="outline" onClick={() => setSimularOpen(true)}>
+                <Wand2 className="h-4 w-4" /> Simular pedido (dev)
+              </Button>
+            )}
             {podeReprocessar && (
               <Button
                 variant="outline"
@@ -317,6 +324,12 @@ export function PedidosCanaisPage() {
       <DetalhesPedidoDialog
         pedido={verPedido}
         onClose={() => setVerPedido(null)}
+      />
+
+      <SimularPedidoDevDialog
+        open={simularOpen}
+        onOpenChange={setSimularOpen}
+        filialId={filialId}
       />
     </div>
   );

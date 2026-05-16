@@ -46,7 +46,7 @@ const navItemsOperacional: NavItem[] = [
   { to: '/notas-fiscais', label: 'Notas fiscais', icon: FileText, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
   { to: '/estoque', label: 'Estoque', icon: Boxes, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
   { to: '/vendas', label: 'Saídas', icon: Receipt, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
-  { to: '/canais/pedidos', label: 'Pedidos canais', icon: Smartphone, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
+  { to: '/canais/pedidos', label: 'Deliveries', icon: Smartphone, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/alertas', label: 'Alertas', icon: Bell, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
 ];

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Pencil, Plus, Power, Upload } from 'lucide-react';
@@ -27,6 +27,15 @@ export function FiliaisPage() {
     queryKey: ['filiais'],
     queryFn: () => listarFiliais(),
   });
+
+  // Convenção UX: inativas ao fim; alfabético por nome (pt-BR).
+  const filiaisOrdenadas = useMemo(() => {
+    const base = filiaisQuery.data ?? [];
+    return [...base].sort((a, b) => {
+      if (a.ativa !== b.ativa) return a.ativa ? -1 : 1;
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    });
+  }, [filiaisQuery.data]);
 
   const desativarMutation = useMutation({
     mutationFn: desativarFilial,
@@ -117,7 +126,7 @@ export function FiliaisPage() {
       />
 
       <DataTable
-        data={filiaisQuery.data}
+        data={filiaisOrdenadas}
         columns={columns}
         isLoading={filiaisQuery.isLoading}
         isError={filiaisQuery.isError}

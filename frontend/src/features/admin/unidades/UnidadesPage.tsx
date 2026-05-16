@@ -61,19 +61,25 @@ export function UnidadesPage() {
   const filtradas = useMemo(() => {
     const todas = unidadesQuery.data ?? [];
     const termo = filtros.q.trim().toLowerCase();
-    return todas.filter((u) => {
-      if (filtros.ativa === 'true' && !u.ativa) return false;
-      if (filtros.ativa === 'false' && u.ativa) return false;
-      if (filtros.tipo !== TIPO_TODOS && u.tipo !== filtros.tipo) return false;
-      if (
-        termo &&
-        !u.nome.toLowerCase().includes(termo) &&
-        !u.codigo.toLowerCase().includes(termo)
-      ) {
-        return false;
-      }
-      return true;
-    });
+    return todas
+      .filter((u) => {
+        if (filtros.ativa === 'true' && !u.ativa) return false;
+        if (filtros.ativa === 'false' && u.ativa) return false;
+        if (filtros.tipo !== TIPO_TODOS && u.tipo !== filtros.tipo) return false;
+        if (
+          termo &&
+          !u.nome.toLowerCase().includes(termo) &&
+          !u.codigo.toLowerCase().includes(termo)
+        ) {
+          return false;
+        }
+        return true;
+      })
+      // Convenção UX: inativos ao fim; alfabético por nome (pt-BR).
+      .sort((a, b) => {
+        if (a.ativa !== b.ativa) return a.ativa ? -1 : 1;
+        return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+      });
   }, [unidadesQuery.data, filtros]);
 
   function aplicarFiltros() {

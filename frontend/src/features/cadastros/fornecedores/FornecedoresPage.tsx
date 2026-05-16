@@ -68,6 +68,15 @@ export function FornecedoresPage() {
     queryFn: () => listarFornecedores(filtros),
   });
 
+  // Convenção UX: inativos ao fim; alfabético por razão social (pt-BR).
+  const fornecedoresOrdenados = useMemo(() => {
+    const base = fornecedoresQuery.data ?? [];
+    return [...base].sort((a, b) => {
+      if (a.ativo !== b.ativo) return a.ativo ? -1 : 1;
+      return a.razaoSocial.localeCompare(b.razaoSocial, 'pt-BR', { sensitivity: 'base' });
+    });
+  }, [fornecedoresQuery.data]);
+
   const desativarMutation = useMutation({
     mutationFn: desativarFornecedor,
     onSuccess: () => {
@@ -173,7 +182,7 @@ export function FornecedoresPage() {
       </form>
 
       <DataTable
-        data={fornecedoresQuery.data}
+        data={fornecedoresOrdenados}
         columns={columns}
         isLoading={fornecedoresQuery.isLoading}
         isError={fornecedoresQuery.isError}

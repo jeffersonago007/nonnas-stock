@@ -37,6 +37,13 @@ const perfilLabel: Record<Perfil, string> = {
   CONSULTA: 'Consulta',
 };
 
+const perfilOrdem: Record<Perfil, number> = {
+  ADMIN: 0,
+  GERENTE: 1,
+  OPERADOR: 2,
+  CONSULTA: 3,
+};
+
 export function UsuariosPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Usuario | null>(null);
@@ -62,19 +69,26 @@ export function UsuariosPage() {
   const filtrados = useMemo(() => {
     const todos = usuariosQuery.data ?? [];
     const termo = filtros.q.trim().toLowerCase();
-    return todos.filter((u) => {
-      if (filtros.ativo === 'true' && !u.ativo) return false;
-      if (filtros.ativo === 'false' && u.ativo) return false;
-      if (filtros.perfil !== PERFIL_TODOS && u.perfil !== filtros.perfil) return false;
-      if (
-        termo &&
-        !u.nome.toLowerCase().includes(termo) &&
-        !u.email.toLowerCase().includes(termo)
-      ) {
-        return false;
-      }
-      return true;
-    });
+    return todos
+      .filter((u) => {
+        if (filtros.ativo === 'true' && !u.ativo) return false;
+        if (filtros.ativo === 'false' && u.ativo) return false;
+        if (filtros.perfil !== PERFIL_TODOS && u.perfil !== filtros.perfil) return false;
+        if (
+          termo &&
+          !u.nome.toLowerCase().includes(termo) &&
+          !u.email.toLowerCase().includes(termo)
+        ) {
+          return false;
+        }
+        return true;
+      })
+      // Convenção UX: inativos ao fim → perfil (ADMIN > GERENTE > OPERADOR > CONSULTA) → nome.
+      .sort((a, b) => {
+        if (a.ativo !== b.ativo) return a.ativo ? -1 : 1;
+        if (a.perfil !== b.perfil) return perfilOrdem[a.perfil] - perfilOrdem[b.perfil];
+        return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+      });
   }, [usuariosQuery.data, filtros]);
 
   function aplicarFiltros() {

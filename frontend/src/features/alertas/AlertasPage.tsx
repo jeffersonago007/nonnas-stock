@@ -57,11 +57,25 @@ const TIPO_LABELS: Record<TipoAlerta, string> = {
   RUPTURA: 'Ruptura',
 };
 
+const TIPO_ORDER: Record<TipoAlerta, number> = {
+  RUPTURA: 0,
+  ESTOQUE_MINIMO_ABSOLUTO: 1,
+  ESTOQUE_MINIMO_PERCENTUAL: 2,
+  VENCIMENTO_PROXIMO_DIAS: 3,
+};
+
 const PRIORIDADE_LABELS: Record<Prioridade, string> = {
   BAIXA: 'Baixa',
   MEDIA: 'Média',
   ALTA: 'Alta',
   CRITICA: 'Crítica',
+};
+
+const PRIORIDADE_ORDER: Record<Prioridade, number> = {
+  CRITICA: 0,
+  ALTA: 1,
+  MEDIA: 2,
+  BAIXA: 3,
 };
 
 const STATUS_LABELS: Record<StatusAlerta, string> = {
@@ -323,6 +337,16 @@ function ConfigsTab() {
     return m;
   }, [filiaisQuery.data]);
 
+  const configsOrdenadas = useMemo(() => {
+    if (!configsQuery.data) return configsQuery.data;
+    return [...configsQuery.data].sort((a, b) => {
+      if (a.ativo !== b.ativo) return a.ativo ? -1 : 1;
+      const tipoDiff = TIPO_ORDER[a.tipo] - TIPO_ORDER[b.tipo];
+      if (tipoDiff !== 0) return tipoDiff;
+      return PRIORIDADE_ORDER[a.prioridade] - PRIORIDADE_ORDER[b.prioridade];
+    });
+  }, [configsQuery.data]);
+
   const togglarMut = useMutation({
     mutationFn: (config: AlertaConfig) =>
       atualizarConfig(config.id, {
@@ -402,7 +426,7 @@ function ConfigsTab() {
       </div>
 
       <DataTable
-        data={configsQuery.data}
+        data={configsOrdenadas}
         columns={columns}
         isLoading={configsQuery.isLoading}
         isError={configsQuery.isError}

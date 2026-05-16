@@ -48,18 +48,24 @@ export function EmpresasPage() {
   const filtradas = useMemo(() => {
     const todas = empresasQuery.data ?? [];
     const termo = filtros.q.trim().toLowerCase();
-    return todas.filter((e) => {
-      if (filtros.ativa === 'true' && !e.ativa) return false;
-      if (filtros.ativa === 'false' && e.ativa) return false;
-      if (
-        termo &&
-        !e.razaoSocial.toLowerCase().includes(termo) &&
-        !e.cnpj.includes(termo)
-      ) {
-        return false;
-      }
-      return true;
-    });
+    return todas
+      .filter((e) => {
+        if (filtros.ativa === 'true' && !e.ativa) return false;
+        if (filtros.ativa === 'false' && e.ativa) return false;
+        if (
+          termo &&
+          !e.razaoSocial.toLowerCase().includes(termo) &&
+          !e.cnpj.includes(termo)
+        ) {
+          return false;
+        }
+        return true;
+      })
+      // Convenção UX: inativas ao fim; alfabético por razão social (pt-BR).
+      .sort((a, b) => {
+        if (a.ativa !== b.ativa) return a.ativa ? -1 : 1;
+        return a.razaoSocial.localeCompare(b.razaoSocial, 'pt-BR', { sensitivity: 'base' });
+      });
   }, [empresasQuery.data, filtros]);
 
   function aplicarFiltros() {

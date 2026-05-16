@@ -75,6 +75,15 @@ export function ProdutosPage() {
     queryFn: () => listarProdutos(filtros),
   });
 
+  // Convenção UX: inativos ao fim; alfabético por nome (pt-BR).
+  const produtosOrdenados = useMemo(() => {
+    const base = produtosQuery.data ?? [];
+    return [...base].sort((a, b) => {
+      if (a.ativo !== b.ativo) return a.ativo ? -1 : 1;
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    });
+  }, [produtosQuery.data]);
+
   function aplicarFiltros() {
     setFiltros({
       q: buscaInput.trim() || undefined,
@@ -218,7 +227,7 @@ export function ProdutosPage() {
       </form>
 
       <DataTable
-        data={produtosQuery.data}
+        data={produtosOrdenados}
         columns={columns}
         isLoading={produtosQuery.isLoading}
         isError={produtosQuery.isError}

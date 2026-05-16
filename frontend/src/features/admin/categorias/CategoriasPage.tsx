@@ -48,12 +48,18 @@ export function CategoriasPage() {
   const filtradas = useMemo(() => {
     const todas = categoriasQuery.data ?? [];
     const termo = filtros.q.trim().toLowerCase();
-    return todas.filter((c) => {
-      if (filtros.ativa === 'true' && !c.ativa) return false;
-      if (filtros.ativa === 'false' && c.ativa) return false;
-      if (termo && !c.nome.toLowerCase().includes(termo)) return false;
-      return true;
-    });
+    return todas
+      .filter((c) => {
+        if (filtros.ativa === 'true' && !c.ativa) return false;
+        if (filtros.ativa === 'false' && c.ativa) return false;
+        if (termo && !c.nome.toLowerCase().includes(termo)) return false;
+        return true;
+      })
+      // Convenção UX: inativas ao fim; alfabético por nome (pt-BR).
+      .sort((a, b) => {
+        if (a.ativa !== b.ativa) return a.ativa ? -1 : 1;
+        return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+      });
   }, [categoriasQuery.data, filtros]);
 
   function aplicarFiltros() {

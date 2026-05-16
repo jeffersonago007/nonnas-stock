@@ -120,8 +120,14 @@ export function InsumosPage() {
   // categoria/ativo/q continuam server-side via insumosQuery acima.
   const insumosFiltrados = useMemo(() => {
     const base = insumosQuery.data ?? [];
-    if (!filtrosAplicados.soSemEstoque || filialId == null) return base;
-    return base.filter((i) => (saldoPorInsumo.get(i.id) ?? 0) <= 0);
+    const filtrada = !filtrosAplicados.soSemEstoque || filialId == null
+      ? base
+      : base.filter((i) => (saldoPorInsumo.get(i.id) ?? 0) <= 0);
+    // Convenção UX: inativos ao fim; alfabético por nome (pt-BR).
+    return [...filtrada].sort((a, b) => {
+      if (a.ativo !== b.ativo) return a.ativo ? -1 : 1;
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    });
   }, [insumosQuery.data, filtrosAplicados.soSemEstoque, filialId, saldoPorInsumo]);
 
   const unidadeMap = useMemo(() => {

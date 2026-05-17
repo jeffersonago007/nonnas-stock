@@ -24,6 +24,9 @@ public class PedidoCanalEntity {
     @Column(name = "credencial_id", nullable = false, updatable = false) private UUID credencialId;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 40) private StatusPedidoCanal status;
     @Column(name = "valor_total", nullable = false, precision = 20, scale = 4) private BigDecimal valorTotal;
+    @Column(name = "taxa_entrega", nullable = false, precision = 20, scale = 4) private BigDecimal taxaEntrega = BigDecimal.ZERO;
+    @Column(name = "taxa_servico", nullable = false, precision = 20, scale = 4) private BigDecimal taxaServico = BigDecimal.ZERO;
+    @Column(name = "valor_liquido", nullable = false, precision = 20, scale = 4) private BigDecimal valorLiquido = BigDecimal.ZERO;
     @Column(nullable = false, length = 3) private String moeda;
     @Column(name = "cliente_nome", length = 200) private String clienteNome;
     @Column(name = "cliente_telefone", length = 40) private String clienteTelefone;
@@ -51,6 +54,9 @@ public class PedidoCanalEntity {
     public UUID getCredencialId() { return credencialId; } public void setCredencialId(UUID v) { this.credencialId = v; }
     public StatusPedidoCanal getStatus() { return status; } public void setStatus(StatusPedidoCanal v) { this.status = v; }
     public BigDecimal getValorTotal() { return valorTotal; } public void setValorTotal(BigDecimal v) { this.valorTotal = v; }
+    public BigDecimal getTaxaEntrega() { return taxaEntrega; } public void setTaxaEntrega(BigDecimal v) { this.taxaEntrega = v; }
+    public BigDecimal getTaxaServico() { return taxaServico; } public void setTaxaServico(BigDecimal v) { this.taxaServico = v; }
+    public BigDecimal getValorLiquido() { return valorLiquido; } public void setValorLiquido(BigDecimal v) { this.valorLiquido = v; }
     public String getMoeda() { return moeda; } public void setMoeda(String v) { this.moeda = v; }
     public String getClienteNome() { return clienteNome; } public void setClienteNome(String v) { this.clienteNome = v; }
     public String getClienteTelefone() { return clienteTelefone; } public void setClienteTelefone(String v) { this.clienteTelefone = v; }

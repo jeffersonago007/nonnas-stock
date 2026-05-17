@@ -2,6 +2,9 @@ package com.nonnas.saleschannels.infrastructure.adapter.opendelivery;
 
 import com.nonnas.saleschannels.application.opendelivery.EventoBruto;
 import com.nonnas.saleschannels.application.opendelivery.OpenDeliveryCustomer;
+import com.nonnas.saleschannels.application.opendelivery.OpenDeliveryFee;
+import com.nonnas.saleschannels.application.opendelivery.OpenDeliveryFeeReceiver;
+import com.nonnas.saleschannels.application.opendelivery.OpenDeliveryFeeType;
 import com.nonnas.saleschannels.application.opendelivery.OpenDeliveryItem;
 import com.nonnas.saleschannels.application.opendelivery.OpenDeliveryMerchant;
 import com.nonnas.saleschannels.application.opendelivery.OpenDeliveryOption;
@@ -47,8 +50,40 @@ final class OpenDeliveryResponseMapper {
                 Optional.ofNullable(o.items()).orElse(List.of()).stream()
                         .map(OpenDeliveryResponseMapper::item)
                         .toList(),
+                Optional.ofNullable(o.otherFees()).orElse(List.of()).stream()
+                        .map(OpenDeliveryResponseMapper::fee)
+                        .toList(),
                 total(o.total()),
                 o.extraInfo());
+    }
+
+    private static OpenDeliveryFee fee(OpenDeliveryOrderResponse.Fee f) {
+        return new OpenDeliveryFee(
+                f.name(),
+                mapearFeeType(f.type()),
+                mapearFeeReceiver(f.receivedBy()),
+                price(f.price()),
+                f.observation());
+    }
+
+    private static OpenDeliveryFeeType mapearFeeType(String type) {
+        if (type == null) return OpenDeliveryFeeType.OTHER;
+        return switch (type.toUpperCase()) {
+            case "DELIVERY_FEE" -> OpenDeliveryFeeType.DELIVERY_FEE;
+            case "SERVICE_FEE" -> OpenDeliveryFeeType.SERVICE_FEE;
+            case "TIP" -> OpenDeliveryFeeType.TIP;
+            default -> OpenDeliveryFeeType.OTHER;
+        };
+    }
+
+    private static OpenDeliveryFeeReceiver mapearFeeReceiver(String receivedBy) {
+        if (receivedBy == null) return OpenDeliveryFeeReceiver.OTHER;
+        return switch (receivedBy.toUpperCase()) {
+            case "MARKETPLACE" -> OpenDeliveryFeeReceiver.MARKETPLACE;
+            case "MERCHANT" -> OpenDeliveryFeeReceiver.MERCHANT;
+            case "LOGISTIC_SERVICES" -> OpenDeliveryFeeReceiver.LOGISTIC_SERVICES;
+            default -> OpenDeliveryFeeReceiver.OTHER;
+        };
     }
 
     private static OpenDeliveryMerchant merchant(OpenDeliveryOrderResponse.Merchant m) {

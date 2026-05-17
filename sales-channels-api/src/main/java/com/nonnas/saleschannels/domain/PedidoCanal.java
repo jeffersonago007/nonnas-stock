@@ -36,6 +36,9 @@ public final class PedidoCanal {
     private final CredencialCanalId credencialId;
     private StatusPedidoCanal status;
     private final BigDecimal valorTotal;
+    private final BigDecimal taxaEntrega;
+    private final BigDecimal taxaServico;
+    private final BigDecimal valorLiquido;
     private final String moeda;
     private final String clienteNome;
     private final String clienteTelefone;
@@ -49,7 +52,9 @@ public final class PedidoCanal {
 
     public PedidoCanal(PedidoCanalId id, CanalTipo canalTipo, String pedidoExternoId,
                        String displayId, UUID filialId, CredencialCanalId credencialId,
-                       StatusPedidoCanal status, BigDecimal valorTotal, String moeda,
+                       StatusPedidoCanal status, BigDecimal valorTotal,
+                       BigDecimal taxaEntrega, BigDecimal taxaServico, BigDecimal valorLiquido,
+                       String moeda,
                        String clienteNome, String clienteTelefone,
                        List<ItemPedidoCanal> itens, UUID movimentacaoId,
                        String erroProcessamento, Instant recebidoEm,
@@ -62,6 +67,9 @@ public final class PedidoCanal {
         this.credencialId = Objects.requireNonNull(credencialId);
         this.status = Objects.requireNonNull(status);
         this.valorTotal = exigirNaoNegativo(valorTotal, "valorTotal");
+        this.taxaEntrega = exigirNaoNegativo(taxaEntrega, "taxaEntrega");
+        this.taxaServico = exigirNaoNegativo(taxaServico, "taxaServico");
+        this.valorLiquido = exigirNaoNegativo(valorLiquido, "valorLiquido");
         this.moeda = exigir(moeda, "moeda");
         this.clienteNome = clienteNome;
         this.clienteTelefone = clienteTelefone;
@@ -81,12 +89,16 @@ public final class PedidoCanal {
     public static PedidoCanal recebido(CanalTipo canalTipo, String pedidoExternoId,
                                        String displayId, UUID filialId,
                                        CredencialCanalId credencialId,
-                                       BigDecimal valorTotal, String moeda,
+                                       BigDecimal valorTotal,
+                                       BigDecimal taxaEntrega, BigDecimal taxaServico,
+                                       BigDecimal valorLiquido,
+                                       String moeda,
                                        String clienteNome, String clienteTelefone,
                                        List<ItemPedidoCanal> itens, Instant agora) {
         return new PedidoCanal(PedidoCanalId.generate(), canalTipo, pedidoExternoId,
                 displayId, filialId, credencialId, StatusPedidoCanal.RECEBIDO,
-                valorTotal, moeda, clienteNome, clienteTelefone, itens,
+                valorTotal, taxaEntrega, taxaServico, valorLiquido,
+                moeda, clienteNome, clienteTelefone, itens,
                 null, null, agora, null, null, null);
     }
 
@@ -154,6 +166,9 @@ public final class PedidoCanal {
     public CredencialCanalId credencialId() { return credencialId; }
     public StatusPedidoCanal status() { return status; }
     public BigDecimal valorTotal() { return valorTotal; }
+    public BigDecimal taxaEntrega() { return taxaEntrega; }
+    public BigDecimal taxaServico() { return taxaServico; }
+    public BigDecimal valorLiquido() { return valorLiquido; }
     public String moeda() { return moeda; }
     public Optional<String> clienteNomeOpt() { return Optional.ofNullable(clienteNome); }
     public Optional<String> clienteTelefoneOpt() { return Optional.ofNullable(clienteTelefone); }

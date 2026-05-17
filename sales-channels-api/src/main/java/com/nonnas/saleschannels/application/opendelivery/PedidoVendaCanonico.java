@@ -36,6 +36,7 @@ public record PedidoVendaCanonico(
         OpenDeliveryMerchant merchant,
         OpenDeliveryCustomer customer,
         List<OpenDeliveryItem> items,
+        List<OpenDeliveryFee> otherFees,
         OpenDeliveryTotal total,
         String extraInfo
 ) {
@@ -43,5 +44,6 @@ public record PedidoVendaCanonico(
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Pedido canônico precisa de ao menos 1 item");
         }
+        otherFees = otherFees == null ? List.of() : List.copyOf(otherFees);
     }
 }

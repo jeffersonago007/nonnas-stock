@@ -110,13 +110,19 @@ class SimularPedidoDevController {
                 })
                 .toList();
 
-        BigDecimal valorTotal = itens.stream()
+        BigDecimal subtotalItens = itens.stream()
                 .map(ItemPedidoCanal::precoTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal taxaEntrega = req.taxaEntrega() != null ? req.taxaEntrega() : BigDecimal.ZERO;
+        BigDecimal taxaServico = req.taxaServico() != null ? req.taxaServico() : BigDecimal.ZERO;
+        BigDecimal valorTotal = subtotalItens.add(taxaEntrega).add(taxaServico);
+        BigDecimal valorLiquido = subtotalItens;
 
         PedidoCanal pedido = PedidoCanal.recebido(
                 req.canal(), pedidoExternoId, displayId, req.filialId(),
-                credencial.id(), valorTotal, "BRL",
+                credencial.id(), valorTotal,
+                taxaEntrega, taxaServico, valorLiquido,
+                "BRL",
                 req.clienteNome(), req.clienteTelefone(),
                 itens, agora);
 
@@ -150,6 +156,8 @@ class SimularPedidoDevController {
             String displayId,
             String clienteNome,
             String clienteTelefone,
+            @PositiveOrZero BigDecimal taxaEntrega,
+            @PositiveOrZero BigDecimal taxaServico,
             @NotNull @jakarta.validation.constraints.Size(min = 1, message = "Pedido precisa de ao menos 1 item")
             List<@Valid SimularItemRequest> itens
     ) {}

@@ -55,11 +55,23 @@ function formatPrecoPtBR(value: unknown): string {
   return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+const taxaSchema = z
+  .union([z.string(), z.number()])
+  .optional()
+  .transform((v) => {
+    if (v === undefined || v === null || v === '') return undefined;
+    const n = typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
+    return Number.isFinite(n) ? n : undefined;
+  })
+  .refine((n) => n === undefined || n >= 0, { message: 'Taxa não pode ser negativa' });
+
 const schema = z.object({
   canal: z.enum(['IFOOD', 'NOVENTANOVE_FOOD', 'KEETA', 'OPEN_DELIVERY_GENERICO']),
   displayId: z.string().optional(),
   clienteNome: z.string().optional(),
   clienteTelefone: z.string().optional(),
+  taxaEntrega: taxaSchema,
+  taxaServico: taxaSchema,
   itens: z.array(itemSchema).min(1, 'Adicione ao menos 1 item'),
 });
 
@@ -89,6 +101,8 @@ export function SimularPedidoDevDialog({ open, onOpenChange, filialId }: Props) 
       displayId: '',
       clienteNome: 'Cliente Demo',
       clienteTelefone: '',
+      taxaEntrega: undefined,
+      taxaServico: undefined,
       itens: [ITEM_DEFAULT],
     },
   });
@@ -109,6 +123,8 @@ export function SimularPedidoDevDialog({ open, onOpenChange, filialId }: Props) 
         displayId: '',
         clienteNome: 'Cliente Demo',
         clienteTelefone: '',
+        taxaEntrega: undefined,
+        taxaServico: undefined,
         itens: [ITEM_DEFAULT],
       });
     }
@@ -122,6 +138,8 @@ export function SimularPedidoDevDialog({ open, onOpenChange, filialId }: Props) 
         displayId: v.displayId || null,
         clienteNome: v.clienteNome || null,
         clienteTelefone: v.clienteTelefone || null,
+        taxaEntrega: v.taxaEntrega ?? null,
+        taxaServico: v.taxaServico ?? null,
         itens: v.itens,
       }),
     onSuccess: (p) => {
@@ -196,6 +214,59 @@ export function SimularPedidoDevDialog({ open, onOpenChange, filialId }: Props) 
             <div className="space-y-2">
               <Label htmlFor="clienteTelefone">Telefone (opcional)</Label>
               <Input id="clienteTelefone" placeholder="(11) 9..." {...form.register('clienteTelefone')} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="taxaEntrega">Taxa de entrega (opcional)</Label>
+              <Controller
+                control={form.control}
+                name="taxaEntrega"
+                render={({ field }) => (
+                  <Input
+                    id="taxaEntrega"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={field.value === undefined || field.value === null
+                      ? ''
+                      : typeof field.value === 'number'
+                        ? formatPrecoPtBR(field.value)
+                        : String(field.value)}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    onBlur={() => {
+                      field.onChange(formatPrecoPtBR(field.value));
+                      field.onBlur();
+                    }}
+                  />
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="taxaServico">Taxa de serviço (opcional)</Label>
+              <Controller
+                control={form.control}
+                name="taxaServico"
+                render={({ field }) => (
+                  <Input
+                    id="taxaServico"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={field.value === undefined || field.value === null
+                      ? ''
+                      : typeof field.value === 'number'
+                        ? formatPrecoPtBR(field.value)
+                        : String(field.value)}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    onBlur={() => {
+                      field.onChange(formatPrecoPtBR(field.value));
+                      field.onBlur();
+                    }}
+                  />
+                )}
+              />
             </div>
           </div>
 

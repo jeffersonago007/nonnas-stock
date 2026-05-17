@@ -21,6 +21,7 @@ public record OpenDeliveryOrderResponse(
         Merchant merchant,
         Customer customer,
         List<Item> items,
+        List<Fee> otherFees,
         Total total,
         String extraInfo
 ) {
@@ -56,6 +57,15 @@ public record OpenDeliveryOrderResponse(
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Price(BigDecimal value, String currency) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Fee(
+            String name,
+            String type,
+            String receivedBy,
+            Price price,
+            String observation
+    ) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Total(

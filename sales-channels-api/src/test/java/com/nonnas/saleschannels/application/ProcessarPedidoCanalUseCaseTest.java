@@ -95,6 +95,7 @@ class ProcessarPedidoCanalUseCaseTest {
                         new OpenDeliveryItem("i2", 2, "COCA-LATA", "Coca",
                                 new BigDecimal("2"), OpenDeliveryUnit.UN, price, price, null, List.of())
                 ),
+                List.of(),
                 new OpenDeliveryTotal(new BigDecimal("20"), BigDecimal.ZERO,
                         BigDecimal.ZERO, new BigDecimal("20"), "BRL"),
                 null);
@@ -208,6 +209,7 @@ class ProcessarPedidoCanalUseCaseTest {
                 new OpenDeliveryMerchant("merchant-test", "Nonnas"), null,
                 List.of(new OpenDeliveryItem("i1", 1, "X", "Item", BigDecimal.ONE,
                         OpenDeliveryUnit.UN, price, price, null, List.of())),
+                List.of(),
                 new OpenDeliveryTotal(BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.TEN, "BRL"),
                 null);
         when(adapter.buscarPedido("ord-3")).thenReturn(canonico);
@@ -247,7 +249,9 @@ class ProcessarPedidoCanalUseCaseTest {
         // pedido existente em RECEBIDO
         PedidoCanal pedido = PedidoCanal.recebido(
                 CanalTipo.OPEN_DELIVERY_GENERICO, "ord-c", null,
-                credencial.filialId(), credencial.id(), BigDecimal.ZERO, "BRL", null, null,
+                credencial.filialId(), credencial.id(), BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                "BRL", null, null,
                 List.of(com.nonnas.saleschannels.domain.ItemPedidoCanal.novo(
                         1, "X", "x", BigDecimal.ONE, "UN", BigDecimal.ONE, BigDecimal.ONE, null)),
                 T0);

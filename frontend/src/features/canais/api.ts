@@ -163,6 +163,9 @@ export interface PedidoCanal {
   credencialId: string;
   status: StatusPedidoCanal;
   valorTotal: number;
+  taxaEntrega: number;
+  taxaServico: number;
+  valorLiquido: number;
   moeda: string;
   clienteNome: string | null;
   clienteTelefone: string | null;
@@ -233,6 +236,8 @@ export interface SimularPedidoRequest {
   displayId?: string | null;
   clienteNome?: string | null;
   clienteTelefone?: string | null;
+  taxaEntrega?: number | null;
+  taxaServico?: number | null;
   itens: SimularItem[];
 }
 

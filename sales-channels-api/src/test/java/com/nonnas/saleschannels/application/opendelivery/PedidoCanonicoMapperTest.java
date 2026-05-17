@@ -43,6 +43,7 @@ class PedidoCanonicoMapperTest {
                 new OpenDeliveryMerchant("merchant-mooca", "Nonnas Mooca"),
                 new OpenDeliveryCustomer("cust-1", "Maria", "+5511999990000"),
                 List.of(item1, item2),
+                List.of(),
                 new OpenDeliveryTotal(
                         new BigDecimal("61.90"), BigDecimal.ZERO, BigDecimal.ZERO,
                         new BigDecimal("61.90"), "BRL"),
@@ -57,6 +58,9 @@ class PedidoCanonicoMapperTest {
         assertThat(pedido.canalTipo()).isEqualTo(CanalTipo.IFOOD);
         assertThat(pedido.filialId()).isEqualTo(FILIAL);
         assertThat(pedido.valorTotal()).isEqualByComparingTo("61.90");
+        assertThat(pedido.taxaEntrega()).isEqualByComparingTo("0");
+        assertThat(pedido.taxaServico()).isEqualByComparingTo("0");
+        assertThat(pedido.valorLiquido()).isEqualByComparingTo("61.90");
         assertThat(pedido.moeda()).isEqualTo("BRL");
         assertThat(pedido.clienteNomeOpt()).contains("Maria");
         assertThat(pedido.clienteTelefoneOpt()).contains("+5511999990000");
@@ -78,7 +82,7 @@ class PedidoCanonicoMapperTest {
         PedidoVendaCanonico canonico = new PedidoVendaCanonico(
                 "x", "y", OpenDeliveryOrderType.DELIVERY, "iFood", T0,
                 new OpenDeliveryMerchant("m", "M"), null,
-                List.of(item), null, null);
+                List.of(item), null, null, null);
 
         PedidoCanal pedido = PedidoCanonicoMapper.paraDominio(
                 canonico, CanalTipo.IFOOD, FILIAL, CRED, T0);
@@ -96,7 +100,7 @@ class PedidoCanonicoMapperTest {
         PedidoVendaCanonico canonico = new PedidoVendaCanonico(
                 "x", null, OpenDeliveryOrderType.DELIVERY, null, T0,
                 new OpenDeliveryMerchant("m", "M"), null,
-                List.of(item), null, null);
+                List.of(item), null, null, null);
 
         PedidoCanal pedido = PedidoCanonicoMapper.paraDominio(
                 canonico, CanalTipo.OPEN_DELIVERY_GENERICO, FILIAL, CRED, T0);
@@ -117,6 +121,7 @@ class PedidoCanonicoMapperTest {
                 "x", null, OpenDeliveryOrderType.DELIVERY, null, T0,
                 new OpenDeliveryMerchant("m", "M"), null,
                 List.of(item),
+                null,
                 new OpenDeliveryTotal(BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, "BRL"),
                 null);
 
@@ -124,5 +129,79 @@ class PedidoCanonicoMapperTest {
                 canonico, CanalTipo.IFOOD, FILIAL, CRED, T0);
 
         assertThat(pedido.itens().get(0).sequencia()).isEqualTo(1);
+    }
+
+    @Test
+    void somaTaxasPorTipoEDerivaValorLiquidoIgnorandoTip() {
+        OpenDeliveryItem item = new OpenDeliveryItem(
+                "i1", 1, "PIZZA", "Pizza",
+                new BigDecimal("1"), OpenDeliveryUnit.UN,
+                new OpenDeliveryPrice(new BigDecimal("50.00"), "BRL"),
+                new OpenDeliveryPrice(new BigDecimal("50.00"), "BRL"),
+                null, List.of());
+        OpenDeliveryFee entrega1 = new OpenDeliveryFee(
+                "Entrega base", OpenDeliveryFeeType.DELIVERY_FEE, OpenDeliveryFeeReceiver.LOGISTIC_SERVICES,
+                new OpenDeliveryPrice(new BigDecimal("6.50"), "BRL"), null);
+        OpenDeliveryFee entrega2 = new OpenDeliveryFee(
+                "Entrega adicional", OpenDeliveryFeeType.DELIVERY_FEE, OpenDeliveryFeeReceiver.LOGISTIC_SERVICES,
+                new OpenDeliveryPrice(new BigDecimal("1.00"), "BRL"), null);
+        OpenDeliveryFee servico = new OpenDeliveryFee(
+                "Taxa de serviço", OpenDeliveryFeeType.SERVICE_FEE, OpenDeliveryFeeReceiver.MARKETPLACE,
+                new OpenDeliveryPrice(new BigDecimal("2.50"), "BRL"), null);
+        OpenDeliveryFee tip = new OpenDeliveryFee(
+                "Gorjeta", OpenDeliveryFeeType.TIP, OpenDeliveryFeeReceiver.MERCHANT,
+                new OpenDeliveryPrice(new BigDecimal("5.00"), "BRL"), null);
+
+        // total.orderAmount = itemsPrice (50) + DELIVERY (7.50) + SERVICE (2.50) + TIP (5.00) = 65.00
+        PedidoVendaCanonico canonico = new PedidoVendaCanonico(
+                "ord-fees", "#F1", OpenDeliveryOrderType.DELIVERY, "iFood", T0,
+                new OpenDeliveryMerchant("m", "M"),
+                new OpenDeliveryCustomer("c", "Ana", "+5511..."),
+                List.of(item),
+                List.of(entrega1, entrega2, servico, tip),
+                new OpenDeliveryTotal(
+                        new BigDecimal("50.00"), new BigDecimal("15.00"), BigDecimal.ZERO,
+                        new BigDecimal("65.00"), "BRL"),
+                null);
+
+        PedidoCanal pedido = PedidoCanonicoMapper.paraDominio(
+                canonico, CanalTipo.IFOOD, FILIAL, CRED, T0);
+
+        assertThat(pedido.valorTotal()).isEqualByComparingTo("65.00");
+        assertThat(pedido.taxaEntrega()).isEqualByComparingTo("7.50");
+        assertThat(pedido.taxaServico()).isEqualByComparingTo("2.50");
+        // 65.00 - 7.50 - 2.50 = 55.00 (TIP fica embutido, não desconta)
+        assertThat(pedido.valorLiquido()).isEqualByComparingTo("55.00");
+    }
+
+    @Test
+    void valorLiquidoNuncaNegativoQuandoTaxasExcedemTotal() {
+        // Edge case raro: pedido com cupom 100% (orderAmount=0) mas com taxas
+        // que o merchant absorveu — não vamos persistir valor negativo.
+        OpenDeliveryItem item = new OpenDeliveryItem(
+                "i1", 1, "X", "Item",
+                new BigDecimal("1"), OpenDeliveryUnit.UN,
+                new OpenDeliveryPrice(BigDecimal.ZERO, "BRL"),
+                new OpenDeliveryPrice(BigDecimal.ZERO, "BRL"),
+                null, List.of());
+        OpenDeliveryFee entrega = new OpenDeliveryFee(
+                "Entrega", OpenDeliveryFeeType.DELIVERY_FEE, OpenDeliveryFeeReceiver.MERCHANT,
+                new OpenDeliveryPrice(new BigDecimal("8.00"), "BRL"), null);
+
+        PedidoVendaCanonico canonico = new PedidoVendaCanonico(
+                "ord-coupon", null, OpenDeliveryOrderType.DELIVERY, null, T0,
+                new OpenDeliveryMerchant("m", "M"), null,
+                List.of(item),
+                List.of(entrega),
+                new OpenDeliveryTotal(
+                        BigDecimal.ZERO, new BigDecimal("8.00"), new BigDecimal("8.00"),
+                        BigDecimal.ZERO, "BRL"),
+                null);
+
+        PedidoCanal pedido = PedidoCanonicoMapper.paraDominio(
+                canonico, CanalTipo.OPEN_DELIVERY_GENERICO, FILIAL, CRED, T0);
+
+        assertThat(pedido.taxaEntrega()).isEqualByComparingTo("8.00");
+        assertThat(pedido.valorLiquido()).isEqualByComparingTo("0");
     }
 }

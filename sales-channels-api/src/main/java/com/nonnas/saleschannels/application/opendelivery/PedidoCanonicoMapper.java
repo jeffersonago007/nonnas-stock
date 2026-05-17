@@ -35,6 +35,12 @@ public final class PedidoCanonicoMapper {
                                           Instant agora) {
         List<ItemPedidoCanal> itens = mapearItens(canonico.items());
         BigDecimal total = resolverTotal(canonico, itens);
+        BigDecimal taxaEntrega = somarFees(canonico, OpenDeliveryFeeType.DELIVERY_FEE);
+        BigDecimal taxaServico = somarFees(canonico, OpenDeliveryFeeType.SERVICE_FEE);
+        BigDecimal valorLiquido = total.subtract(taxaEntrega).subtract(taxaServico);
+        if (valorLiquido.signum() < 0) {
+            valorLiquido = BigDecimal.ZERO;
+        }
         String moeda = resolverMoeda(canonico);
 
         String clienteNome = canonico.customer() != null ? canonico.customer().name() : null;
@@ -47,11 +53,22 @@ public final class PedidoCanonicoMapper {
                 filialId,
                 credencialId,
                 total,
+                taxaEntrega,
+                taxaServico,
+                valorLiquido,
                 moeda,
                 clienteNome,
                 clienteTelefone,
                 itens,
                 agora);
+    }
+
+    private static BigDecimal somarFees(PedidoVendaCanonico canonico, OpenDeliveryFeeType tipoAlvo) {
+        return canonico.otherFees().stream()
+                .filter(f -> f.type() == tipoAlvo)
+                .map(f -> f.price() != null ? f.price().value() : BigDecimal.ZERO)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private static List<ItemPedidoCanal> mapearItens(List<OpenDeliveryItem> items) {

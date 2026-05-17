@@ -29,7 +29,9 @@ class PedidoCanalTest {
         return PedidoCanal.recebido(
                 CanalTipo.IFOOD, "ifood-order-123", "#A1B2",
                 FILIAL, CRED,
-                new BigDecimal("49.90"), "BRL",
+                new BigDecimal("49.90"),
+                BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("49.90"),
+                "BRL",
                 "Maria", "+5511999990000",
                 List.of(item), T0);
     }
@@ -125,7 +127,8 @@ class PedidoCanalTest {
     void pedidoSemItensRejeita() {
         assertThatThrownBy(() -> PedidoCanal.recebido(
                 CanalTipo.IFOOD, "x", null, FILIAL, CRED,
-                BigDecimal.ZERO, "BRL", null, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                "BRL", null, null,
                 List.of(), T0))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("1 item");

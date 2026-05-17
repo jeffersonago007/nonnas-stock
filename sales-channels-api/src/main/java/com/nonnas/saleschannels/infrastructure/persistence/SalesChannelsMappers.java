@@ -52,6 +52,9 @@ final class SalesChannelsMappers {
         e.setCredencialId(p.credencialId().value());
         e.setStatus(p.status());
         e.setValorTotal(p.valorTotal());
+        e.setTaxaEntrega(p.taxaEntrega());
+        e.setTaxaServico(p.taxaServico());
+        e.setValorLiquido(p.valorLiquido());
         e.setMoeda(p.moeda());
         e.setClienteNome(p.clienteNomeOpt().orElse(null));
         e.setClienteTelefone(p.clienteTelefoneOpt().orElse(null));
@@ -92,7 +95,9 @@ final class SalesChannelsMappers {
                 PedidoCanalId.of(e.getId()), e.getCanalTipo(),
                 e.getPedidoExternoId(), e.getDisplayId(),
                 e.getFilialId(), CredencialCanalId.of(e.getCredencialId()),
-                e.getStatus(), e.getValorTotal(), e.getMoeda(),
+                e.getStatus(), e.getValorTotal(),
+                e.getTaxaEntrega(), e.getTaxaServico(), e.getValorLiquido(),
+                e.getMoeda(),
                 e.getClienteNome(), e.getClienteTelefone(),
                 itens,
                 e.getMovimentacaoId(), e.getErroProcessamento(),

@@ -17,11 +17,11 @@ import {
   FileText,
   BookOpen,
   Receipt,
-  Smartphone,
   KeyRound,
   Link as LinkIcon,
 } from 'lucide-react';
 
+import { Moto } from '@/components/icons/Moto';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/store';
 import { hasAnyRole } from '@/routes/RoleGuard';
@@ -46,7 +46,7 @@ const navItemsOperacional: NavItem[] = [
   { to: '/notas-fiscais', label: 'Notas fiscais', icon: FileText, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
   { to: '/estoque', label: 'Estoque', icon: Boxes, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
   { to: '/vendas', label: 'Saídas', icon: Receipt, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
-  { to: '/canais/pedidos', label: 'Deliveries', icon: Smartphone, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
+  { to: '/canais/pedidos', label: 'Deliveries', icon: Moto, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/alertas', label: 'Alertas', icon: Bell, allow: ['ADMIN', 'GERENTE', 'OPERADOR'] },
 ];

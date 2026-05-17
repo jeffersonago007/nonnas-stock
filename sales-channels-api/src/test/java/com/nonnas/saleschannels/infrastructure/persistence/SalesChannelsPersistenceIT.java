@@ -98,7 +98,9 @@ class SalesChannelsPersistenceIT extends AbstractSalesChannelsIntegrationTest {
         PedidoCanal pedido = PedidoCanal.recebido(
                 CanalTipo.IFOOD, "ext-order-1", "#001",
                 cred.filialId(), cred.id(),
-                new BigDecimal("49.90"), "BRL",
+                new BigDecimal("60.40"),
+                new BigDecimal("8.00"), new BigDecimal("2.50"), new BigDecimal("49.90"),
+                "BRL",
                 "Maria", "+5511999990000",
                 List.of(item), T0);
 
@@ -106,6 +108,9 @@ class SalesChannelsPersistenceIT extends AbstractSalesChannelsIntegrationTest {
         assertThat(salvo.id()).isNotNull();
         assertThat(salvo.itens()).hasSize(1);
         assertThat(salvo.status()).isEqualTo(StatusPedidoCanal.RECEBIDO);
+        assertThat(salvo.taxaEntrega()).isEqualByComparingTo("8.00");
+        assertThat(salvo.taxaServico()).isEqualByComparingTo("2.50");
+        assertThat(salvo.valorLiquido()).isEqualByComparingTo("49.90");
 
         // Transição: RECEBIDO → EM_PROCESSAMENTO → CONFIRMADO_ESTOQUE.
         salvo.iniciarProcessamento(T0.plusSeconds(5));
@@ -118,6 +123,9 @@ class SalesChannelsPersistenceIT extends AbstractSalesChannelsIntegrationTest {
         assertThat(recarregado).isPresent();
         assertThat(recarregado.get().status()).isEqualTo(StatusPedidoCanal.CONFIRMADO_ESTOQUE);
         assertThat(recarregado.get().itens()).hasSize(1);
+        assertThat(recarregado.get().taxaEntrega()).isEqualByComparingTo("8.00");
+        assertThat(recarregado.get().taxaServico()).isEqualByComparingTo("2.50");
+        assertThat(recarregado.get().valorLiquido()).isEqualByComparingTo("49.90");
     }
 
     @Test
@@ -130,13 +138,17 @@ class SalesChannelsPersistenceIT extends AbstractSalesChannelsIntegrationTest {
         PedidoCanal p1 = PedidoCanal.recebido(
                 CanalTipo.IFOOD, "ext-dup", null,
                 cred.filialId(), cred.id(),
-                BigDecimal.ONE, "BRL", null, null, List.of(item), T0);
+                BigDecimal.ONE,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE,
+                "BRL", null, null, List.of(item), T0);
         pedidos.salvarNovo(p1, "{}", null);
 
         PedidoCanal p2 = PedidoCanal.recebido(
                 CanalTipo.IFOOD, "ext-dup", null,
                 cred.filialId(), cred.id(),
-                BigDecimal.ONE, "BRL", null, null,
+                BigDecimal.ONE,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE,
+                "BRL", null, null,
                 List.of(ItemPedidoCanal.novo(1, "Y", "Outro", BigDecimal.ONE, "UN",
                         BigDecimal.ONE, BigDecimal.ONE, null)), T0);
         assertThatThrownBy(() -> pedidos.salvarNovo(p2, "{}", null))
@@ -155,7 +167,9 @@ class SalesChannelsPersistenceIT extends AbstractSalesChannelsIntegrationTest {
             PedidoCanal p = PedidoCanal.recebido(
                     CanalTipo.IFOOD, "order-" + i, null,
                     cred.filialId(), cred.id(),
-                    BigDecimal.ONE, "BRL", null, null,
+                    BigDecimal.ONE,
+                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE,
+                    "BRL", null, null,
                     List.of(item), T0.plusSeconds(i * 10L));
             pedidos.salvarNovo(p, "{}", null);
         }
@@ -197,7 +211,9 @@ class SalesChannelsPersistenceIT extends AbstractSalesChannelsIntegrationTest {
                 PedidoCanal.recebido(
                         CanalTipo.IFOOD, "ord-100-real", null,
                         cred.filialId(), cred.id(),
-                        BigDecimal.ONE, "BRL", null, null, List.of(item), T0),
+                        BigDecimal.ONE,
+                        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE,
+                        "BRL", null, null, List.of(item), T0),
                 "{}", null);
 
         EventoCanal e = eventos.salvarSeNovo(EventoCanal.recebido(

@@ -143,6 +143,33 @@ export function DetalhesPedidoDialog({ pedido, onClose }: Props) {
                         </td>
                         <td></td>
                       </tr>
+                      <tr className="text-muted-foreground">
+                        <td colSpan={5} className="px-3 py-1 text-right">
+                          Taxa de entrega
+                        </td>
+                        <td className="px-3 py-1 text-right">
+                          − {fmtMoeda(pedido.taxaEntrega, pedido.moeda)}
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr className="text-muted-foreground">
+                        <td colSpan={5} className="px-3 py-1 text-right">
+                          Taxa de serviço
+                        </td>
+                        <td className="px-3 py-1 text-right">
+                          − {fmtMoeda(pedido.taxaServico, pedido.moeda)}
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr className="border-t bg-emerald-50 font-semibold text-emerald-900">
+                        <td colSpan={5} className="px-3 py-2 text-right">
+                          Valor recebido
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoeda(pedido.valorLiquido, pedido.moeda)}
+                        </td>
+                        <td></td>
+                      </tr>
                     </tfoot>
                   </table>
                 </div>

@@ -4,7 +4,7 @@ import com.nonnas.identity.application.ports.Usuario2faPort;
 import com.nonnas.identity.application.ports.UsuarioRepository;
 import com.nonnas.identity.domain.Usuario;
 import com.nonnas.identity.domain.UsuarioId;
-import com.nonnas.identity.infrastructure.crypto.CryptoService;
+import com.nonnas.web.crypto.CryptoService;
 import com.nonnas.identity.infrastructure.security.TotpService;
 import com.nonnas.sharedkernel.NotFoundException;
 import org.springframework.stereotype.Service;

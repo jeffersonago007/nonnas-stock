@@ -1,4 +1,4 @@
-package com.nonnas.identity.infrastructure.crypto;
+package com.nonnas.web.crypto;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

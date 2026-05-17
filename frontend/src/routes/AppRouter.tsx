@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -5,28 +6,32 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleGuard } from './RoleGuard';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
-import { FiliaisPage } from '@/features/cadastros/filiais/FiliaisPage';
-import { CargaInicialPage } from '@/features/cadastros/filiais/CargaInicialPage';
-import { InsumosPage } from '@/features/cadastros/insumos/InsumosPage';
-import { FornecedoresPage } from '@/features/cadastros/fornecedores/FornecedoresPage';
-import { ProdutosPage } from '@/features/cadastros/produtos/ProdutosPage';
-import { FichasTecnicasPage } from '@/features/receitas/FichasTecnicasPage';
-import { EstoquePage } from '@/features/operacoes/EstoquePage';
-import { MovimentacoesPage } from '@/features/operacoes/MovimentacoesPage';
-import { TransferenciasPage } from '@/features/operacoes/TransferenciasPage';
-import { AlertasPage } from '@/features/alertas/AlertasPage';
-import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
-import { NotificacoesPage } from '@/features/notificacoes/NotificacoesPage';
-import { CategoriasPage } from '@/features/admin/categorias/CategoriasPage';
-import { NotasFiscaisPage } from '@/features/operacoes/notas-fiscais/NotasFiscaisPage';
-import { LancarNotaFiscalPage } from '@/features/operacoes/notas-fiscais/LancarNotaFiscalPage';
-import { UnidadesPage } from '@/features/admin/unidades/UnidadesPage';
-import { EmpresasPage } from '@/features/admin/empresas/EmpresasPage';
-import { UsuariosPage } from '@/features/admin/usuarios/UsuariosPage';
-import { VendasPage } from '@/features/vendas/VendasPage';
-import { CredenciaisPage } from '@/features/canais/CredenciaisPage';
-import { DeparaPage } from '@/features/canais/DeparaPage';
-import { PedidosCanaisPage } from '@/features/canais/PedidosCanaisPage';
+
+// Rotas pesadas (Recharts, react-hook-form, formulários grandes) ficam fora
+// do bundle principal. Login + Dashboard ficam eager por serem a 1ª tela após
+// abrir o app e estarem no caminho crítico de TTI (Time To Interactive).
+const FiliaisPage = lazy(() => import('@/features/cadastros/filiais/FiliaisPage').then((m) => ({ default: m.FiliaisPage })));
+const CargaInicialPage = lazy(() => import('@/features/cadastros/filiais/CargaInicialPage').then((m) => ({ default: m.CargaInicialPage })));
+const InsumosPage = lazy(() => import('@/features/cadastros/insumos/InsumosPage').then((m) => ({ default: m.InsumosPage })));
+const FornecedoresPage = lazy(() => import('@/features/cadastros/fornecedores/FornecedoresPage').then((m) => ({ default: m.FornecedoresPage })));
+const ProdutosPage = lazy(() => import('@/features/cadastros/produtos/ProdutosPage').then((m) => ({ default: m.ProdutosPage })));
+const FichasTecnicasPage = lazy(() => import('@/features/receitas/FichasTecnicasPage').then((m) => ({ default: m.FichasTecnicasPage })));
+const EstoquePage = lazy(() => import('@/features/operacoes/EstoquePage').then((m) => ({ default: m.EstoquePage })));
+const MovimentacoesPage = lazy(() => import('@/features/operacoes/MovimentacoesPage').then((m) => ({ default: m.MovimentacoesPage })));
+const TransferenciasPage = lazy(() => import('@/features/operacoes/TransferenciasPage').then((m) => ({ default: m.TransferenciasPage })));
+const AlertasPage = lazy(() => import('@/features/alertas/AlertasPage').then((m) => ({ default: m.AlertasPage })));
+const RelatoriosPage = lazy(() => import('@/features/relatorios/RelatoriosPage').then((m) => ({ default: m.RelatoriosPage })));
+const NotificacoesPage = lazy(() => import('@/features/notificacoes/NotificacoesPage').then((m) => ({ default: m.NotificacoesPage })));
+const CategoriasPage = lazy(() => import('@/features/admin/categorias/CategoriasPage').then((m) => ({ default: m.CategoriasPage })));
+const NotasFiscaisPage = lazy(() => import('@/features/operacoes/notas-fiscais/NotasFiscaisPage').then((m) => ({ default: m.NotasFiscaisPage })));
+const LancarNotaFiscalPage = lazy(() => import('@/features/operacoes/notas-fiscais/LancarNotaFiscalPage').then((m) => ({ default: m.LancarNotaFiscalPage })));
+const UnidadesPage = lazy(() => import('@/features/admin/unidades/UnidadesPage').then((m) => ({ default: m.UnidadesPage })));
+const EmpresasPage = lazy(() => import('@/features/admin/empresas/EmpresasPage').then((m) => ({ default: m.EmpresasPage })));
+const UsuariosPage = lazy(() => import('@/features/admin/usuarios/UsuariosPage').then((m) => ({ default: m.UsuariosPage })));
+const VendasPage = lazy(() => import('@/features/vendas/VendasPage').then((m) => ({ default: m.VendasPage })));
+const CredenciaisPage = lazy(() => import('@/features/canais/CredenciaisPage').then((m) => ({ default: m.CredenciaisPage })));
+const DeparaPage = lazy(() => import('@/features/canais/DeparaPage').then((m) => ({ default: m.DeparaPage })));
+const PedidosCanaisPage = lazy(() => import('@/features/canais/PedidosCanaisPage').then((m) => ({ default: m.PedidosCanaisPage })));
 
 // Visibilidade espelhando o Sidebar (T-RBAC-01):
 //   ADMIN     → tudo

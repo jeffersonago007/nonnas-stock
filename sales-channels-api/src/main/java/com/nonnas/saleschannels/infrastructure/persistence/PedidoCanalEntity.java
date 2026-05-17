@@ -2,6 +2,7 @@ package com.nonnas.saleschannels.infrastructure.persistence;
 
 import com.nonnas.saleschannels.domain.CanalTipo;
 import com.nonnas.saleschannels.domain.StatusPedidoCanal;
+import com.nonnas.web.crypto.CamposSensiveisConverter;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -28,8 +29,12 @@ public class PedidoCanalEntity {
     @Column(name = "taxa_servico", nullable = false, precision = 20, scale = 4) private BigDecimal taxaServico = BigDecimal.ZERO;
     @Column(name = "valor_liquido", nullable = false, precision = 20, scale = 4) private BigDecimal valorLiquido = BigDecimal.ZERO;
     @Column(nullable = false, length = 3) private String moeda;
-    @Column(name = "cliente_nome", length = 200) private String clienteNome;
-    @Column(name = "cliente_telefone", length = 40) private String clienteTelefone;
+    // PII LGPD — cifrado em repouso via AES-256-GCM (T-QOL-03).
+    // length aumentado para acomodar ciphertext base64 (~88 chars p/ nome curto).
+    @Convert(converter = CamposSensiveisConverter.class)
+    @Column(name = "cliente_nome", length = 500) private String clienteNome;
+    @Convert(converter = CamposSensiveisConverter.class)
+    @Column(name = "cliente_telefone", length = 500) private String clienteTelefone;
     @JdbcTypeCode(SqlTypes.JSON) @Column(name = "payload_canonico_json", nullable = false, columnDefinition = "jsonb") private String payloadCanonicoJson;
     @JdbcTypeCode(SqlTypes.JSON) @Column(name = "payload_bruto_json", columnDefinition = "jsonb") private String payloadBrutoJson;
     @Column(name = "movimentacao_id") private UUID movimentacaoId;

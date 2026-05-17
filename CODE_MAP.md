@@ -60,7 +60,7 @@ Cada módulo segue layout idêntico (memória `feedback_module_patterns.md`):
 | Módulo | Papel |
 |---|---|
 | [shared-kernel/](shared-kernel/) | `Money`, `Quantity`, `EntityId`, `Result` sealed, `DomainException` sealed. Events (`AlertaDisparadoEvent`). Distribui `AbstractIntegrationTest` + `Builders` via **test-jar** (ADR 0011). Zero deps de Spring/JPA. |
-| [web-commons/](web-commons/) | `GlobalExceptionHandler` único (RFC 7807). Substitui handlers locais. |
+| [web-commons/](web-commons/) | `GlobalExceptionHandler` único (RFC 7807). Substitui handlers locais. Hospeda `com.nonnas.web.crypto.*` (CryptoService AES-256-GCM + CamposSensiveisConverter JPA) compartilhado por bounded contexts via `@Convert` em colunas PII. |
 | [app/](app/) | Agrega 7 bounded contexts + actuator + springdoc. `NonnasStockApplication`, `application*.yml` (defaults/dev/test/prod), `SecurityConfig`, `RateLimitFilter`, `MdcRequestFilter`, `SentryConfig`. **Único módulo executável** (`./mvnw -pl app spring-boot:run`). |
 | [nfe-importer/](nfe-importer/) | Parser NF-e modelo 55 (DOM/XPath, XXE-blocked). [NotaFiscalController](nfe-importer/src/main/java/com/nonnas/nfeimporter/interfaces/rest/NotaFiscalController.java) com `/preview-xml` (enriquecido com `matchStatus` por item: DEPARA/COLISAO/LIVRE — ver [PreviewNotaFiscalUseCase](nfe-importer/src/main/java/com/nonnas/nfeimporter/application/PreviewNotaFiscalUseCase.java)), `/lancar`. Resolve insumo via de-para `(fornecedor, cProd)` primeiro; nunca reusa por código global. |
 | ~~`sales-channels-api/` placeholder~~ | Promovido a bounded context na tabela acima (T-CANAL-00..02, 2026-05-15). |
@@ -128,6 +128,8 @@ Vite 5 + React 18 + TS 5.6 + Tailwind 3.4 + shadcn/ui + Zustand + TanStack Query
 | V027 | sales-channels-api | T-CANAL-01 — `eventos_canais` (UNIQUE `(canal, event_id_externo)` para idempotência de polling) |
 | V028 | sales-channels-api | T-CANAL-04 — `canal_produto_depara` com 2 partial unique indexes: `uq_canal_produto_depara_global` (filial IS NULL) e `uq_canal_produto_depara_com_filial` (filial IS NOT NULL). Sem FK física pra produtos_vendaveis (ADR 0010 — validação em runtime) |
 | V029 | sales-channels-api | T-CANAL-06 — `pedidos_canais.taxa_entrega/taxa_servico/valor_liquido` (NUMERIC(20,4) NOT NULL DEFAULT 0 + CHECK ≥ 0). Backfill `valor_liquido = valor_total` pra pedidos pré-T-CANAL-06 |
+| V030 | sales-channels-api | T-QOL-03 — `cliente_nome/cliente_telefone TYPE VARCHAR(500)` (acomoda ciphertext base64) + DELETE de pedidos+eventos demo pré-cripto |
+| V031 | catalog | T-QOL-03 — `fornecedores_contatos.nome/email/telefone TYPE VARCHAR(500)` + DELETE FROM (numerada V031 não V030 para evitar colisão Flyway no classpath consolidado) |
 
 ---
 

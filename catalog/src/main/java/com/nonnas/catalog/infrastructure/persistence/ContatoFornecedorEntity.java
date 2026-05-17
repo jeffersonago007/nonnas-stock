@@ -1,5 +1,6 @@
 package com.nonnas.catalog.infrastructure.persistence;
 
+import com.nonnas.web.crypto.CamposSensiveisConverter;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -10,9 +11,13 @@ import java.util.UUID;
 public class ContatoFornecedorEntity {
 
     @Id @Column(nullable = false, updatable = false) private UUID id;
-    @Column(length = 150) private String nome;
-    @Column(length = 150) private String email;
-    @Column(length = 30) private String telefone;
+    // PII LGPD — cifrado em repouso (T-QOL-03). length expandido pra ciphertext.
+    @Convert(converter = CamposSensiveisConverter.class)
+    @Column(length = 500) private String nome;
+    @Convert(converter = CamposSensiveisConverter.class)
+    @Column(length = 500) private String email;
+    @Convert(converter = CamposSensiveisConverter.class)
+    @Column(length = 500) private String telefone;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
 
     public ContatoFornecedorEntity() {}

@@ -30,6 +30,11 @@ class SaldoLoteRepositoryImpl implements SaldoLoteRepository {
         return r != null ? r : BigDecimal.ZERO;
     }
 
+    @Override public BigDecimal somarSaldoTotalLote(LoteId loteId) {
+        BigDecimal r = jpa.somarSaldoTotalLote(loteId.value());
+        return r != null ? r : BigDecimal.ZERO;
+    }
+
     @Override public List<LoteSaldoFefo> findLotesParaSaidaFefo(UUID insumoId, UUID filialId) {
         return jpa.findLotesParaSaidaFefo(insumoId, filialId).stream()
                 .map(r -> new LoteSaldoFefo(LoteId.of(r.loteId()), r.saldoBase(), r.dataValidade()))

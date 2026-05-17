@@ -22,6 +22,13 @@ public interface SaldoLoteRepository {
     java.math.BigDecimal somarPorInsumoEFilial(UUID insumoId, UUID filialId);
 
     /**
+     * Soma o saldo total de UM lote (todas as filiais) — usado pelo cálculo
+     * de custo médio ponderado do lote AGREGADOR (T-CMV-01). Retorna 0
+     * quando o lote ainda não tem saldo em nenhuma filial.
+     */
+    java.math.BigDecimal somarSaldoTotalLote(LoteId loteId);
+
+    /**
      * Retorna lotes com saldo positivo do insumo na filial, ordenados por
      * data_validade NULLS LAST, lote.id ASC. Lock pessimista para serializar
      * saídas concorrentes no mesmo lote.

@@ -1,5 +1,6 @@
 package com.nonnas.reporting.interfaces.rest;
 
+import com.nonnas.reporting.application.CmvUseCase;
 import com.nonnas.reporting.application.CurvaABCUseCase;
 import com.nonnas.reporting.application.DivergenciaInventarioUseCase;
 import com.nonnas.reporting.application.MovimentacaoPorPeriodoUseCase;
@@ -34,6 +35,7 @@ public class RelatoriosController {
     private final MovimentacaoPorPeriodoUseCase movimentacao;
     private final DivergenciaInventarioUseCase divergencia;
     private final RefreshViewsUseCase refresh;
+    private final CmvUseCase cmv;
 
     public RelatoriosController(PosicaoEstoquePorFilialUseCase posicao,
                                 CurvaABCUseCase curvaAbc,
@@ -41,7 +43,8 @@ public class RelatoriosController {
                                 VencimentoProximoUseCase vencimento,
                                 MovimentacaoPorPeriodoUseCase movimentacao,
                                 DivergenciaInventarioUseCase divergencia,
-                                RefreshViewsUseCase refresh) {
+                                RefreshViewsUseCase refresh,
+                                CmvUseCase cmv) {
         this.posicao = posicao;
         this.curvaAbc = curvaAbc;
         this.ruptura = ruptura;
@@ -49,6 +52,7 @@ public class RelatoriosController {
         this.movimentacao = movimentacao;
         this.divergencia = divergencia;
         this.refresh = refresh;
+        this.cmv = cmv;
     }
 
     @GetMapping("/posicao")
@@ -125,6 +129,39 @@ public class RelatoriosController {
         UUID escopo = SecurityScope.resolveFilialId(filialId);
         return divergencia.execute(escopo, new PeriodoFiltro(inicio, fim), page, size).stream()
                 .map(RelatorioDto.DivergenciaResponse::from).toList();
+    }
+
+    @GetMapping("/cmv/por-insumo")
+    @PreAuthorize("isAuthenticated()")
+    public List<RelatorioDto.CmvPorInsumoResponse> cmvPorInsumo(
+            @RequestParam Instant de,
+            @RequestParam Instant ate,
+            @RequestParam(required = false) UUID filialId) {
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        return cmv.porInsumo(de, ate, escopo).stream()
+                .map(RelatorioDto.CmvPorInsumoResponse::from).toList();
+    }
+
+    @GetMapping("/cmv/por-produto")
+    @PreAuthorize("isAuthenticated()")
+    public List<RelatorioDto.CmvPorProdutoResponse> cmvPorProduto(
+            @RequestParam Instant de,
+            @RequestParam Instant ate,
+            @RequestParam(required = false) UUID filialId) {
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        return cmv.porProduto(de, ate, escopo).stream()
+                .map(RelatorioDto.CmvPorProdutoResponse::from).toList();
+    }
+
+    @GetMapping("/cmv/por-canal")
+    @PreAuthorize("isAuthenticated()")
+    public List<RelatorioDto.CmvPorCanalResponse> cmvPorCanal(
+            @RequestParam Instant de,
+            @RequestParam Instant ate,
+            @RequestParam(required = false) UUID filialId) {
+        UUID escopo = SecurityScope.resolveFilialId(filialId);
+        return cmv.porCanal(de, ate, escopo).stream()
+                .map(RelatorioDto.CmvPorCanalResponse::from).toList();
     }
 
     @PostMapping("/refresh")

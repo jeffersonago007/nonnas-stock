@@ -21,6 +21,12 @@ public interface SpringDataSaldoLoteRepository extends JpaRepository<SaldoLoteEn
         """)
     BigDecimal somarPorInsumoEFilial(@Param("insumoId") UUID insumoId, @Param("filialId") UUID filialId);
 
+    @Query("""
+        SELECT COALESCE(SUM(s.quantidadeBase), 0) FROM SaldoLoteEntity s
+        WHERE s.loteId = :loteId
+        """)
+    BigDecimal somarSaldoTotalLote(@Param("loteId") UUID loteId);
+
     /**
      * FEFO: lotes com saldo positivo do insumo na filial, ordenados por
      * data de validade (NULLS LAST) e id. Lock pessimista serializa saídas

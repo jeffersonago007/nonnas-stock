@@ -1,6 +1,8 @@
 package com.nonnas.inventory.application.movimentacao;
 
+import com.nonnas.inventory.application.ports.LoteRepository;
 import com.nonnas.inventory.application.ports.SaldoLoteRepository;
+import com.nonnas.inventory.domain.Lote;
 import com.nonnas.inventory.domain.Movimentacao;
 import com.nonnas.inventory.domain.TipoMovimentacao;
 import com.nonnas.inventory.testsupport.AbstractInventoryIntegrationTest;
@@ -23,6 +25,9 @@ class RegistrarEntradaMultiItemUseCaseIT extends AbstractInventoryIntegrationTes
 
     @Autowired
     private RegistrarEntradaMultiItemUseCase entradaMulti;
+
+    @Autowired
+    private LoteRepository loteRepo;
 
     @Autowired
     private SaldoLoteRepository saldoRepo;
@@ -89,6 +94,39 @@ class RegistrarEntradaMultiItemUseCaseIT extends AbstractInventoryIntegrationTes
 
         assertThatThrownBy(() -> entradaMulti.execute(cmd))
                 .hasMessageContaining("obrigatório");
+    }
+
+    @Test
+    void agregador_duasEntradas_calculaCustoMedioPonderado() {
+        // T-CMV-01: insumo sem controla_validade vai pro lote AGREGADOR.
+        // Custo médio = (10×20 + 10×30) / 20 = 25,00.
+        UUID filial = UUID.randomUUID();
+        UUID usuario = UUID.randomUUID();
+        UUID insumo = UUID.randomUUID();
+        UUID unidade = UUID.randomUUID();
+
+        var entrada1 = new RegistrarEntradaMultiItemUseCase.Comando(
+                filial, usuario, TipoMovimentacao.ENTRADA_AJUSTE, null, null, null,
+                List.of(new RegistrarEntradaMultiItemUseCase.ItemEntrada(
+                        insumo, null, null, null, null, null,
+                        new BigDecimal("20.0000"), unidade,
+                        new BigDecimal("10"), new BigDecimal("10"), false)));
+        entradaMulti.execute(entrada1);
+
+        Lote apos1 = loteRepo.findAgregadorByInsumo(insumo).orElseThrow();
+        assertThat(apos1.valorUnitario()).isEqualByComparingTo("20.0000");
+
+        var entrada2 = new RegistrarEntradaMultiItemUseCase.Comando(
+                filial, usuario, TipoMovimentacao.ENTRADA_AJUSTE, null, null, null,
+                List.of(new RegistrarEntradaMultiItemUseCase.ItemEntrada(
+                        insumo, null, null, null, null, null,
+                        new BigDecimal("30.0000"), unidade,
+                        new BigDecimal("10"), new BigDecimal("10"), false)));
+        entradaMulti.execute(entrada2);
+
+        Lote apos2 = loteRepo.findAgregadorByInsumo(insumo).orElseThrow();
+        assertThat(apos2.id()).isEqualTo(apos1.id()); // mesmo lote, valor atualizado
+        assertThat(apos2.valorUnitario()).isEqualByComparingTo("25.0000");
     }
 
     @Test

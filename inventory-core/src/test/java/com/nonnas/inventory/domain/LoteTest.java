@@ -63,6 +63,31 @@ class LoteTest {
     }
 
     @Test
+    void agregadorAceitaNovoValorUnitario() {
+        Lote l = Lote.novoAgregador(UUID.randomUUID(), T0);
+        Lote atualizado = l.comNovoValorUnitarioAgregador(new BigDecimal("12.3400"));
+        assertThat(atualizado.id()).isEqualTo(l.id());
+        assertThat(atualizado.tipo()).isEqualTo(TipoLote.AGREGADOR);
+        assertThat(atualizado.valorUnitario()).isEqualByComparingTo("12.3400");
+    }
+
+    @Test
+    void rastreadoRejeitaAtualizacaoDeValorUnitario() {
+        Lote l = Lote.novoRastreado(UUID.randomUUID(), null, null, "L-001",
+                null, null, new BigDecimal("5.0000"), T0);
+        assertThatThrownBy(() -> l.comNovoValorUnitarioAgregador(new BigDecimal("9")))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("AGREGADOR");
+    }
+
+    @Test
+    void agregadorRejeitaNovoValorNegativo() {
+        Lote l = Lote.novoAgregador(UUID.randomUUID(), T0);
+        assertThatThrownBy(() -> l.comNovoValorUnitarioAgregador(new BigDecimal("-1")))
+                .isInstanceOf(ValidationException.class);
+    }
+
+    @Test
     void agregadorRejeitaCamposDeRastreio() {
         UUID id = UUID.randomUUID();
         Instant now = T0;

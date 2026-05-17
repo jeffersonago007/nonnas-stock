@@ -1,10 +1,14 @@
 package com.nonnas.inventory.application.movimentacao;
 
 import com.nonnas.inventory.application.ports.LoteRepository;
+import com.nonnas.inventory.application.ports.SaldoLoteRepository;
 import com.nonnas.inventory.domain.Lote;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.util.UUID;
 
@@ -27,11 +31,17 @@ import java.util.UUID;
 @Service
 public class BuscarOuCriarLoteAgregadorUseCase {
 
+    /** Precisão suficiente pra evitar erro acumulado em milhares de entradas
+     *  (mais que NUMERIC(20,4) da coluna). Half-up é o arredondamento fiscal. */
+    private static final MathContext CUSTO_MEDIO_MC = new MathContext(20, RoundingMode.HALF_UP);
+
     private final LoteRepository loteRepo;
+    private final SaldoLoteRepository saldoRepo;
     private final Clock clock;
 
-    public BuscarOuCriarLoteAgregadorUseCase(LoteRepository loteRepo, Clock clock) {
+    public BuscarOuCriarLoteAgregadorUseCase(LoteRepository loteRepo, SaldoLoteRepository saldoRepo, Clock clock) {
         this.loteRepo = loteRepo;
+        this.saldoRepo = saldoRepo;
         this.clock = clock;
     }
 
@@ -39,5 +49,37 @@ public class BuscarOuCriarLoteAgregadorUseCase {
     public Lote execute(UUID insumoId) {
         return loteRepo.findAgregadorByInsumo(insumoId)
                 .orElseGet(() -> loteRepo.save(Lote.novoAgregador(insumoId, clock.instant())));
+    }
+
+    /**
+     * Variante usada no caminho de entrada (T-CMV-01): além de buscar/criar
+     * o lote, recalcula o custo médio ponderado:
+     *
+     *   novo_custo = (saldo_anterior × custo_anterior + qtd_entrada × custo_entrada)
+     *              / (saldo_anterior + qtd_entrada)
+     *
+     * O saldo anterior é a soma cross-filial; uma única matriz por insumo é a
+     * decisão adotada (ver STATUS T-CMV-01). Quando o lote acaba de ser
+     * criado (saldo=0, custo=0), o resultado degenera em {@code custo_entrada} —
+     * primeira entrada estampa o custo direto.
+     */
+    @Transactional
+    public Lote executeComCusto(UUID insumoId, BigDecimal qtdEntrada, BigDecimal custoUnitarioEntrada) {
+        Lote lote = execute(insumoId);
+        BigDecimal saldoAnterior = saldoRepo.somarSaldoTotalLote(lote.id());
+        BigDecimal custoAnterior = lote.valorUnitario();
+
+        BigDecimal numerador = saldoAnterior.multiply(custoAnterior)
+                .add(qtdEntrada.multiply(custoUnitarioEntrada));
+        BigDecimal denominador = saldoAnterior.add(qtdEntrada);
+        if (denominador.signum() <= 0) {
+            return lote; // sem mudança — caller já fez a validação de qtd>0
+        }
+        BigDecimal novoCustoMedio = numerador.divide(denominador, CUSTO_MEDIO_MC)
+                .setScale(4, RoundingMode.HALF_UP);
+        if (novoCustoMedio.compareTo(custoAnterior) == 0) {
+            return lote;
+        }
+        return loteRepo.save(lote.comNovoValorUnitarioAgregador(novoCustoMedio));
     }
 }

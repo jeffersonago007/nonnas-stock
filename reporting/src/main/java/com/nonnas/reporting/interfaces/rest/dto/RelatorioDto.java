@@ -1,6 +1,9 @@
 package com.nonnas.reporting.interfaces.rest.dto;
 
 import com.nonnas.reporting.domain.ClasseABC;
+import com.nonnas.reporting.domain.CmvPorCanalItem;
+import com.nonnas.reporting.domain.CmvPorInsumoItem;
+import com.nonnas.reporting.domain.CmvPorProdutoItem;
 import com.nonnas.reporting.domain.CurvaABCItem;
 import com.nonnas.reporting.domain.DivergenciaInventarioItem;
 import com.nonnas.reporting.domain.MovimentacaoPorPeriodoItem;
@@ -90,6 +93,48 @@ public final class RelatorioDto {
                     i.quantidadeAjustes(),
                     i.quantidadeDiffPositiva(), i.quantidadeDiffNegativa(),
                     i.quantidadeDiffLiquida());
+        }
+    }
+
+    public record CmvPorInsumoResponse(
+            UUID insumoId, String codigo, String nome,
+            BigDecimal quantidadeVendidaBase,
+            BigDecimal cmvTotal,
+            BigDecimal custoMedioPeriodo,
+            long quantidadeMovimentacoes
+    ) {
+        public static CmvPorInsumoResponse from(CmvPorInsumoItem i) {
+            return new CmvPorInsumoResponse(
+                    i.insumoId(), i.codigo(), i.nome(),
+                    i.quantidadeVendidaBase(), i.cmvTotal(),
+                    i.custoMedioPeriodo(), i.quantidadeMovimentacoes());
+        }
+    }
+
+    public record CmvPorProdutoResponse(
+            UUID produtoVendavelId, String codigo, String nome,
+            BigDecimal quantidadeVendida,
+            BigDecimal cmvTotal,
+            long quantidadeMovimentacoes
+    ) {
+        public static CmvPorProdutoResponse from(CmvPorProdutoItem i) {
+            return new CmvPorProdutoResponse(
+                    i.produtoVendavelId(), i.codigo(), i.nome(),
+                    i.quantidadeVendida(), i.cmvTotal(), i.quantidadeMovimentacoes());
+        }
+    }
+
+    public record CmvPorCanalResponse(
+            String canal,
+            long quantidadePedidos,
+            BigDecimal receitaLiquidaTotal,
+            BigDecimal cmvTotal,
+            BigDecimal margemBruta
+    ) {
+        public static CmvPorCanalResponse from(CmvPorCanalItem i) {
+            return new CmvPorCanalResponse(
+                    i.canal(), i.quantidadePedidos(),
+                    i.receitaLiquidaTotal(), i.cmvTotal(), i.margemBruta());
         }
     }
 

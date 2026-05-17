@@ -81,12 +81,12 @@ public class RegistrarEntradaMultiItemUseCase {
                         item.dataFabricacao, item.dataValidade,
                         item.valorUnitario, clock.instant()));
             } else {
-                // Lote único do insumo. NF / fornecedor / valor unitário do item
-                // ficam refletidos apenas no histórico de movimentação — o lote
-                // em si é "balde" e não acumula esses metadados (decisão consciente:
-                // valor unitário do agregador fica zerado, custo médio ficaria em
-                // T futuro).
-                lote = agregador.execute(item.insumoId);
+                // Lote único do insumo. NF / fornecedor ficam só no histórico
+                // de movimentação. O valor unitário do agregador é atualizado
+                // pelo custo médio ponderado a cada entrada (T-CMV-01) — saídas
+                // (RegistrarSaidaMultiItem) leem lote.valorUnitario diretamente
+                // e portanto refletem o CMV vigente no momento da venda.
+                lote = agregador.executeComCusto(item.insumoId, item.quantidadeBase, item.valorUnitario);
             }
 
             ItemMovimentacao mi = ItemMovimentacao.novo(

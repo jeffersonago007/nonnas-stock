@@ -159,6 +159,69 @@ export async function listarDivergencia(params: {
   return data;
 }
 
+// ────────────────────────────────── CMV ──────────────────────────────────
+// T-CMV-01: Custo da Mercadoria Vendida em 3 perspectivas.
+
+export interface CmvPorInsumo {
+  insumoId: string;
+  codigo: string;
+  nome: string;
+  quantidadeVendidaBase: number;
+  cmvTotal: number;
+  custoMedioPeriodo: number;
+  quantidadeMovimentacoes: number;
+}
+
+export interface CmvPorProduto {
+  produtoVendavelId: string;
+  codigo: string;
+  nome: string;
+  quantidadeVendida: number;
+  cmvTotal: number;
+  quantidadeMovimentacoes: number;
+}
+
+export interface CmvPorCanal {
+  canal: string;
+  quantidadePedidos: number;
+  receitaLiquidaTotal: number;
+  cmvTotal: number;
+  margemBruta: number;
+}
+
+export async function listarCmvPorInsumo(params: {
+  de: string;
+  ate: string;
+  filialId?: string | null;
+}): Promise<CmvPorInsumo[]> {
+  const q: Record<string, string> = { de: params.de, ate: params.ate };
+  if (params.filialId) q.filialId = params.filialId;
+  const { data } = await api.get<CmvPorInsumo[]>('/relatorios/cmv/por-insumo', { params: q });
+  return data;
+}
+
+export async function listarCmvPorProduto(params: {
+  de: string;
+  ate: string;
+  filialId?: string | null;
+}): Promise<CmvPorProduto[]> {
+  const q: Record<string, string> = { de: params.de, ate: params.ate };
+  if (params.filialId) q.filialId = params.filialId;
+  const { data } = await api.get<CmvPorProduto[]>('/relatorios/cmv/por-produto', { params: q });
+  return data;
+}
+
+export async function listarCmvPorCanal(params: {
+  de: string;
+  ate: string;
+  filialId?: string | null;
+}): Promise<CmvPorCanal[]> {
+  const q: Record<string, string> = { de: params.de, ate: params.ate };
+  if (params.filialId) q.filialId = params.filialId;
+  const { data } = await api.get<CmvPorCanal[]>('/relatorios/cmv/por-canal', { params: q });
+  return data;
+}
+
 // ───────────────────────────── Refresh views ─────────────────────────────
 
 export async function refreshRelatorios(): Promise<void> {

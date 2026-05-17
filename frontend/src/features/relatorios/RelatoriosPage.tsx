@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
+  Banknote,
   Boxes,
   CalendarClock,
   Download,
@@ -34,6 +35,8 @@ import { useFilialFiltroStore } from '@/features/filtroGlobal/store';
 import { useAuthStore } from '@/features/auth/store';
 import { hasAnyRole } from '@/routes/RoleGuard';
 import { listarCategorias } from '@/features/cadastros/insumos/api';
+
+import { CmvTab } from './CmvTab';
 
 import {
   type ClasseABC,
@@ -175,6 +178,9 @@ export function RelatoriosPage() {
           <TabsTrigger value="divergencia">
             <Scale className="mr-2 h-4 w-4" /> Divergência
           </TabsTrigger>
+          <TabsTrigger value="cmv">
+            <Banknote className="mr-2 h-4 w-4" /> CMV
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="posicao">
@@ -194,6 +200,9 @@ export function RelatoriosPage() {
         </TabsContent>
         <TabsContent value="divergencia">
           <DivergenciaTab />
+        </TabsContent>
+        <TabsContent value="cmv">
+          <CmvTab />
         </TabsContent>
       </Tabs>
     </div>

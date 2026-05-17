@@ -84,12 +84,31 @@ public record Lote(
 
     /**
      * Cria o lote agregador único do insumo. Sem fornecedor/NF/numero/datas.
-     * Valor unitário fica 0 — atualizações de custo no agregador são
-     * decisão futura (precisaria custo médio ponderado, fora do escopo atual).
+     * Valor unitário nasce 0 e é atualizado a cada entrada via
+     * {@link #comNovoValorUnitarioAgregador(BigDecimal)} — custo médio
+     * ponderado (T-CMV-01, fecha o gap do ADR 0014).
      */
     public static Lote novoAgregador(UUID insumoId, Instant agora) {
         return new Lote(LoteId.generate(), insumoId, TipoLote.AGREGADOR,
                 null, null, null, null, null, BigDecimal.ZERO, agora);
+    }
+
+    /**
+     * Retorna uma cópia do lote AGREGADOR com novo valor unitário (custo
+     * médio ponderado recalculado). Reservado para o caminho de entrada —
+     * o caller atualiza via repo após esta chamada. Lança se {@code tipo}
+     * for RASTREADO (custo de lote rastreado é imutável e reflete a NF-e
+     * de origem — FIFO real).
+     */
+    public Lote comNovoValorUnitarioAgregador(BigDecimal novoValorUnitario) {
+        if (tipo != TipoLote.AGREGADOR) {
+            throw new ValidationException("Valor unitário só pode ser atualizado em lote AGREGADOR");
+        }
+        if (novoValorUnitario == null || novoValorUnitario.signum() < 0) {
+            throw new ValidationException("Novo valor unitário não pode ser negativo");
+        }
+        return new Lote(id, insumoId, tipo, fornecedorId, notaFiscalId,
+                numeroLote, dataFabricacao, dataValidade, novoValorUnitario, createdAt);
     }
 
     public Optional<UUID> fornecedorIdOpt() { return Optional.ofNullable(fornecedorId); }

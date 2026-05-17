@@ -2,6 +2,24 @@
 
 Atualizado automaticamente pelo semantic-release.
 
+## [0.2.0](https://github.com/jeffersonago007/nonnas-stock/compare/v0.1.4...v0.2.0) (2026-05-17)
+
+### Features
+
+* **canais:** simulador dev de pedido para demo sem canal real ([0adc302](https://github.com/jeffersonago007/nonnas-stock/commit/0adc30291f46a87996b7d1325d7679b609f9da0d))
+* **canais:** T-CANAL-00..02 — fundação MVP 1.2 via Open Delivery (Abrasel) ([611d0f4](https://github.com/jeffersonago007/nonnas-stock/commit/611d0f4dfc798c2bd4024c28485423041cd4846d))
+* **canais:** T-CANAL-03 — adapter Open Delivery genérico + polling ([94c0a27](https://github.com/jeffersonago007/nonnas-stock/commit/94c0a2795e1f54b3881325010b2c3b4a543ca3ee))
+* **canais:** T-CANAL-04 — ProcessarPedidoCanalUseCase + de-para + CRUD APIs ([a4d816a](https://github.com/jeffersonago007/nonnas-stock/commit/a4d816a03bbcfc37f7d03127c8503cb87be0143a))
+* **canais:** T-CANAL-05 — UI completa + scheduler ativo (MVP 1.2 fim) ([02f97e7](https://github.com/jeffersonago007/nonnas-stock/commit/02f97e7db99b1fcb91560fe8ceae655fc198b724))
+* **canais:** T-CANAL-06 — discrimina taxa de entrega/serviço e valor recebido ([eb055cc](https://github.com/jeffersonago007/nonnas-stock/commit/eb055cc10a3499e3433c62b0fb0822810fef75cc))
+* **rbac:** T-RBAC-01 — gating de menu por perfil + escopagem por filial ([9fedf4f](https://github.com/jeffersonago007/nonnas-stock/commit/9fedf4f36fb07b36ede9b5fe1061f2144b4a2083))
+* T-CMV-01 — CMV (Custo da Mercadoria Vendida) em 3 perspectivas ([a24e086](https://github.com/jeffersonago007/nonnas-stock/commit/a24e086a9db314ad46ef093d2b036a3f5d57b3bc))
+* T-QOL-01..03 — code-split + command palette + cripto LGPD ([f59d035](https://github.com/jeffersonago007/nonnas-stock/commit/f59d035c4c6a00b378c18414c4b1cde9aa0427f6))
+
+### Bug Fixes
+
+* **canais:** controllers usam SecurityScope no lugar de @AuthenticationPrincipal UserDetails ([6936fcd](https://github.com/jeffersonago007/nonnas-stock/commit/6936fcde9d06b4bd9f6278f552f2154445e87fec))
+
 ## [0.1.4](https://github.com/jeffersonago007/nonnas-stock/compare/v0.1.3...v0.1.4) (2026-05-12)
 
 ### Bug Fixes
